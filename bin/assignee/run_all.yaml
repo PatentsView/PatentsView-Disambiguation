@@ -1,0 +1,16 @@
+program: pv/disambiguation/assignee/run_clustering.py
+method: grid
+project: assignee_disambiguation
+parameters:
+  chunk_id:
+    values: [0,1,2,3,4]
+  chunk_size:
+    value: 10000
+  run_id:
+    value: "run_22"
+  min_batch_size:
+    value: 7000
+  sim_threshold:
+    value: 0.85
+  max_canopy_size:
+    value: 24000
