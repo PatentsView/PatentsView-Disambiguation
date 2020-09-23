@@ -4,7 +4,7 @@
 
 ```
 pip install git+git://github.com/iesl/grinch.git
-conda install pytorch==1.2.0 torchvision==0.4.0 cudatoolkit=9.2 -c pytorch 
+conda install pytorch==1.2.0 torchvision==0.4.0 cudatoolkit=9.2 -c pytorch
 ```
 
 ## Inventor
