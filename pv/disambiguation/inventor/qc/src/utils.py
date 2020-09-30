@@ -16,6 +16,7 @@ def get_dataframe_from_pymysql_cursor(connection, query):
 
 
 def generate_comparitive_violin_plot(old_data, new_data, log=False):
+    plt.ioff()
     if log:
         old_y = np.log(old_data)
         new_y = np.log(new_data)
@@ -25,7 +26,7 @@ def generate_comparitive_violin_plot(old_data, new_data, log=False):
     fig, axarr = plt.subplots(nrows=1, ncols=2, sharex=True, sharey=True, figsize=(15, 10))
     axarr[0].violinplot(old_y)
     axarr[1].violinplot(new_y)
-    return axarr
+    return fig,axarr
 
 
 def calculate_cluster_distances(cluster_data):
