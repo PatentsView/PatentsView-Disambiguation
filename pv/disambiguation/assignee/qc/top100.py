@@ -54,7 +54,7 @@ def main():
                 cursor.execute(this_q)
                 results = pd.DataFrame(cursor.fetchall(), columns=[i[0] for i in cursor.description])
                 names = [x[1][0] for x in results.iterrows()]
-                name_str = '; '.join(names)
+                name_str = '; '.join([str(x) for x in names])
                 fout.write('%s\t%s\t%s\n' % (val[0], val[1], name_str))
                 cursor.close()
 
