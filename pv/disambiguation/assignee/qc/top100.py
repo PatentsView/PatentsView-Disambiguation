@@ -36,16 +36,16 @@ def main():
             SELECT DISTINCT(organization) from rawassignee WHERE assignee_id="%s" LIMIT 10;
             """
     from tqdm import tqdm
-    # with open('assignee_top_100_old.txt', 'w') as fout:
-    #     for idx, val in tqdm(top100old.iterrows()):
-    #         this_q = (get_entity_name_old + '') % val[1]
-    #         with granted_db.cursor() as cursor:
-    #             cursor.execute(this_q)
-    #             results = pd.DataFrame(cursor.fetchall(), columns=[i[0] for i in cursor.description])
-    #             names = [x for x in results['organization']]
-    #             name_str = '; '.join(names)
-    #             fout.write('%s\t%s\t%s\n' % (val[0], val[1], name_str))
-    #             cursor.close()
+    with open('assignee_top_100_old.txt', 'w') as fout:
+        for idx, val in tqdm(top100old.iterrows()):
+            this_q = (get_entity_name_old + '') % val[1]
+            with granted_db.cursor() as cursor:
+                cursor.execute(this_q)
+                results = pd.DataFrame(cursor.fetchall(), columns=[i[0] for i in cursor.description])
+                names = [x for x in results['organization']]
+                name_str = '; '.join(names)
+                fout.write('%s\t%s\t%s\n' % (val[0], val[1], name_str))
+                cursor.close()
 
     with open('assignee_top_100_new.txt', 'w') as fout:
         for idx, val in tqdm(top100new.iterrows()):
