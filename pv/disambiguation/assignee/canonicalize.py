@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import mysql.connector
 import collections
+from tqdm import tqdm
 
 import pymysql
 from pv.disambiguation.util.qc_utils import get_dataframe_from_pymysql_cursor, generate_comparitive_violin_plot
@@ -36,12 +37,12 @@ def main():
     entity_data = get_dataframe_from_pymysql_cursor(granted_db, entity_id_query).to_numpy()
 
     entity2namecount = collections.defaultdict(dict)
-    for i in range(mention_data.shape[0]):
-        name = mention_data[2] if mention_data[2] else '%s %s' % (mention_data[3], mention_data[4])
-        if name not in entity2namecount[mention_data[1]]:
-            entity2namecount[mention_data[1]][name] = 1
+    for i in tqdm(range(mention_data.shape[0]), 'counting', mention_data.shape[0]):
+        name = mention_data[i][2] if mention_data[i][2] else '%s %s' % (mention_data[i][3], mention_data[i][4])
+        if name not in entity2namecount[mention_data[i][1]]:
+            entity2namecount[mention_data[i][1]][name] = 1
         else:
-            entity2namecount[mention_data[1]][name] += 1
+            entity2namecount[mention_data[i][1]][name] += 1
 
 
     # Algorithm:
@@ -52,7 +53,6 @@ def main():
 
     entity_kb = EntityKBFeatures('data/assignee/permid/permid_entity_info.pkl', None, None)
     canonical_names = dict()
-    from tqdm import tqdm
     for entity,name2count in tqdm(entity2namecount.items(), 'canonicalizing'):
         sorted_pairs = sorted([(n,c) for n,c in name2count.items()], key=lambda x:x[1], reverse=True)
         for n,c in sorted_pairs:
@@ -60,7 +60,7 @@ def main():
                 canonical_names[entity] = n
                 break
         if entity in canonical_names:
-            break
+            continue
         else:
             canonical_names[entity] = sorted_pairs[0][0]
 
