@@ -207,6 +207,10 @@ def main(argv):
         logging.info('Running singletons!!')
         run_singletons(list(singletons), outdir, job_name='job-singletons')
 
+        logging.info('Saving chunk to canopy map')
+        with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+            pickle.dump(chunks, fout)
+
     run_batch(chunks[FLAGS.chunk_id], outdir, job_name='job-%s' % FLAGS.chunk_id)
 
 

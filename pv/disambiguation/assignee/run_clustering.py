@@ -59,16 +59,17 @@ def batched_canopy_process(datasets, model, encoding_model):
     return run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model)
 
 
-def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions):
+def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree, trees):
     features = encoding_model.encode(all_records)
-    grinch = Agglom(model, features, num_points=len(all_pids), min_allowable_sim=0)
+    grinch = Agglom(model, features, num_points=len(all_pids))
     grinch.build_dendrogram_hac()
     fc = grinch.flat_clustering(model.aux['threshold'])
-    # import pdb
-    # pdb.set_trace()
+    tree_id = len(trees)
+    trees.append(grinch)
     for i in range(len(all_pids)):
         if all_canopies[i] not in canopy2predictions:
             canopy2predictions[all_canopies[i]] = [[], []]
+            canopy2tree[all_canopies[i]] = tree_id
         canopy2predictions[all_canopies[i]][0].append(all_pids[i])
         canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
     return canopy2predictions
@@ -106,8 +107,12 @@ def run_batch(canopy_list, outdir, loader, job_name='disambig'):
 
     os.makedirs(outdir, exist_ok=True)
     results = dict()
+    canopy2tree_id = dict()
+    tree_list = []
     outfile = os.path.join(outdir, job_name) + '.pkl'
+    outstatefile = os.path.join(outdir, job_name) + 'internals.pkl'
     num_mentions_processed = 0
+    num_canopies_processed = 0
     if os.path.exists(outfile):
         with open(outfile, 'rb') as fin:
             results = pickle.load(fin)
@@ -123,19 +128,24 @@ def run_batch(canopy_list, outdir, loader, job_name='disambig'):
     weight_model.aux['threshold'] = 1 / (1 + FLAGS.sim_threshold)
 
     if to_run_on:
-        for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
-          batcher(to_run_on, loader, FLAGS.min_batch_size)):
-            logging.info('[%s] run_batch %s - %s - processed %s mentions', job_name, idx, len(canopy_list),
+        for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(batcher(to_run_on, loader, FLAGS.min_batch_size)):
+            logging.info('[%s] run_batch %s - %s of %s - processed %s mentions', job_name, idx, num_canopies_processed,
+                         len(canopy_list),
                          num_mentions_processed)
-            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results)
+            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results, canopy2tree_id, tree_list)
+            num_mentions_processed += len(all_pids)
+            num_canopies_processed += np.unique(all_canopies).shape[0]
             if idx % 10 == 0:
-                wandb.log({'computed': idx + FLAGS.chunk_id * FLAGS.chunk_size, 'num_mentions': num_mentions_processed})
+                wandb.log({'computed': idx + FLAGS.chunk_id * FLAGS.chunk_size, 'num_mentions': num_mentions_processed,
+                           'num_canopies_processed': num_canopies_processed})
                 logging.info('[%s] caching results for job', job_name)
-                with open(outfile, 'wb') as fin:
-                    pickle.dump(results, fin)
+                # with open(outfile, 'wb') as fin:
+                #     pickle.dump(results, fin)
 
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
+
+    torch.save([tree_list, canopy2tree_id], outstatefile)
 
 
 def handle_singletons(canopy2predictions, singleton_canopies, loader):
@@ -198,6 +208,10 @@ def main(argv):
     if FLAGS.chunk_id == 0:
         logging.info('Running singletons!!')
         run_singletons(list(singletons), outdir, job_name='job-singletons', loader=loader)
+        with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+            pickle.dump(chunks, fout)
+        with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+            pickle.dump(chunks, fout)
 
     run_batch(chunks[FLAGS.chunk_id], outdir, loader, job_name='job-%s' % FLAGS.chunk_id)
 
