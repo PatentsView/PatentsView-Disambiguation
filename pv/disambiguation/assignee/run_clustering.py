@@ -146,7 +146,7 @@ def main(argv):
     logging.info('Running clustering - %s ', str(argv))
 
     config = configparser.ConfigParser()
-    config.read('config/database_config.ini', 'config/inventor/run_clustering.ini')
+    config.read('config/database_config.ini', 'config/assignee/run_clustering.ini')
 
     wandb.init(project="%s-%s" % (config['assignee']['exp_name'], config['assignee']['dataset_name']))
     wandb.config.update(config)
@@ -175,7 +175,7 @@ def main(argv):
         logging.info('Running singletons!!')
         run_singletons(list(singletons), outdir, job_name='job-singletons', loader=loader)
 
-    run_batch(chunks[config['assignee']['chunk_id']], outdir, loader, job_name='job-%s' % config['assignee']['chunk_id'])
+    run_batch(config, chunks[config['assignee']['chunk_id']], outdir, loader, job_name='job-%s' % config['assignee']['chunk_id'])
 
 
 if __name__ == "__main__":

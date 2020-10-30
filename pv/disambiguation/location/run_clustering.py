@@ -5,31 +5,12 @@ import pickle
 import numpy as np
 import wandb
 from absl import app
-from absl import flags
 from absl import logging
 from grinch.model import LinearAndRuleModel
+import configparser
 
 from pv.disambiguation.location.load import Loader
 from pv.disambiguation.location.model import LocationAgglom, LocationModelWithApps
-
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string('inventor_location_name_mentions', 'data/location/inventor_location.mentions.pkl', '')
-flags.DEFINE_string('assignee_location_name_mentions', 'data/location/assignee_location.mentions.pkl', '')
-
-flags.DEFINE_string('outprefix', 'exp_out', 'data path')
-flags.DEFINE_string('run_id', 'run_1', 'data path')
-
-flags.DEFINE_string('dataset_name', 'patentsview', '')
-flags.DEFINE_string('exp_name', 'disambiguation-location', '')
-
-flags.DEFINE_string('base_id_file', '', '')
-
-flags.DEFINE_integer('chunk_size', 10000, '')
-flags.DEFINE_integer('chunk_id', 1000, '')
-flags.DEFINE_integer('min_batch_size', 1, '')
-
-flags.DEFINE_integer('max_canopy_size', 900, '')
 
 logging.set_verbosity(logging.INFO)
 
@@ -83,7 +64,7 @@ def batcher(canopy_list, loader, min_batch_size=1):
         yield all_pids, all_lbls, all_records, all_canopies
 
 
-def run_batch(canopy_list, outdir, job_name='disambig'):
+def run_batch(config, canopy_list, outdir, job_name='disambig'):
     logging.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
 
     os.makedirs(outdir, exist_ok=True)
@@ -100,19 +81,19 @@ def run_batch(canopy_list, outdir, job_name='disambig'):
     if len(to_run_on) == 0:
         logging.info('already had all canopies completed! wrapping up here...')
 
-    encoding_model = LocationModelWithApps.from_flags(FLAGS)
+    encoding_model = LocationModelWithApps.from_config(config)
     weight_model = LinearAndRuleModel.from_encoding_model(encoding_model)
     weight_model.aux['threshold'] = 0.1
-    loader = Loader.from_flags(FLAGS)
+    loader = Loader.from_config(config)
 
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
-          batcher(to_run_on, loader, FLAGS.min_batch_size)):
+          batcher(to_run_on, loader, config['location']['min_batch_size'])):
             logging.info('[%s] run_batch %s - %s - processed %s mentions', job_name, idx, len(canopy_list),
                          num_mentions_processed)
             run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results)
             if idx % 10000 == 0:
-                wandb.log({'computed': idx + FLAGS.chunk_id * FLAGS.chunk_size, 'num_mentions': num_mentions_processed})
+                wandb.log({'computed': idx + config['location']['chunk_id'] * config['location']['chunk_size'], 'num_mentions': num_mentions_processed})
                 logging.info('[%s] caching results for job', job_name)
                 with open(outfile, 'wb') as fin:
                     pickle.dump(results, fin)
@@ -148,7 +129,7 @@ def handle_singletons(canopy2predictions, singleton_canopies, loader):
     return canopy2predictions
 
 
-def run_singletons(canopy_list, outdir, job_name='disambig'):
+def run_singletons(config,canopy_list, outdir, job_name='disambig'):
     logging.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
 
     os.makedirs(outdir, exist_ok=True)
@@ -158,7 +139,7 @@ def run_singletons(canopy_list, outdir, job_name='disambig'):
         with open(outfile, 'rb') as fin:
             results = pickle.load(fin)
 
-    loader = Loader.from_flags(FLAGS)
+    loader = Loader.from_config(config)
 
     to_run_on = needs_predicting(canopy_list, results, loader)
     logging.info('had results for %s, running on %s', len(canopy_list) - len(to_run_on), len(to_run_on))
@@ -175,10 +156,13 @@ def run_singletons(canopy_list, outdir, job_name='disambig'):
 
 def main(argv):
     logging.info('Running location clustering - %s ', str(argv))
-    wandb.init(project="%s-%s" % (FLAGS.exp_name, FLAGS.dataset_name))
-    wandb.config.update(flags.FLAGS)
+    config = configparser.ConfigParser()
+    config.read('config/database_config.ini', 'config/inventor/run_clustering.ini')
 
-    loader = Loader.from_flags(FLAGS)
+    wandb.init(project="%s-%s" % (config['location']['exp_name'], config['location']['dataset_name']))
+    wandb.config.update(config)
+
+    loader = Loader.from_config(config)
     all_canopies = set(loader.name_mentions.keys())
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
@@ -188,20 +172,20 @@ def main(argv):
     logging.info('Largest canopies - ')
     for c in all_canopies_sorted[:10]:
         logging.info('%s - %s records', c, loader.num_records(c))
-    outdir = os.path.join(FLAGS.outprefix, 'location', FLAGS.run_id)
-    num_chunks = int(len(all_canopies_sorted) / FLAGS.chunk_size)
+    outdir = os.path.join(config['location']['outprefix'], 'location', config['location']['run_id'])
+    num_chunks = int(len(all_canopies_sorted) / config['location']['chunk_size'])
     logging.info('%s num_chunks', num_chunks)
-    logging.info('%s chunk_size', FLAGS.chunk_size)
-    logging.info('%s chunk_id', FLAGS.chunk_id)
+    logging.info('%s chunk_size', config['location']['chunk_size'])
+    logging.info('%s chunk_id', config['location']['chunk_id'])
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
-    if FLAGS.chunk_id == 0:
+    if config['location']['chunk_id'] == 0:
         logging.info('Running singletons!!')
         run_singletons(list(singletons), outdir, job_name='job-singletons')
 
-    run_batch(chunks[FLAGS.chunk_id], outdir, job_name='job-%s' % FLAGS.chunk_id)
+    run_batch(config, chunks[config['location']['chunk_id']], outdir, job_name='job-%s' % config['location']['chunk_id'])
 
 
 if __name__ == "__main__":

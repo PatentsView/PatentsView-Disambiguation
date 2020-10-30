@@ -41,7 +41,7 @@ class NumMentionsLocationFeatures(object):
 
 class LocationModelWithApps(object):
     @staticmethod
-    def from_flags(flgs):
+    def from_config(config):
         logging.info('Building Location Model...')
 
         city = SingleItemHashingVectorizerFeatures('city', lambda x: x._canonical_city)
