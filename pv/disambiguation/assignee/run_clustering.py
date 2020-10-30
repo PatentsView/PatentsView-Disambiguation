@@ -11,35 +11,7 @@ from grinch.model import LinearAndRuleModel
 
 from pv.disambiguation.assignee.load_name_mentions import Loader
 from pv.disambiguation.assignee.model import AssigneeModel
-
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string('assignee_canopies', 'data/assignee/assignee_mentions.canopies.pkl', '')
-flags.DEFINE_string('assignee_mentions', 'data/assignee/assignee_mentions.records.pkl', '')
-flags.DEFINE_string('assignee_name_model', 'data/assignee/permid/permid_vectorizer.pkl', '')
-
-flags.DEFINE_string('model', 'exp_out/disambiguation-inventor-patentsview/solo/1rib1zt6/model-1000.torch', '')
-
-flags.DEFINE_string('patent_titles', 'data/inventor/title_features.both.pkl', '')
-flags.DEFINE_string('coinventors', 'data/inventor/coinventor_features.both.pkl', '')
-flags.DEFINE_string('assignees', 'data/inventor/assignee_features.both.pkl', '')
-flags.DEFINE_string('title_model', 'exp_out/sent2vec/patents/2020-05-10-15-08-42/model.bin', '')
-
-flags.DEFINE_string('rawinventor', '/iesl/data/patentsview/2020-06-10/rawinventor.tsv', 'data path')
-flags.DEFINE_string('outprefix', 'exp_out', 'data path')
-flags.DEFINE_string('run_id', 'run_3', 'data path')
-
-flags.DEFINE_string('dataset_name', 'patentsview', '')
-flags.DEFINE_string('exp_name', 'disambiguation-inventor', '')
-
-flags.DEFINE_string('base_id_file', '', '')
-
-flags.DEFINE_integer('chunk_size', 10000, '')
-flags.DEFINE_integer('chunk_id', 1000, '')
-flags.DEFINE_integer('min_batch_size', 900, '')
-
-flags.DEFINE_integer('max_canopy_size', 900, '')
-flags.DEFINE_float('sim_threshold', 0.80, '')
+import configparser
 
 logging.set_verbosity(logging.INFO)
 
@@ -101,7 +73,7 @@ def batcher(canopy_list, loader, min_batch_size=800):
         yield all_pids, all_lbls, all_records, all_canopies
 
 
-def run_batch(canopy_list, outdir, loader, job_name='disambig'):
+def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
     logging.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
 
     os.makedirs(outdir, exist_ok=True)
@@ -118,18 +90,18 @@ def run_batch(canopy_list, outdir, loader, job_name='disambig'):
     if len(to_run_on) == 0:
         logging.info('already had all canopies completed! wrapping up here...')
 
-    encoding_model = AssigneeModel.from_flags(FLAGS)
+    encoding_model = AssigneeModel.from_config(config)
     weight_model = LinearAndRuleModel.from_encoding_model(encoding_model)
-    weight_model.aux['threshold'] = 1 / (1 + FLAGS.sim_threshold)
+    weight_model.aux['threshold'] = 1 / (1 + config['assignee']['sim_threshold'])
 
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
-          batcher(to_run_on, loader, FLAGS.min_batch_size)):
+          batcher(to_run_on, loader, config['assignee']['min_batch_size'])):
             logging.info('[%s] run_batch %s - %s - processed %s mentions', job_name, idx, len(canopy_list),
                          num_mentions_processed)
             run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results)
             if idx % 10 == 0:
-                wandb.log({'computed': idx + FLAGS.chunk_id * FLAGS.chunk_size, 'num_mentions': num_mentions_processed})
+                wandb.log({'computed': idx + config['assignee']['chunk_id'] * config['assignee']['chunk_size'], 'num_mentions': num_mentions_processed})
                 logging.info('[%s] caching results for job', job_name)
                 with open(outfile, 'wb') as fin:
                     pickle.dump(results, fin)
@@ -172,12 +144,16 @@ def run_singletons(canopy_list, outdir, loader, job_name='disambig'):
 
 def main(argv):
     logging.info('Running clustering - %s ', str(argv))
-    wandb.init(project="%s-%s" % (FLAGS.exp_name, FLAGS.dataset_name))
-    wandb.config.update(flags.FLAGS)
 
-    loader = Loader.from_flags(FLAGS)
+    config = configparser.ConfigParser()
+    config.read('config/database_config.ini', 'config/inventor/run_clustering.ini')
+
+    wandb.init(project="%s-%s" % (config['assignee']['exp_name'], config['assignee']['dataset_name']))
+    wandb.config.update(config)
+
+    loader = Loader.from_config(config)
     all_canopies = set(loader.assignee_canopies.keys())
-    all_canopies = set([x for x in all_canopies if loader.num_records(x) < FLAGS.max_canopy_size])
+    all_canopies = set([x for x in all_canopies if loader.num_records(x) < config['assignee']['max_canopy_size']])
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
                                  reverse=True)
@@ -186,20 +162,20 @@ def main(argv):
     logging.info('Largest canopies - ')
     for c in all_canopies_sorted[:10]:
         logging.info('%s - %s records', c, loader.num_records(c))
-    outdir = os.path.join(FLAGS.outprefix, 'assignee', FLAGS.run_id)
-    num_chunks = int(len(all_canopies_sorted) / FLAGS.chunk_size)
+    outdir = os.path.join(config['assignee']['outprefix'], 'assignee', config['assignee']['run_id'])
+    num_chunks = int(len(all_canopies_sorted) / config['assignee']['chunk_size'])
     logging.info('%s num_chunks', num_chunks)
-    logging.info('%s chunk_size', FLAGS.chunk_size)
-    logging.info('%s chunk_id', FLAGS.chunk_id)
+    logging.info('%s chunk_size', config['assignee']['chunk_size'])
+    logging.info('%s chunk_id', config['assignee']['chunk_id'])
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
-    if FLAGS.chunk_id == 0:
+    if config['assignee']['chunk_id'] == 0:
         logging.info('Running singletons!!')
         run_singletons(list(singletons), outdir, job_name='job-singletons', loader=loader)
 
-    run_batch(chunks[FLAGS.chunk_id], outdir, loader, job_name='job-%s' % FLAGS.chunk_id)
+    run_batch(chunks[config['assignee']['chunk_id']], outdir, loader, job_name='job-%s' % config['assignee']['chunk_id'])
 
 
 if __name__ == "__main__":

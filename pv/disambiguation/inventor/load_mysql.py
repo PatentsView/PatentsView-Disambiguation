@@ -49,6 +49,14 @@ class Loader(object):
         l = Loader(pregranted_canopies, granted_canopies)
         return l
 
+    @staticmethod
+    def from_config(config, config_type):
+        with open(config[config_type]['pregranted_canopies'], 'rb') as fin:
+            pregranted_canopies = pickle.load(fin)
+        with open(config[config_type]['granted_canopies'], 'rb') as fin:
+            granted_canopies = pickle.load(fin)
+        l = Loader(pregranted_canopies, granted_canopies)
+        return l
 
 def load_canopy(canopy_name, pregrant_ids, granted_ids, cnx_pg, cnx_g):
     logging.info('Loading data from canopy %s, %s pregranted, %s granted', canopy_name, len(pregrant_ids),
