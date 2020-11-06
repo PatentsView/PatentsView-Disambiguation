@@ -116,7 +116,7 @@ def main(argv):
                 last_disambig_id = rec[1]
 
     entity2namecount = collections.defaultdict(dict)
-    for i in tqdm(range(len(mention_data)), 'counting', len(mention_data)):
+    for i in range(len(mention_data)):
         name = mention_data[i][2] if mention_data[i][2] else '%s %s' % (mention_data[i][3], mention_data[i][4])
         if name not in entity2namecount[mention_data[i][1]]:
             entity2namecount[mention_data[i][1]][name] = 1
