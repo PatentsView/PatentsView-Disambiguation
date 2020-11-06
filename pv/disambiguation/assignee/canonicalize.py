@@ -65,7 +65,7 @@ def batched_main(batch_size=1000):
 
 
 
-def main():
+def main(argv):
     granted_db = pymysql.connect(read_default_file="~/.mylogin.cnf", database='patent_20200630')
 
     old_disambig_data_query = """
@@ -124,7 +124,7 @@ def main():
     # Otherwise pick most frequently appearing name in the cluster (i.e. largest number of patents determines frequency)
     # Normalize characters not displayed in html
     # TODO: Normalize & Tie-break!
-    
+
     with open('assignee_canonical.pkl', 'wb') as fout:
         import pickle
         pickle.dump(canonical_names,fout)
