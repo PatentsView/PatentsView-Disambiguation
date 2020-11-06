@@ -75,13 +75,13 @@ class AssigneeModel(object):
         logging.info('Building Assignee Model...')
 
         # Features:
-        name_features = HashingVectorizerFeatures('name_features', lambda x: x.name_features)
+        # name_features = HashingVectorizerFeatures('name_features', lambda x: x.name_features)
         locations = HashingVectorizerFeatures('locations', lambda x: x.location_strings)
 
         canopy_feat = HashingVectorizerFeatures('canopy', lambda x: x.canopies)
         entity_kb_feat = EntityKBFeatures('data/assignee/permid/permid_entity_info.pkl', 'entitykb', lambda x: x)
         # PatentID Features
-        patent_id = HashingVectorizerFeatures('patentid', lambda x: x.record_id)
+        # patent_id = HashingVectorizerFeatures('patentid', lambda x: x.record_id)
         name_tfidf = SKLearnVectorizerFeatures(flgs.assignee_name_model,
                                                'name_tfidf',
                                                lambda x: clean(split(x.normalized_most_frequent)))
