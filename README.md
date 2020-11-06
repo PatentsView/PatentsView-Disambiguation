@@ -12,16 +12,16 @@ conda install pytorch==1.2.0 torchvision==0.4.0 cudatoolkit=9.2 -c pytorch
 ### Build Features
 
 ```
-python -m pv.disambiguation.inventor.build_assignee_features_sql.py
-python -m pv.disambiguation.inventor.build_coinventor_features_sql.py
-python -m pv.disambiguation.inventor.build_title_map_sql.py
+python -m pv.disambiguation.inventor.build_assignee_features_sql
+python -m pv.disambiguation.inventor.build_coinventor_features_sql
+python -m pv.disambiguation.inventor.build_title_map_sql
 ```
 
 ### Build Canopies
 
 ```
-python -m pv.disambiguation.inventor.build_canopies_sql.py --source granted
-python -m pv.disambiguation.inventor.build_canopies_sql.py --source pregranted
+python -m pv.disambiguation.inventor.build_canopies_sql --source granted
+python -m pv.disambiguation.inventor.build_canopies_sql --source pregranted
 ```
 
 ### Run clustering
@@ -44,7 +44,7 @@ python -m pv.disambiguation.inventor.finalize
 This command trains an inventor disambiguation model.
 
 ```
-python -m pv.disambiguation.inventor.train_model.py --training_data data/inventor-train/eval_common_characteristics.train --dev_data data/inventor-train/eval_common_characteristics.dev --max_num_dev_canopies 200
+python -m pv.disambiguation.inventor.train_model --training_data data/inventor-train/eval_common_characteristics.train --dev_data data/inventor-train/eval_common_characteristics.dev --max_num_dev_canopies 200
 ```
 
 ## Assignee
@@ -52,7 +52,7 @@ python -m pv.disambiguation.inventor.train_model.py --training_data data/invento
 ### Build Mentions & Canopies
 
 ```
-python -m pv.disambiguation.assignee.build_assignee_name_mentions_sql.py
+python -m pv.disambiguation.assignee.build_assignee_name_mentions_sql
 ```
 
 ### Run clustering
@@ -75,10 +75,10 @@ python -m pv.disambiguation.assignee.finalize
 ### Build Mentions & Canopies
 
 ```
-python -m pv.disambiguation.location.build_assignee_location_canopies.py
-python -m pv.disambiguation.location.build_inventor_location_canopies.py
-python -m pv.disambiguation.location.build_assignee_location_mentions.py
-python -m pv.disambiguation.location.build_inventor_location_mentions.py
+python -m pv.disambiguation.location.build_assignee_location_canopies
+python -m pv.disambiguation.location.build_inventor_location_canopies
+python -m pv.disambiguation.location.build_assignee_location_mentions
+python -m pv.disambiguation.location.build_inventor_location_mentions
 ```
 
 ### Run clustering

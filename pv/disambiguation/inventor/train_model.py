@@ -43,6 +43,7 @@ flags.DEFINE_integer('max_num_dev_canopies', 50, '')
 
 flags.DEFINE_string('canopy2record_dict', 'data/inventor/canopy2record_first_letter_last_name_dict.pkl', '')
 flags.DEFINE_string('record2canopy_dict', 'data/inventor/record2canopy_first_letter_last_name_dict.pkl', '')
+flags.DEFINE_string('rawinventor', 'data/patentsview/2020-06-10/rawinventor.tsv', 'data path')
 
 
 def main(argv):
