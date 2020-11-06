@@ -52,20 +52,28 @@ def handle_singletons(canopy2predictions, singleton_canopies, loader):
 
 def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree, trees):
     features = encoding_model.encode(all_records)
-    # grinch = WeightedMultiFeatureGrinch(model, features, num_points=len(all_pids), max_nodes=3 * len(all_pids))
-    grinch = Agglom(model, features, num_points=len(all_pids))
-    grinch.build_dendrogram_hac()
-    # grinch.get_score_batch(grinch.all_valid_internal_nodes())
-    fc = grinch.flat_clustering(model.aux['threshold'])
-    tree_id = len(trees)
-    trees.append(grinch)
-    for i in range(len(all_pids)):
-        if all_canopies[i] not in canopy2predictions:
-            canopy2predictions[all_canopies[i]] = [[], []]
-            canopy2tree[all_canopies[i]] = tree_id
-        canopy2predictions[all_canopies[i]][0].append(all_pids[i])
-        canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
-    return canopy2predictions
+    if len(all_pids) > 1:
+        grinch = Agglom(model, features, num_points=len(all_pids))
+        grinch.build_dendrogram_hac()
+        fc = grinch.flat_clustering(model.aux['threshold'])
+        tree_id = len(trees)
+        trees.append(grinch)
+        for i in range(len(all_pids)):
+            if all_canopies[i] not in canopy2predictions:
+                canopy2predictions[all_canopies[i]] = [[], []]
+                canopy2tree[all_canopies[i]] = tree_id
+            canopy2predictions[all_canopies[i]][0].append(all_pids[i])
+            canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
+        return canopy2predictions
+    else:
+        fc = [0]
+        for i in range(len(all_pids)):
+            if all_canopies[i] not in canopy2predictions:
+                canopy2predictions[all_canopies[i]] = [[], []]
+                canopy2tree[all_canopies[i]] = None
+            canopy2predictions[all_canopies[i]][0].append(all_pids[i])
+            canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
+        return canopy2predictions
 
 
 def needs_predicting(canopy_list, results, loader):
