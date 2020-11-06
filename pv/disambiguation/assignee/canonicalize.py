@@ -75,11 +75,19 @@ def main():
 
     old_disambig_data = get_dataframe_from_pymysql_cursor(granted_db, old_disambig_data_query)
 
-
+    mention_query = """
+    SELECT rawassignee.uuid, disambiguated_id, organization, name_first, name_last 
+    from rawassignee INNER JOIN tmp_assignee_disambiguation_granted ON rawassignee.uuid=tmp_assignee_disambiguation_granted.uuid;
+    """
 
     mention_data = get_dataframe_from_pymysql_cursor(granted_db, mention_query).to_numpy()
 
+    entity_id_query = """
+        SELECT DISTINCT(disambiguated_id)
+        from tmp_assignee_disambiguation_granted;
+    """
 
+    entity_data = get_dataframe_from_pymysql_cursor(granted_db, entity_id_query).to_numpy()
 
     entity2namecount = collections.defaultdict(dict)
     for i in tqdm(range(mention_data.shape[0]), 'counting', mention_data.shape[0]):
