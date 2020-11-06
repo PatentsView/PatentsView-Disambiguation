@@ -42,7 +42,7 @@ def batched_main(batch_size=1000):
         eids = ", ".join(['"%s"' % x for x in unique_entity_ids[idx:idx+batch_size]])
         mq = mention_query % eids
         mention_data = get_dataframe_from_pymysql_cursor(granted_db, mq).to_numpy()
-        for i in tqdm(range(mention_data.shape[0]), 'counting', mention_data.shape[0]):
+        for i in tqdm(range(len(mention_data)), 'counting', len(mention_data)):
             name = mention_data[i][2] if mention_data[i][2] else '%s %s' % (mention_data[i][3], mention_data[i][4])
             if name not in entity2namecount[mention_data[i][1]]:
                 entity2namecount[mention_data[i][1]][name] = 1
@@ -68,14 +68,6 @@ def batched_main(batch_size=1000):
 def main(argv):
     granted_db = pymysql.connect(read_default_file="~/.mylogin.cnf", database='patent_20200630')
 
-    old_disambig_data_query = """
-    select count(1) as cluster_size, assignee_id
-    from rawassignee
-    group by assignee_id;
-    """
-
-    old_disambig_data = get_dataframe_from_pymysql_cursor(granted_db, old_disambig_data_query)
-
     mention_query = """
     SELECT rawassignee.uuid, disambiguated_id, organization, name_first, name_last 
     from rawassignee INNER JOIN tmp_assignee_disambiguation_granted ON rawassignee.uuid=tmp_assignee_disambiguation_granted.uuid
@@ -88,8 +80,12 @@ def main(argv):
     granted_db.cursor().execute(mention_query)
     canonical_names = dict()
 
+    logging.info('Starting to do canonicalization')
+
     with granted_db.cursor() as cursor:
+        logging.info('Starting to do execute sql query...')
         cursor.execute(mention_query)
+        logging.info('Starting to group data...')
         for rec in tqdm(cursor, 'canonicalizing'):
             logging.log_first_n(logging.INFO, 'Record %s', 10, str(rec))
             if last_disambig_id is None:
@@ -99,7 +95,7 @@ def main(argv):
                 mention_data.append(rec)
             else:
                 entity2namecount = collections.defaultdict(dict)
-                for i in tqdm(range(mention_data.shape[0]), 'counting', mention_data.shape[0]):
+                for i in tqdm(range(len(mention_data)), 'counting', len(mention_data)):
                     name = mention_data[i][2] if mention_data[i][2] else '%s %s' % (mention_data[i][3], mention_data[i][4])
                     if name not in entity2namecount[mention_data[i][1]]:
                         entity2namecount[mention_data[i][1]][name] = 1
@@ -119,13 +115,27 @@ def main(argv):
                 mention_data = [rec]
                 last_disambig_id = rec[1]
 
+    entity2namecount = collections.defaultdict(dict)
+    for i in tqdm(range(len(mention_data)), 'counting', len(mention_data)):
+        name = mention_data[i][2] if mention_data[i][2] else '%s %s' % (mention_data[i][3], mention_data[i][4])
+        if name not in entity2namecount[mention_data[i][1]]:
+            entity2namecount[mention_data[i][1]][name] = 1
+        else:
+            entity2namecount[mention_data[i][1]][name] += 1
+    assert len(entity2namecount) == 1
+    for entity,name2count in entity2namecount.items():
+        sorted_pairs = sorted([(n,c) for n,c in name2count.items()], key=lambda x:x[1], reverse=True)
+        for n,c in sorted_pairs:
+            if normalize_name(n) in entity_kb.emap:
+                canonical_names[entity] = n
+                break
     # Algorithm:
     # If linked, use name of PermID entity
     # Otherwise pick most frequently appearing name in the cluster (i.e. largest number of patents determines frequency)
     # Normalize characters not displayed in html
     # TODO: Normalize & Tie-break!
 
-    with open('assignee_canonical.pkl', 'wb') as fout:
+    with open('assignee_canonical2.pkl', 'wb') as fout:
         import pickle
         pickle.dump(canonical_names,fout)
 
