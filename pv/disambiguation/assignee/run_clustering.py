@@ -18,14 +18,13 @@ flags.DEFINE_string('assignee_canopies', 'data/assignee/assignee_mentions.canopi
 flags.DEFINE_string('assignee_mentions', 'data/assignee/assignee_mentions.records.pkl', '')
 flags.DEFINE_string('assignee_name_model', 'data/assignee/permid/permid_vectorizer.pkl', '')
 
-flags.DEFINE_string('model', 'exp_out/disambiguation-inventor-patentsview/solo/1rib1zt6/model-1000.torch', '')
+flags.DEFINE_string('model', 'resources/assignee_model.torch', '')
 
 flags.DEFINE_string('patent_titles', 'data/inventor/title_features.both.pkl', '')
 flags.DEFINE_string('coinventors', 'data/inventor/coinventor_features.both.pkl', '')
 flags.DEFINE_string('assignees', 'data/inventor/assignee_features.both.pkl', '')
-flags.DEFINE_string('title_model', 'exp_out/sent2vec/patents/2020-05-10-15-08-42/model.bin', '')
+flags.DEFINE_string('title_model', 'resources/sent2vec_model.bin', '')
 
-flags.DEFINE_string('rawinventor', '/iesl/data/patentsview/2020-06-10/rawinventor.tsv', 'data path')
 flags.DEFINE_string('outprefix', 'exp_out', 'data path')
 flags.DEFINE_string('run_id', 'run_3', 'data path')
 
