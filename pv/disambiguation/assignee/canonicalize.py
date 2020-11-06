@@ -37,7 +37,7 @@ def batched_main(batch_size=1000):
     entity_kb = EntityKBFeatures('data/assignee/permid/permid_entity_info.pkl', None, None)
     canonical_names = dict()
 
-    for idx in tqdm(range(0, unique_entity_ids.shape[0], batch_size), unique_entity_ids.shape[0], 'entity ids processed'):
+    for idx in tqdm(range(0, unique_entity_ids.shape[0], batch_size), (unique_entity_ids.shape[0]),desc='entity ids processed'):
         eids = ", ".join(['"%s"' % x for x in unique_entity_ids[idx:idx+batch_size]])
         mq = mention_query % eids
         mention_data = get_dataframe_from_pymysql_cursor(granted_db, mq).to_numpy()
