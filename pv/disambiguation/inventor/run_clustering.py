@@ -154,6 +154,9 @@ def main(argv):
 
     logging.info('Config - %s', str(config))
 
+    config['inventor']['chunk_size'] = int(config['inventor']['chunk_size'])
+    config['inventor']['chunk_id'] = int(config['inventor']['chunk_id'])
+
     loader = Loader.from_config(config, 'inventor')
 
     all_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
