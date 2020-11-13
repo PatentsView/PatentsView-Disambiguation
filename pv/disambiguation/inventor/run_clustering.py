@@ -111,7 +111,7 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
             num_mentions_processed += len(all_pids)
             num_canopies_processed += np.unique(all_canopies).shape[0]
             # if idx % 10 == 0:
-            #     wandb.log({'computed': idx + config['inventor']['chunk_id'] * config['inventor']['chunk_size'], 'num_mentions': num_mentions_processed,
+            #     wandb.log({'computed': idx + int(config['inventor']['chunk_id']) * int(config['inventor']['chunk_size']), 'num_mentions': num_mentions_processed,
             #                'num_canopies_processed': num_canopies_processed})
             #     logging.info('[%s] caching results for job', job_name)
             #     with open(outfile, 'wb') as fin:
@@ -154,9 +154,6 @@ def main(argv):
 
     logging.info('Config - %s', str(config))
 
-    config['inventor']['chunk_size'] = int(config['inventor']['chunk_size'])
-    config['inventor']['chunk_id'] = int(config['inventor']['chunk_id'])
-
     loader = Loader.from_config(config, 'inventor')
 
     all_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
@@ -170,19 +167,19 @@ def main(argv):
     for c in all_canopies_sorted[:10]:
         logging.info('%s - %s records', c, loader.num_records(c))
     outdir = os.path.join(config['inventor']['outprefix'], 'inventor', config['inventor']['run_id'])
-    num_chunks = int(len(all_canopies_sorted) / config['inventor']['chunk_size'])
+    num_chunks = int(len(all_canopies_sorted) / int(config['inventor']['chunk_size']))
     logging.info('%s num_chunks', num_chunks)
-    logging.info('%s chunk_size', config['inventor']['chunk_size'])
-    logging.info('%s chunk_id', config['inventor']['chunk_id'])
+    logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
+    logging.info('%s chunk_id', int(config['inventor']['chunk_id']))
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
-    if config['inventor']['chunk_id'] == 0:
+    if int(config['inventor']['chunk_id']) == 0:
         logging.info('Running singletons!!')
         run_singletons(config, list(singletons), outdir, job_name='job-singletons')
 
-    run_batch(config, chunks[config['inventor']['chunk_id']], outdir, job_name='job-%s' % config['inventor']['chunk_id'])
+    run_batch(config, chunks[int(config['inventor']['chunk_id'])], outdir, job_name='job-%s' % int(config['inventor']['chunk_id']))
 
 
 if __name__ == "__main__":
