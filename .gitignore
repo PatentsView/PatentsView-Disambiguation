@@ -1,5 +1,6 @@
 # Project Specific
 config/database_config.ini
+config/database_tables.ini
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -7,6 +7,29 @@ pip install git+git://github.com/iesl/grinch.git
 conda install pytorch==1.2.0 torchvision==0.4.0 cudatoolkit=9.2 -c pytorch
 ```
 
+### Database Setup
+
+Set the following files / values:
+
+#####  config/database_tables.ini
+
+```
+[DATABASE]
+
+pregranted_table =
+granted_table =
+```
+
+#####  config/database_config.ini
+
+```
+[DATABASE]
+
+host =
+user =
+password =
+```
+
 ## Inventor
 
 ### Build Features

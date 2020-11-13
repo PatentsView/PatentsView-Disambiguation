@@ -5,16 +5,15 @@ import mysql.connector
 from absl import logging
 
 from pv.disambiguation.core import InventorMention
-
+import pv.disambiguation.util.db as pvdb
 
 class Loader(object):
-    def __init__(self, pregranted_canopies, granted_canopies):
+    def __init__(self, pregranted_canopies, granted_canopies, config):
         self.pregranted_canopies = pregranted_canopies
         self.granted_canopies = granted_canopies
-        self.cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                             database='patent_20200630')
-        self.cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                              database='pregrant_publications')
+        self.cnx_g = pvdb.granted_table(config)
+        self.cnx_pg = pvdb.pregranted_table(config)
+
 
     def load(self, canopy):
         return load_canopy(canopy,
