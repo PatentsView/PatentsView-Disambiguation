@@ -103,7 +103,7 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
 
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
-          batch(to_run_on, loader, config['inventor']['min_batch_size'])):
+          batch(to_run_on, loader, int(config['inventor']['min_batch_size']))):
             logging.info('[%s] run_batch %s - %s of %s - processed %s mentions', job_name, idx, num_canopies_processed,
                          len(canopy_list),
                          num_mentions_processed)
