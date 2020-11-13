@@ -49,7 +49,8 @@ def build_granted(config):
     return feature_map
 
 
-def run(source, config):
+def run(args):
+    source, config = args[0], args[1]
     if source == 'pregranted':
         features = build_pregrants(config)
     elif source == 'granted':
