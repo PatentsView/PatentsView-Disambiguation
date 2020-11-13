@@ -8,17 +8,13 @@ from absl import flags
 from absl import logging
 from tqdm import tqdm
 
-FLAGS = flags.FLAGS
-flags.DEFINE_string('canopy_out', 'data/location/canopies.assignee', '')
-flags.DEFINE_string('source', 'pregranted', 'pregranted or granted')
-flags.DEFINE_string('disambiguation', 'exp_out/assignee/run_22/disambiguation.tsv', '')
-flags.DEFINE_string('uuidmap', 'data/assignee/uuid.pkl', '')
+import pv.disambiguation.util.db as pvdb
+import configparser
 
-
-def load_disambiguation(granted_uuid, pregranted_uuid):
+def load_disambiguation(granted_uuid, pregranted_uuid, config):
     logging.info('disambiguation loading....')
     uuid2entityid = dict()
-    with open(FLAGS.disambiguation, 'r') as fin:
+    with open(config['ASSIGNEE_LOCATION_CANOPIES']['disambiguation'], 'r') as fin:
         for line in tqdm(fin, desc='load disambiguation', total=9560321):
             splt = line.strip().split('\t')
             if splt[0] in pregranted_uuid:
@@ -28,12 +24,11 @@ def load_disambiguation(granted_uuid, pregranted_uuid):
     return uuid2entityid
 
 
-def build_granted(granted_uuids, pgranted_uuids):
+def build_granted(granted_uuids, pgranted_uuids, config):
     canopy2uuids = collections.defaultdict(list)
     uuid2canopy = dict()
-    uuid2entityid = load_disambiguation(granted_uuids, pgranted_uuids)
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='patent_20200630')
+    uuid2entityid = load_disambiguation(granted_uuids, pgranted_uuids, config)
+    cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
     query = "SELECT uuid, rawlocation_id FROM rawassignee;"
     cursor.execute(query)
@@ -43,12 +38,11 @@ def build_granted(granted_uuids, pgranted_uuids):
     return canopy2uuids, uuid2canopy
 
 
-def build_pregrants(granted_uuids, pgranted_uuids):
+def build_pregrants(granted_uuids, pgranted_uuids, config):
     canopy2uuids = collections.defaultdict(list)
     uuid2canopy = dict()
     uuid2entityid = load_disambiguation(granted_uuids, pgranted_uuids)
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='pregrant_publications')
+    cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
     query = "SELECT id, rawlocation_id FROM rawassignee;"
     cursor.execute(query)
@@ -58,11 +52,10 @@ def build_pregrants(granted_uuids, pgranted_uuids):
     return canopy2uuids, uuid2canopy
 
 
-def collection_location_mentions_granted():
+def collection_location_mentions_granted(config):
     canopy2uuids = collections.defaultdict(list)
-    uuid2entityid = load_disambiguation()
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='pregrant_publications')
+    uuid2entityid = load_disambiguation(config)
+    cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
     query = "SELECT uuid, rawlocation_id FROM rawassignee;"
     cursor.execute(query)
@@ -73,12 +66,20 @@ def collection_location_mentions_granted():
 
 def main(argv):
     logging.info('Building canopies')
-    granted_uuids, pgranted_uuids = pickle.load(open(FLAGS.uuidmap, 'rb'))
-    if FLAGS.source == 'pregranted':
-        canopies, uuid2canopy = build_pregrants(granted_uuids, pgranted_uuids)
-    elif FLAGS.source == 'granted':
-        canopies, uuid2canopy = build_granted(granted_uuids, pgranted_uuids)
-    with open(FLAGS.canopy_out + '.%s.pkl' % FLAGS.source, 'wb') as fout:
+
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/location/build_assignee_location_canopies.ini'])
+
+    granted_uuids, pgranted_uuids = pickle.load(open(config['ASSIGNEE_LOCATION_CANOPIES']['uuidmap'], 'rb'))
+    source = 'pregranted'
+    canopies, uuid2canopy = build_pregrants(granted_uuids, pgranted_uuids, config)
+    with open(config['ASSIGNEE_LOCATION_CANOPIES']['canopy_out'] + '.%s.pkl' % source, 'wb') as fout:
+        pickle.dump([canopies, uuid2canopy], fout)
+
+    source = 'granted'
+    canopies, uuid2canopy = build_granted(granted_uuids, pgranted_uuids, config)
+    with open(config['ASSIGNEE_LOCATION_CANOPIES']['canopy_out'] + '.%s.pkl' % source, 'wb') as fout:
         pickle.dump([canopies, uuid2canopy], fout)
 
 

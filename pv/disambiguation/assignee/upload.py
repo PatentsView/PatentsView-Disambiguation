@@ -7,23 +7,17 @@ from absl import app
 from absl import flags
 from absl import logging
 from tqdm import tqdm
+import configparser
 
-FLAGS = flags.FLAGS
+import pv.disambiguation.util.db as pvdb
 
-flags.DEFINE_string('input', 'exp_out/assignee/run_22/disambiguation.tsv', '')
-flags.DEFINE_string('uuidmap', 'data/assignee/uuid.pkl', '')
-
-flags.DEFINE_boolean('create_tables', False, '')
-flags.DEFINE_boolean('drop_tables', False, '')
 
 logging.set_verbosity(logging.INFO)
 
 
-def create_tables():
-    cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                    database='patent_20200630')
-    cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                     database='pregrant_publications')
+def create_tables(config):
+    cnx_g = pvdb.granted_table(config)
+    cnx_pg = pvdb.granted_table(config)
 
     g_cursor = cnx_g.cursor()
     g_cursor.execute(
@@ -35,11 +29,9 @@ def create_tables():
     pg_cursor.close()
 
 
-def drop_tables():
-    cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                    database='patent_20200630')
-    cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                     database='pregrant_publications')
+def drop_tables(config):
+    cnx_g = pvdb.granted_table(config)
+    cnx_pg = pvdb.granted_table(config)
 
     g_cursor = cnx_g.cursor()
     g_cursor.execute("DROP TABLE tmp_assignee_disambiguation_granted")
@@ -49,11 +41,9 @@ def drop_tables():
     pg_cursor.close()
 
 
-def create_uuid_map():
-    cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                    database='patent_20200630')
-    cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                     database='pregrant_publications')
+def create_uuid_map(config):
+    cnx_g = pvdb.granted_table(config)
+    cnx_pg = pvdb.granted_table(config)
 
     g_cursor = cnx_g.cursor()
     g_cursor.execute("SELECT uuid, patent_id, sequence FROM rawassignee;")
@@ -69,10 +59,10 @@ def create_uuid_map():
     return granted_uuids, pgranted_uuids
 
 
-def upload(granted_ids, pregranted_ids):
+def upload(granted_ids, pregranted_ids, config):
     pairs_pregranted = []
     pairs_granted = []
-    with open(FLAGS.input, 'r') as fin:
+    with open(config['ASSIGNEE_UPLOAD']['input'], 'r') as fin:
         for line in fin:
             splt = line.strip().split('\t')
             if splt[0] in pregranted_ids:
@@ -80,10 +70,8 @@ def upload(granted_ids, pregranted_ids):
             elif splt[0] in granted_ids:
                 pairs_granted.append((granted_ids[splt[0]], splt[1]))
 
-    cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                    database='patent_20200630')
-    cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                     database='pregrant_publications')
+    cnx_g = pvdb.granted_table(config)
+    cnx_pg = pvdb.granted_table(config)
 
     g_cursor = cnx_g.cursor()
     batch_size = 100000
@@ -115,20 +103,18 @@ def upload(granted_ids, pregranted_ids):
 
 
 def main(argv):
-    # if FLAGS.drop_tables:
-    #     drop_tables()
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/assignee/upload.ini'])
 
-    if FLAGS.create_tables:
-        create_tables()
-
-    if not os.path.exists(FLAGS.uuidmap):
-        granted_uuids, pgranted_uuids = create_uuid_map()
-        with open(FLAGS.uuidmap, 'wb') as fout:
+    if not os.path.exists(config['ASSIGNEE_UPLOAD']['uuidmap']):
+        granted_uuids, pgranted_uuids = create_uuid_map(config)
+        with open(config['ASSIGNEE_UPLOAD']['uuidmap'], 'wb') as fout:
             pickle.dump([granted_uuids, pgranted_uuids], fout)
     else:
-        granted_uuids, pgranted_uuids = pickle.load(open(FLAGS.uuidmap, 'rb'))
+        granted_uuids, pgranted_uuids = pickle.load(config['ASSIGNEE_UPLOAD']['uuidmap'])
 
-    upload(granted_uuids, pgranted_uuids)
+    upload(granted_uuids, pgranted_uuids, config)
 
 
 if __name__ == "__main__":

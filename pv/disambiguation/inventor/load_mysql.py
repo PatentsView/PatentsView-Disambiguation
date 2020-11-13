@@ -49,12 +49,12 @@ class Loader(object):
         return l
 
     @staticmethod
-    def from_config(config, config_type):
+    def from_config(config, config_type='inventor'):
         with open(config[config_type]['pregranted_canopies'], 'rb') as fin:
             pregranted_canopies = pickle.load(fin)
         with open(config[config_type]['granted_canopies'], 'rb') as fin:
             granted_canopies = pickle.load(fin)
-        l = Loader(pregranted_canopies, granted_canopies)
+        l = Loader(pregranted_canopies, granted_canopies, config)
         return l
 
 def load_canopy(canopy_name, pregrant_ids, granted_ids, cnx_pg, cnx_g):
@@ -67,7 +67,6 @@ def load_canopy(canopy_name, pregrant_ids, granted_ids, cnx_pg, cnx_g):
 
 def get_granted(ids, cnx, max_query_size=300000):
     # | uuid | patent_id | assignee_id | rawlocation_id | type | name_first | name_last | organization | sequence |
-    # cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'],'.mylogin.cnf'), database='patent_20200630')
     cursor = cnx.cursor()
     feature_map = dict()
     for idx in range(0, len(ids), max_query_size):
@@ -84,7 +83,6 @@ def get_granted(ids, cnx, max_query_size=300000):
 
 def get_pregrants(ids, cnx, max_query_size=300000):
     # | id | document_number | sequence | name_first | name_last | organization | type | rawlocation_id | city | state | country | filename | created_date | updated_date |
-    # cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'],'.mylogin.cnf'), database='pregrant_publications')
     cursor = cnx.cursor()
     feature_map = dict()
     for idx in range(0, len(ids), max_query_size):

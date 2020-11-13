@@ -10,15 +10,15 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('feature_out', 'data/inventor/title_features', '')
 
 import os
-
+import pv.disambiguation.util.db as pvdb
+import configparser
 
 def last_name(im):
     return im.last_name()[0] if len(im.last_name()) > 0 else im.uuid
 
 
-def build_pregrants():
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='pregrant_publications')
+def build_pregrants(config):
+    cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
     query = "select document_number,invention_title from application;"
     cursor.execute(query)
@@ -32,9 +32,8 @@ def build_pregrants():
     return feature_map
 
 
-def build_granted():
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='patent_20200630')
+def build_granted(config):
+    cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
     query = "SELECT id,title FROM patent;"
     cursor.execute(query)
@@ -49,10 +48,13 @@ def build_granted():
 
 
 def run(source):
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/inventor/build_title_map_sql.ini'])
     if source == 'pregranted':
-        features = build_pregrants()
+        features = build_pregrants(config)
     elif source == 'granted':
-        features = build_granted()
+        features = build_granted(config)
     return features
 
 
@@ -62,7 +64,11 @@ def main(argv):
     features = feats[0]
     for i in range(1, len(feats)):
         features.update(feats[i])
-    with open(FLAGS.feature_out + '.%s.pkl' % 'both', 'wb') as fout:
+
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/inventor/build_title_map_sql.ini'])
+    with open(config['INVENTOR_BUILD_TITLES']['feature_out'] + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 
 
