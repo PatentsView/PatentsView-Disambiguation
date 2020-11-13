@@ -152,6 +152,7 @@ def main(argv):
     config = configparser.ConfigParser()
     config.read('config/database_config.ini', 'config/inventor/run_clustering.ini')
 
+    logging.info('Config - %s', str(config))
 
     wandb.init(project="%s-%s" % (config['inventor']['exp_name'], config['inventor']['dataset_name']))
     wandb.config.update(config)
