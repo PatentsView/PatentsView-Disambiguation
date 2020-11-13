@@ -110,12 +110,12 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
             run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results)
             num_mentions_processed += len(all_pids)
             num_canopies_processed += np.unique(all_canopies).shape[0]
-            if idx % 10 == 0:
-                wandb.log({'computed': idx + config['inventor']['chunk_id'] * config['inventor']['chunk_size'], 'num_mentions': num_mentions_processed,
-                           'num_canopies_processed': num_canopies_processed})
-                logging.info('[%s] caching results for job', job_name)
-                with open(outfile, 'wb') as fin:
-                    pickle.dump(results, fin)
+            # if idx % 10 == 0:
+            #     wandb.log({'computed': idx + config['inventor']['chunk_id'] * config['inventor']['chunk_size'], 'num_mentions': num_mentions_processed,
+            #                'num_canopies_processed': num_canopies_processed})
+            #     logging.info('[%s] caching results for job', job_name)
+            #     with open(outfile, 'wb') as fin:
+            #         pickle.dump(results, fin)
 
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
@@ -153,9 +153,6 @@ def main(argv):
     config.read(['config/database_config.ini', 'config/inventor/run_clustering.ini'])
 
     logging.info('Config - %s', str(config))
-
-    wandb.init(project="%s-%s" % (config['inventor']['exp_name'], config['inventor']['dataset_name']))
-    wandb.config.update(config)
 
     loader = Loader.from_config(config, 'inventor')
 
