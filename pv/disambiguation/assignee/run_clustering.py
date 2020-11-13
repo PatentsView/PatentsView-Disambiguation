@@ -96,15 +96,15 @@ def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
 
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
-          batcher(to_run_on, loader, config['assignee']['min_batch_size'])):
+          batcher(to_run_on, loader, int(config['assignee']['min_batch_size']))):
             logging.info('[%s] run_batch %s - %s - processed %s mentions', job_name, idx, len(canopy_list),
                          num_mentions_processed)
             run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results)
-            if idx % 10 == 0:
-                wandb.log({'computed': idx + config['assignee']['chunk_id'] * config['assignee']['chunk_size'], 'num_mentions': num_mentions_processed})
-                logging.info('[%s] caching results for job', job_name)
-                with open(outfile, 'wb') as fin:
-                    pickle.dump(results, fin)
+            # if idx % 10 == 0:
+            #     wandb.log({'computed': idx + int(config['assignee']['chunk_id']) * int(config['assignee']['chunk_size']), 'num_mentions': num_mentions_processed})
+            #     logging.info('[%s] caching results for job', job_name)
+            #     with open(outfile, 'wb') as fin:
+            #         pickle.dump(results, fin)
 
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
@@ -153,7 +153,7 @@ def main(argv):
 
     loader = Loader.from_config(config)
     all_canopies = set(loader.assignee_canopies.keys())
-    all_canopies = set([x for x in all_canopies if loader.num_records(x) < config['assignee']['max_canopy_size']])
+    all_canopies = set([x for x in all_canopies if loader.num_records(x) < int(config['assignee']['max_canopy_size'])])
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
                                  reverse=True)
@@ -163,19 +163,19 @@ def main(argv):
     for c in all_canopies_sorted[:10]:
         logging.info('%s - %s records', c, loader.num_records(c))
     outdir = os.path.join(config['assignee']['outprefix'], 'assignee', config['assignee']['run_id'])
-    num_chunks = int(len(all_canopies_sorted) / config['assignee']['chunk_size'])
+    num_chunks = int(len(all_canopies_sorted) / int(config['assignee']['chunk_size']))
     logging.info('%s num_chunks', num_chunks)
-    logging.info('%s chunk_size', config['assignee']['chunk_size'])
-    logging.info('%s chunk_id', config['assignee']['chunk_id'])
+    logging.info('%s chunk_size', int(config['assignee']['chunk_size']))
+    logging.info('%s chunk_id', int(config['assignee']['chunk_id']))
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
-    if config['assignee']['chunk_id'] == 0:
+    if int(config['assignee']['chunk_id']) == 0:
         logging.info('Running singletons!!')
         run_singletons(list(singletons), outdir, job_name='job-singletons', loader=loader)
 
-    run_batch(config, chunks[config['assignee']['chunk_id']], outdir, loader, job_name='job-%s' % config['assignee']['chunk_id'])
+    run_batch(config, chunks[int(config['assignee']['chunk_id'])], outdir, loader, job_name='job-%s' % int(config['assignee']['chunk_id']))
 
 
 if __name__ == "__main__":
