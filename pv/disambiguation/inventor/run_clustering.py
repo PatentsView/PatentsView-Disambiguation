@@ -150,7 +150,7 @@ def run_singletons(config, canopy_list, outdir, job_name='disambig'):
 def main(argv):
     logging.info('Running clustering - %s ', str(argv))
     config = configparser.ConfigParser()
-    config.read('config/database_config.ini', 'config/inventor/run_clustering.ini')
+    config.read(['config/database_config.ini', 'config/inventor/run_clustering.ini'])
 
     logging.info('Config - %s', str(config))
 
