@@ -165,7 +165,8 @@ def main(argv):
     logging.info('Running clustering - %s ', str(argv))
 
     config = configparser.ConfigParser()
-    config.read(['config/database_config.ini', 'config/assignee/run_clustering.ini'])
+    config.read(['config/database_config.ini', 'config/assignee/run_clustering.ini',
+                 'config/database_tables.ini'])
 
     # wandb.init(project="%s-%s" % (config['assignee']['exp_name'], config['assignee']['dataset_name']))
     # wandb.config.update(config)
