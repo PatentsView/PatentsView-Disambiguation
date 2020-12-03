@@ -7,10 +7,12 @@ from absl import app
 from absl import flags
 from absl import logging
 from grinch.agglom import Agglom
+from grinch.multifeature_grinch import WeightedMultiFeatureGrinch
 from grinch.model import LinearAndRuleModel
 import torch
 from pv.disambiguation.assignee.load_name_mentions import Loader
 from pv.disambiguation.assignee.model import AssigneeModel
+from tqdm import tqdm
 
 import configparser
 
@@ -117,7 +119,14 @@ def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
 
-    torch.save([tree_list, canopy2tree_id], outstatefile)
+    logging.info('Beginning to save all tree structures....')
+    grinch_trees = []
+    for t in tqdm(tree_list):
+        grinch = WeightedMultiFeatureGrinch.from_agglom(t)
+        grinch.clear_node_features()
+        grinch.points_set = False
+        grinch_trees.append(grinch)
+    torch.save([grinch_trees, canopy2tree_id], outstatefile)
 
 
 def handle_singletons(canopy2predictions, singleton_canopies, loader):

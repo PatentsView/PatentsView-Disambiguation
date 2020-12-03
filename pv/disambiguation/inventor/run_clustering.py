@@ -8,7 +8,9 @@ from absl import app
 from absl import flags
 from absl import logging
 from grinch.agglom import Agglom
+from grinch.multifeature_grinch import WeightedMultiFeatureGrinch
 import configparser
+from tqdm import tqdm
 
 from pv.disambiguation.inventor.load_mysql import Loader
 from pv.disambiguation.inventor.model import InventorModel
@@ -134,8 +136,14 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
 
-    torch.save([tree_list, canopy2tree_id], outstatefile)
-
+    logging.info('Beginning to save all tree structures....')
+    grinch_trees = []
+    for t in tqdm(tree_list):
+        grinch = WeightedMultiFeatureGrinch.from_agglom(t)
+        grinch.clear_node_features()
+        grinch.points_set = False
+        grinch_trees.append(grinch)
+    torch.save([grinch_trees, canopy2tree_id], outstatefile)
 
 def run_singletons(config, canopy_list, outdir, job_name='disambig'):
     logging.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
