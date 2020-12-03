@@ -7,24 +7,15 @@ from absl import app
 from absl import flags
 from absl import logging
 from tqdm import tqdm
-
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string('input', 'exp_out/location/run_8/disambiguation.tsv', '')
-flags.DEFINE_string('uuidmap', 'data/location/uuid.pkl', '')
-
-flags.DEFINE_boolean('create_tables', False, '')
-flags.DEFINE_boolean('drop_tables', False, '')
+import configparser
 
 logging.set_verbosity(logging.INFO)
+import pv.disambiguation.util.db as pvdb
 
 
-def create_tables():
-    cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                    database='patent_20200630')
-    cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                     database='pregrant_publications')
-
+def create_tables(config):
+    cnx_g = pvdb.granted_table(config)
+    cnx_pg = pvdb.pregranted_table(config)
     g_cursor = cnx_g.cursor()
     g_cursor.execute(
         "CREATE TABLE tmp_location_disambiguation_granted (uuid VARCHAR(255), disambiguated_id VARCHAR(255))")
@@ -35,11 +26,10 @@ def create_tables():
     pg_cursor.close()
 
 
-def drop_tables():
-    cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                    database='patent_20200630')
-    cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                     database='pregrant_publications')
+def drop_tables(config):
+    cnx_g = pvdb.granted_table(config)
+
+    cnx_pg = pvdb.pregranted_table(config)
 
     g_cursor = cnx_g.cursor()
     g_cursor.execute("DROP TABLE tmp_location_disambiguation_granted")
@@ -49,11 +39,10 @@ def drop_tables():
     pg_cursor.close()
 
 
-def create_uuid_map():
-    cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                    database='patent_20200630')
-    cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                     database='pregrant_publications')
+def create_uuid_map(config):
+    cnx_g = pvdb.granted_table(config)
+
+    cnx_pg = pvdb.pregranted_table(config)
 
     g_cursor = cnx_g.cursor()
     g_cursor.execute("SELECT id FROM rawlocation;")
@@ -69,13 +58,13 @@ def create_uuid_map():
     return granted_uuids, pgranted_uuids
 
 
-def upload(granted_ids, pregranted_ids):
+def upload(granted_ids, pregranted_ids, config):
     logging.info('granted_ids size %s', len(granted_ids))
     logging.info('pregranted_ids size %s', len(pregranted_ids))
 
     pairs_pregranted = []
     pairs_granted = []
-    with open(FLAGS.input, 'r') as fin:
+    with open(config['LOCATION_UPLOAD']['input'], 'r') as fin:
         for line in fin:
             splt = line.strip().split('\t')
             if splt[0] in pregranted_ids:
@@ -87,10 +76,9 @@ def upload(granted_ids, pregranted_ids):
     logging.info('pairs granted size %s', len(pairs_granted))
     logging.info('pairs pregranted size %s', len(pairs_pregranted))
 
-    cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                    database='patent_20200630')
-    cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                     database='pregrant_publications')
+    cnx_g = pvdb.granted_table(config)
+
+    cnx_pg = pvdb.pregranted_table(config)
 
     g_cursor = cnx_g.cursor()
     batch_size = 100000
@@ -122,20 +110,18 @@ def upload(granted_ids, pregranted_ids):
 
 
 def main(argv):
-    # if FLAGS.drop_tables:
-    #     drop_tables()
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/location/upload.ini'])
 
-    if FLAGS.create_tables:
-        create_tables()
-
-    if not os.path.exists(FLAGS.uuidmap):
+    if not os.path.exists(config['LOCATION_UPLOAD']['uuidmap']):
         granted_uuids, pgranted_uuids = create_uuid_map()
-        with open(FLAGS.uuidmap, 'wb') as fout:
+        with open(config['LOCATION_UPLOAD']['uuidmap'], 'wb') as fout:
             pickle.dump([granted_uuids, pgranted_uuids], fout)
     else:
-        granted_uuids, pgranted_uuids = pickle.load(open(FLAGS.uuidmap, 'rb'))
+        granted_uuids, pgranted_uuids = pickle.load(open(config['LOCATION_UPLOAD']['uuidmap'], 'rb'))
 
-    upload(granted_uuids, pgranted_uuids)
+    upload(granted_uuids, pgranted_uuids, config)
 
 
 if __name__ == "__main__":

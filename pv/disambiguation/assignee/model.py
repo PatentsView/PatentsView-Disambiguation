@@ -71,7 +71,7 @@ class EntityKBFeatures(object):
 class AssigneeModel(object):
 
     @staticmethod
-    def from_flags(flgs):
+    def from_config(config):
         logging.info('Building Assignee Model...')
 
         # Features:
@@ -82,7 +82,7 @@ class AssigneeModel(object):
         entity_kb_feat = EntityKBFeatures('data/assignee/permid/permid_entity_info.pkl', 'entitykb', lambda x: x)
         # PatentID Features
         # patent_id = HashingVectorizerFeatures('patentid', lambda x: x.record_id)
-        name_tfidf = SKLearnVectorizerFeatures(flgs.assignee_name_model,
+        name_tfidf = SKLearnVectorizerFeatures(config['assignee']['assignee_name_model'],
                                                'name_tfidf',
                                                lambda x: clean(split(x.normalized_most_frequent)))
 

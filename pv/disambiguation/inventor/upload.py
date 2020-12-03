@@ -6,27 +6,17 @@ from absl import app
 from absl import flags
 from absl import logging
 from tqdm import tqdm
+import configparser
 
 from pv.disambiguation.inventor import load_mysql
-
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string('input', 'exp_out/inventor/run_24/disambiguation.tsv', '')
-flags.DEFINE_string('uuidmap', 'data/inventor/uuid2mentionid.tsv', '')
-flags.DEFINE_string('output', 'exp_out/inventor/run_24/disambiguation.tsv.toScore', '')
-
-flags.DEFINE_string('pregranted_canopies', 'data/inventor/canopies.pregranted.pkl', '')
-flags.DEFINE_string('granted_canopies', 'data/inventor/canopies.granted.pkl', '')
-flags.DEFINE_boolean('create_tables', False, '')
+import pv.disambiguation.util.db as pvdb
 
 logging.set_verbosity(logging.INFO)
 
 
-def create_tables():
-    cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                    database='patent_20200630')
-    cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                     database='pregrant_publications')
+def create_tables(config):
+    cnx_g = pvdb.granted_table(config)
+    cnx_pg = pvdb.pregranted_table(config)
 
     g_cursor = cnx_g.cursor()
     g_cursor.execute(
@@ -38,8 +28,8 @@ def create_tables():
     pg_cursor.close()
 
 
-def upload():
-    loader = load_mysql.Loader.from_flags(FLAGS)
+def upload(config):
+    loader = load_mysql.Loader.from_config(config)
     pregranted_ids = set([y for x in loader.pregranted_canopies.values() for y in x])
     granted_ids = set([y for x in loader.granted_canopies.values() for y in x])
 
@@ -53,10 +43,8 @@ def upload():
             elif splt[0] in granted_ids:
                 pairs_granted.append((splt[0], splt[1]))
 
-    cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                    database='patent_20200630')
-    cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                     database='pregrant_publications')
+    cnx_g = pvdb.granted_table(config)
+    cnx_pg = pvdb.pregranted_table(config)
 
     g_cursor = cnx_g.cursor()
     batch_size = 100000
@@ -88,9 +76,12 @@ def upload():
 
 
 def main(argv):
-    if FLAGS.create_tables:
-        create_tables()
-    upload()
+
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/inventor/upload.ini'])
+
+    upload(config)
 
 
 if __name__ == "__main__":

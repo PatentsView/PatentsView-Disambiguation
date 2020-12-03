@@ -5,16 +5,15 @@ import mysql.connector
 from absl import logging
 
 from pv.disambiguation.core import InventorMention
-
+import pv.disambiguation.util.db as pvdb
 
 class Loader(object):
-    def __init__(self, pregranted_canopies, granted_canopies):
+    def __init__(self, pregranted_canopies, granted_canopies, config):
         self.pregranted_canopies = pregranted_canopies
         self.granted_canopies = granted_canopies
-        self.cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                             database='patent_20200630')
-        self.cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                              database='pregrant_publications')
+        self.cnx_g = pvdb.granted_table(config)
+        self.cnx_pg = pvdb.pregranted_table(config)
+
 
     def load(self, canopy):
         return load_canopy(canopy,
@@ -49,6 +48,14 @@ class Loader(object):
         l = Loader(pregranted_canopies, granted_canopies)
         return l
 
+    @staticmethod
+    def from_config(config, config_type='inventor'):
+        with open(config[config_type]['pregranted_canopies'], 'rb') as fin:
+            pregranted_canopies = pickle.load(fin)
+        with open(config[config_type]['granted_canopies'], 'rb') as fin:
+            granted_canopies = pickle.load(fin)
+        l = Loader(pregranted_canopies, granted_canopies, config)
+        return l
 
 def load_canopy(canopy_name, pregrant_ids, granted_ids, cnx_pg, cnx_g):
     logging.info('Loading data from canopy %s, %s pregranted, %s granted', canopy_name, len(pregrant_ids),
@@ -60,7 +67,6 @@ def load_canopy(canopy_name, pregrant_ids, granted_ids, cnx_pg, cnx_g):
 
 def get_granted(ids, cnx, max_query_size=300000):
     # | uuid | patent_id | assignee_id | rawlocation_id | type | name_first | name_last | organization | sequence |
-    # cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'],'.mylogin.cnf'), database='patent_20200630')
     cursor = cnx.cursor()
     feature_map = dict()
     for idx in range(0, len(ids), max_query_size):
@@ -77,7 +83,6 @@ def get_granted(ids, cnx, max_query_size=300000):
 
 def get_pregrants(ids, cnx, max_query_size=300000):
     # | id | document_number | sequence | name_first | name_last | organization | type | rawlocation_id | city | state | country | filename | created_date | updated_date |
-    # cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'],'.mylogin.cnf'), database='pregrant_publications')
     cursor = cnx.cursor()
     feature_map = dict()
     for idx in range(0, len(ids), max_query_size):

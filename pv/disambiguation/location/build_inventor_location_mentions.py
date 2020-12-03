@@ -9,16 +9,17 @@ from absl import logging
 from tqdm import tqdm
 
 from pv.disambiguation.core import LocationMention, LocationNameMention
+import pv.disambiguation.util.db as pvdb
+import configparser
 
-FLAGS = flags.FLAGS
-flags.DEFINE_string('canopy', 'data/location/canopies', '')
-flags.DEFINE_string('output', 'data/location/inventor_location.mentions.pkl', '')
+# FLAGS = flags.FLAGS
+# flags.DEFINE_string('canopy', 'data/location/canopies', '')
+# flags.DEFINE_string('output', 'data/location/inventor_location.mentions.pkl', '')
 
 
-def build_granted(granted_uuid2canopy):
+def build_granted(granted_uuid2canopy, config):
     canopy2mentions = collections.defaultdict(list)
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='patent_20200630')
+    cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
     query = "SELECT * FROM rawlocation;"
     cursor.execute(query)
@@ -30,9 +31,8 @@ def build_granted(granted_uuid2canopy):
     return canopy2mentions
 
 
-def build_pregrants(canopy2mentions, pregranted_uuid2canopy):
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='pregrant_publications')
+def build_pregrants(canopy2mentions, pregranted_uuid2canopy, config):
+    cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
     query = "SELECT * FROM rawlocation;"
     cursor.execute(query)
@@ -57,23 +57,29 @@ def build_name_mentions(canopy2mentions):
 
 def main(argv):
     logging.info('Building mentions')
+
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/inventor/upload.ini'])
+
     logging.info('loading canopies [pregranted] ... ')
 
-    with open(FLAGS.canopy + '.pregranted.pkl', 'rb') as fin:
+
+    with open(config['INVENTOR_LOCATION_MENTIONS']['canopy'] + '.pregranted.pkl', 'rb') as fin:
         pregranted_canopies, pregranted_uuid2canopy = pickle.load(fin)
     logging.info('loading canopies [pregranted] ... done.')
 
     logging.info('loading canopies [granted] ... ')
-    with open(FLAGS.canopy + '.granted.pkl', 'rb') as fin:
+    with open(config['INVENTOR_LOCATION_MENTIONS']['canopy'] + '.granted.pkl', 'rb') as fin:
         granted_canopies, granted_uuid2canopy = pickle.load(fin)
     logging.info('loading canopies [granted] ... done ')
 
-    mentions = build_granted(granted_uuid2canopy)
+    mentions = build_granted(granted_uuid2canopy, config)
     logging.info('len(mentions) = %s ', len(mentions))
-    mentions = build_pregrants(mentions, pregranted_uuid2canopy)
+    mentions = build_pregrants(mentions, pregranted_uuid2canopy, config)
     logging.info('len(mentions) = %s ', len(mentions))
     canopy2name_mentions = build_name_mentions(mentions)
-    with open(FLAGS.output, 'wb') as fout:
+    with open(config['INVENTOR_LOCATION_MENTIONS']['output'], 'wb') as fout:
         pickle.dump(canopy2name_mentions, fout)
 
 

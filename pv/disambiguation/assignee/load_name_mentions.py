@@ -13,10 +13,10 @@ class Loader(object):
         return len(self.assignee_canopies[canopy])
 
     @staticmethod
-    def from_flags(flgs):
-        with open(flgs.assignee_canopies, 'rb') as fin:
+    def from_config(config):
+        with open(config['assignee']['assignee_canopies'], 'rb') as fin:
             canopies = pickle.load(fin)
-        with open(flgs.assignee_mentions, 'rb') as fin:
+        with open(config['assignee']['assignee_mentions'], 'rb') as fin:
             assignee_mentions = pickle.load(fin)
         l = Loader(canopies, assignee_mentions)
         return l
