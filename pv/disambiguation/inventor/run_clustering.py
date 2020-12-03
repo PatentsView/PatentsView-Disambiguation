@@ -126,7 +126,7 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
             num_mentions_processed += len(all_pids)
             num_canopies_processed += np.unique(all_canopies).shape[0]
             if idx % 10 == 0:
-                wandb.log({'computed': idx + int(config['inventor']['chunk_id']) * int(config['inventor']['chunk_size']),
+                logging.info({'computed': idx + int(config['inventor']['chunk_id']) * int(config['inventor']['chunk_size']),
                            'num_mentions': num_mentions_processed,
                            'num_canopies_processed': num_canopies_processed})
             #     logging.info('[%s] caching results for job', job_name)
@@ -173,40 +173,53 @@ def run_singletons(config, canopy_list, outdir, job_name='disambig'):
 
 def main(argv):
     logging.info('Running clustering - %s ', str(argv))
+
+    # Load the config files
     config = configparser.ConfigParser()
     config.read(['config/database_config.ini', 'config/inventor/run_clustering.ini', 'config/database_tables.ini'])
-
     logging.info('Config - %s', str(config))
 
+    # A connection to the SQL database that will be used to load the inventor data.
     loader = Loader.from_config(config, 'inventor')
 
+    # Find all of the canopies in the entire dataset.
     all_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
                                  reverse=True)
 
+    # Find some stats of the data before chunking it
     logging.info('Number of canopies %s ', len(all_canopies_sorted))
     logging.info('Number of singletons %s ', len(singletons))
     logging.info('Largest canopies - ')
     for c in all_canopies_sorted[:10]:
         logging.info('%s - %s records', c, loader.num_records(c))
+
+    # setup the output dir
     outdir = os.path.join(config['inventor']['outprefix'], 'inventor', config['inventor']['run_id'])
+
+    # the number of chunks based on the specified chunksize
     num_chunks = int(len(all_canopies_sorted) / int(config['inventor']['chunk_size']))
+
     logging.info('%s num_chunks', num_chunks)
     logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
     logging.info('%s chunk_id', int(config['inventor']['chunk_id']))
+
+    # chunk all of the data by canopy
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
+    # chunk 0 will write out the meta data and singleton information
     if int(config['inventor']['chunk_id']) == 0:
         logging.info('Running singletons!!')
         run_singletons(config, list(singletons), outdir, job_name='job-singletons')
 
         logging.info('Saving chunk to canopy map')
         with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-            pickle.dump(chunks, fout)
+            pickle.dump([chunks, list(singletons)], fout)
 
+    # run the job for the given batch
     run_batch(config, chunks[int(config['inventor']['chunk_id'])], outdir,
               job_name='job-%s' % int(config['inventor']['chunk_id']))
 
