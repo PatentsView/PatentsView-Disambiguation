@@ -36,8 +36,8 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
         fc = grinch.flat_clustering(model.aux['threshold'])
         tree_id = len(trees)
         trees.append(grinch)
-        canopy2tree[all_canopies[i]] = tree_id
         for i in range(len(all_pids)):
+            canopy2tree[all_canopies[i]] = tree_id
             if all_canopies[i] not in canopy2predictions:
                 canopy2predictions[all_canopies[i]] = [[], []]
                 canopy2tree[all_canopies[i]] = tree_id
