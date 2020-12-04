@@ -198,7 +198,7 @@ def main(argv):
     outdir = os.path.join(config['inventor']['outprefix'], 'inventor', config['inventor']['run_id'])
 
     # determine where the canopies have been stored in chunks and singletons.
-    with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+    with open(outdir + '/chunk2canopies.pkl', 'rb') as fout:
         [chunks, singletons] = pickle.load(fout)
 
     logging.info('Number of new canopies %s ', len(new_canopies))
