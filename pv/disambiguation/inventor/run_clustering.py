@@ -240,12 +240,12 @@ def main(argv):
 
     # chunk 0 will write out the meta data and singleton information
     if int(config['inventor']['chunk_id']) == -1:
-        logging.info('Running singletons!!')
-        run_singletons(config,loader, list(singletons), outdir, job_name='job-singletons')
-
         logging.info('Saving chunk to canopy map')
         with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
             pickle.dump([chunks, list(singletons)], fout)
+
+        logging.info('Running singletons!!')
+        run_singletons(config, loader, list(singletons), outdir, job_name='job-singletons')
 
     # run the job for the given batch
     run_batch(config, chunks[int(config['inventor']['chunk_id'])], outdir,
