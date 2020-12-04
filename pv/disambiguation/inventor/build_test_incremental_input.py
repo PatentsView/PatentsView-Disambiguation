@@ -61,9 +61,9 @@ def main(argv):
     this_g = dict()
     for c in this_chunk:
         if c in loader.pregranted_canopies:
-            this_pre[c] = loader.pregranted_canopies[c][0]
+            this_pre[c] = [loader.pregranted_canopies[c][0]]
         if c in loader.granted_canopies:
-            this_g[c] = loader.granted_canopies[c][0]
+            this_g[c] = [loader.granted_canopies[c][0]]
 
     with open('data/inventor/tmp.test.pre_granted.canopies.pkl', 'wb') as fout:
         pickle.dump(this_pre, fout)
