@@ -180,10 +180,11 @@ def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
         canopy2tree_id = dict()
         for c in this_chunk_canopies:
             all_records = loader.load_canopies([c])
+
             all_pids = [x.uuid for x in all_records]
             all_lbls = -1 * np.ones(len(all_records))
             all_canopies = [c for c in all_lbls]
-            features = encoding_model.encode(all_records)
+            features = encoding_model.encode(all_records) if len(all_records) > 0 else []
             grinch = WeightedMultiFeatureGrinch(weight_model, features, len(all_pids))
             grinch_trees.append(grinch)
             canopy2tree_id[c] = len(grinch_trees)-1
