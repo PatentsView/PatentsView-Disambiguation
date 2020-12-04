@@ -95,7 +95,6 @@ def run(config, loader, new_canopies, chunks, singleton_list,
     logging.info('need to run on %s canopies = %s ...', len(new_canopies), str(new_canopies[:5]))
 
     os.makedirs(outdir, exist_ok=True)
-    statefile = os.path.join(outdir, job_name) + 'internals.pkl'
 
     # create a map from canopy to chunk
     canopy2chunks = dict()
@@ -121,6 +120,7 @@ def run(config, loader, new_canopies, chunks, singleton_list,
 
     for this_chunk_id, this_chunk_canopies in new_canopies_by_chunk.items():
         if this_chunk_id != next_chunk:
+            statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals.pkl'
             [grinch_trees, canopy2tree_id] = torch.load(statefile)
             for c in this_chunk_canopies:
                 all_records = loader.load_canopies([c])
