@@ -131,7 +131,7 @@ def run(config, loader, new_canopies, chunks, singleton_list,
                 grinch_trees[canopy2tree_id[c]].update_and_insert(features)
                 grinch_trees[canopy2tree_id[c]].clear_node_features()
                 grinch_trees[canopy2tree_id[c]].points_set = False
-            torch.save([grinch_trees, canopy2tree_id], statefile)
+            # torch.save([grinch_trees, canopy2tree_id], statefile)
         else:
             grinch_trees = []
             canopy2tree_id = dict()
@@ -146,7 +146,7 @@ def run(config, loader, new_canopies, chunks, singleton_list,
                 canopy2tree_id[c] = len(grinch_trees) - 1
                 grinch_trees[canopy2tree_id[c]].clear_node_features()
                 grinch_trees[canopy2tree_id[c]].points_set = False
-            torch.save([grinch_trees, canopy2tree_id], statefile)
+            # torch.save([grinch_trees, canopy2tree_id], statefile)
 
 
 def run_singletons(config, canopy_list, outdir, job_name='disambig'):
@@ -180,7 +180,9 @@ def main(argv):
 
     # Load the config files
     config = configparser.ConfigParser()
-    config.read(['config/database_config.ini', 'config/inventor/run_clustering.ini', 'config/database_tables.ini'])
+    config.read(['config/database_config.ini',
+                 'config/inventor/run_incremental.ini',
+                 'config/database_tables.ini'])
     logging.info('Config - %s', str(config))
 
     # A connection to the SQL database that will be used to load the inventor data.
