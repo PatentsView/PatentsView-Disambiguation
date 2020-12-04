@@ -171,7 +171,7 @@ def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
             features = encoding_model.encode(all_records)
             grinch = WeightedMultiFeatureGrinch(weight_model, features, len(all_pids))
             grinch_trees.append(grinch)
-            canopy2tree_id[c] = len(grinch_trees)
+            canopy2tree_id[c] = len(grinch_trees)-1
             grinch_trees[canopy2tree_id[c]].clear_node_features()
             grinch_trees[canopy2tree_id[c]].points_set = False
         torch.save([grinch_trees, canopy2tree_id], statefile)
