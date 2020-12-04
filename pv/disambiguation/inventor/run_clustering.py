@@ -157,6 +157,21 @@ def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
     encoding_model = InventorModel.from_config(config)
     weight_model = torch.load(config['inventor']['model']).eval()
 
+    results = dict()
+    outfile = os.path.join(outdir, job_name) + '.pkl'
+    num_mentions_processed = 0
+    if os.path.exists(outfile):
+        with open(outfile, 'rb') as fin:
+            results = pickle.load(fin)
+
+    loader = Loader.from_config(config, 'inventor')
+
+    to_run_on = needs_predicting(singleton_list, results, loader)
+    logging.info('had results for %s, running on %s', len(singleton_list) - len(to_run_on), len(to_run_on))
+
+    if len(to_run_on) == 0:
+        logging.info('already had all canopies completed! wrapping up here...')
+
     for c in singleton_list:
         new_canopies_by_chunk['singletons'].append(c)
 
@@ -175,6 +190,12 @@ def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
             grinch_trees[canopy2tree_id[c]].clear_node_features()
             grinch_trees[canopy2tree_id[c]].points_set = False
         torch.save([grinch_trees, canopy2tree_id], statefile)
+
+    if to_run_on:
+        handle_singletons(results, to_run_on, loader)
+
+    with open(outfile, 'wb') as fin:
+        pickle.dump(results, fin)
 
 
 def main(argv):
