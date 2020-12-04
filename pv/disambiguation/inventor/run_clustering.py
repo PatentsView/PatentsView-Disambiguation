@@ -144,30 +144,37 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
         grinch_trees.append(grinch)
     torch.save([grinch_trees, canopy2tree_id], outstatefile)
 
-def run_singletons(config, canopy_list, outdir, job_name='disambig'):
-    logging.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
+def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
+    logging.info('need to run on %s canopies = %s ...', len(singleton_list), str(singleton_list[:5]))
 
     os.makedirs(outdir, exist_ok=True)
-    results = dict()
-    outfile = os.path.join(outdir, job_name) + '.pkl'
-    num_mentions_processed = 0
-    if os.path.exists(outfile):
-        with open(outfile, 'rb') as fin:
-            results = pickle.load(fin)
+    statefile = os.path.join(outdir, job_name) + 'internals.pkl'
 
-    loader = Loader.from_config(config, 'inventor')
+    import collections
 
-    to_run_on = needs_predicting(canopy_list, results, loader)
-    logging.info('had results for %s, running on %s', len(canopy_list) - len(to_run_on), len(to_run_on))
+    new_canopies_by_chunk = collections.defaultdict(list)
 
-    if len(to_run_on) == 0:
-        logging.info('already had all canopies completed! wrapping up here...')
+    encoding_model = InventorModel.from_config(config)
+    weight_model = torch.load(config['inventor']['model']).eval()
 
-    if to_run_on:
-        handle_singletons(results, to_run_on, loader)
+    for c in singleton_list:
+        new_canopies_by_chunk['singletons'].append(c)
 
-    with open(outfile, 'wb') as fin:
-        pickle.dump(results, fin)
+    for this_chunk_id, this_chunk_canopies in new_canopies_by_chunk.items():
+        grinch_trees = []
+        canopy2tree_id = dict()
+        for c in this_chunk_canopies:
+            all_records = loader.load_canopies([c])
+            all_pids = [x.uuid for x in all_records]
+            all_lbls = -1 * np.ones(len(all_records))
+            all_canopies = [c for c in all_lbls]
+            features = encoding_model.encode(all_records)
+            grinch = WeightedMultiFeatureGrinch(weight_model, features, len(all_pids))
+            grinch_trees.append(grinch)
+            canopy2tree_id[c] = len(grinch_trees)
+            grinch_trees[canopy2tree_id[c]].clear_node_features()
+            grinch_trees[canopy2tree_id[c]].points_set = False
+        torch.save([grinch_trees, canopy2tree_id], statefile)
 
 
 def main(argv):
