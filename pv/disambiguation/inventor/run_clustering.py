@@ -217,7 +217,7 @@ def main(argv):
         chunks[idx % num_chunks].append(c)
 
     # chunk 0 will write out the meta data and singleton information
-    if int(config['inventor']['chunk_id']) == 0:
+    if int(config['inventor']['chunk_id']) == -1:
         logging.info('Running singletons!!')
         run_singletons(config, list(singletons), outdir, job_name='job-singletons')
 
