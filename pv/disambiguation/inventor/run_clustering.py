@@ -140,8 +140,7 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
     grinch_trees = []
     for t in tqdm(tree_list):
         grinch = WeightedMultiFeatureGrinch.from_agglom(t)
-        grinch.clear_node_features()
-        grinch.points_set = False
+        grinch.prepare_for_save()
         grinch_trees.append(grinch)
     torch.save([grinch_trees, canopy2tree_id], outstatefile)
 
