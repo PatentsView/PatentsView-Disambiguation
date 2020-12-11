@@ -130,7 +130,7 @@ def run(config, loader, new_canopies, chunks, singleton_list,
             [grinch_trees, canopy2tree_id] = torch.load(statefile)
 
             # load the old predictions
-            predfile = os.path.join(outdir, job_name) + '.pkl'
+            predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '.pkl'
             with open(predfile, 'rb') as fin:
                 canopy2predictions = pickle.load(fin)
 
@@ -151,7 +151,7 @@ def run(config, loader, new_canopies, chunks, singleton_list,
                     canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
 
             statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
-            predfile = os.path.join(outdir, job_name) + '-updated.pkl'
+            predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '-updated.pkl'
 
             torch.save([grinch_trees, canopy2tree_id], statefile)
             with open(predfile, 'wb') as fin:
@@ -178,7 +178,7 @@ def run(config, loader, new_canopies, chunks, singleton_list,
                     canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
 
             statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
-            predfile = os.path.join(outdir, job_name) + '-updated.pkl'
+            predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '-updated.pkl'
             torch.save([grinch_trees, canopy2tree_id], statefile)
             with open(predfile, 'wb') as fin:
                 pickle.dump(canopy2predictions, fin)
