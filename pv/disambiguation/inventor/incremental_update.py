@@ -135,11 +135,13 @@ def run(config, loader, new_canopies, chunks, singleton_list,
                 canopy2predictions = pickle.load(fin)
 
             for c in this_chunk_canopies:
+                logging.info('Working on canopy %s', c)
                 all_records = loader.load_canopies([c])
                 all_pids = [x.uuid for x in all_records]
                 all_lbls = -1 * np.ones(len(all_records))
                 all_canopies = [c for c in all_lbls]
                 features = encoding_model.encode(all_records)
+                logging.info('Tree ID %s', canopy2tree_id[c])
                 grinch = grinch_trees[canopy2tree_id[c]]
                 grinch.update_and_insert(features, all_pids)
                 fc = grinch.flat_clustering(weight_model.aux['threshold'])

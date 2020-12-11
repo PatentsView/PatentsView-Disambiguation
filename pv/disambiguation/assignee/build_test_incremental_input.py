@@ -29,7 +29,8 @@ def main(argv):
     loader = Loader.from_config(config)
 
     # Find all of the canopies in the entire dataset.
-    all_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
+    all_canopies = set(loader.assignee_canopies.keys())
+    all_canopies = set([x for x in all_canopies if loader.num_records(x) < int(config['assignee']['max_canopy_size'])])
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
                                  reverse=True)
