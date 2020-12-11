@@ -115,7 +115,7 @@ def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
             num_canopies_processed += np.unique(all_canopies).shape[0]
             run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results, canopy2tree_id, tree_list, pids_list, pids_canopy_list)
             if idx % 10 == 0:
-                wandb.log({'computed': idx + int(config['assignee']['chunk_id']) * int(config['assignee']['chunk_size']), 'num_mentions': num_mentions_processed})
+                logging.info({'computed': idx + int(config['assignee']['chunk_id']) * int(config['assignee']['chunk_size']), 'num_mentions': num_mentions_processed})
             #     logging.info('[%s] caching results for job', job_name)
             #     with open(outfile, 'wb') as fin:
             #         pickle.dump(results, fin)
