@@ -147,7 +147,7 @@ def run(config, loader, new_canopies, chunks, singleton_list,
                 grinch.points_set = False
                 canopy2predictions[c] = [[], []]
                 for i in range(grinch.num_points):
-                    canopy2predictions[all_canopies[i]][0].append(grinch.all_pids[i])
+                    canopy2predictions[c][0].append(grinch.all_pids[i])
                     canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
 
             statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
