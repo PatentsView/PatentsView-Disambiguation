@@ -143,7 +143,7 @@ def main(argv):
     loader = Loader.from_config(config)
 
     # note that this is a map from canopy_name to mention_id
-    new_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
+    new_canopies = set(loader.assignee_canopies.keys())
 
     # setup the output dir
     outdir = os.path.join(config['assignee']['outprefix'], 'assignee', config['assignee']['run_id'])

@@ -34,14 +34,15 @@ def batched_canopy_process(datasets, model, encoding_model):
     return run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model)
 
 
-def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree, trees, pids_list):
+def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree, trees, pids_list, canopy_list):
     features = encoding_model.encode(all_records)
     grinch = Agglom(model, features, num_points=len(all_pids))
     grinch.build_dendrogram_hac()
-    fc = grinch.flat_clustering(model.aux['threshold'], pids=all_pids, canopies=all_canopies)
+    fc = grinch.flat_clustering(model.aux['threshold'])
     tree_id = len(trees)
     trees.append(grinch)
     pids_list.append(all_pids)
+    canopy_list.append(all_canopies)
     for i in range(len(all_pids)):
         if all_canopies[i] not in canopy2predictions:
             canopy2predictions[all_canopies[i]] = [[], []]
@@ -86,6 +87,7 @@ def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
     canopy2tree_id = dict()
     tree_list = []
     pids_list = []
+    canopy_list = []
     outfile = os.path.join(outdir, job_name) + '.pkl'
     outstatefile = os.path.join(outdir, job_name) + 'internals.pkl'
     num_mentions_processed = 0
@@ -111,7 +113,7 @@ def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
                          num_mentions_processed)
             num_mentions_processed += len(all_pids)
             num_canopies_processed += np.unique(all_canopies).shape[0]
-            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results, canopy2tree_id, tree_list, pids_list)
+            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results, canopy2tree_id, tree_list, pids_list, canopy_list)
             if idx % 10 == 0:
                 wandb.log({'computed': idx + int(config['assignee']['chunk_id']) * int(config['assignee']['chunk_size']), 'num_mentions': num_mentions_processed})
             #     logging.info('[%s] caching results for job', job_name)
@@ -124,7 +126,7 @@ def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
     logging.info('Beginning to save all tree structures....')
     grinch_trees = []
     for idx,t in tqdm(enumerate(tree_list),total=len(tree_list)):
-        grinch = WeightedMultiFeatureGrinch.from_agglom(t, pids_list[idx])
+        grinch = WeightedMultiFeatureGrinch.from_agglom(t, pids_list[idx], canopy_list[idx])
         grinch.clear_node_features()
         grinch.points_set = False
         grinch_trees.append(grinch)
