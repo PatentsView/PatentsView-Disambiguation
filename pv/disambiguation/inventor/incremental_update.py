@@ -128,7 +128,7 @@ def run(config, loader, new_canopies, chunks, singleton_list,
                 all_lbls = -1 * np.ones(len(all_records))
                 all_canopies = [c for c in all_lbls]
                 features = encoding_model.encode(all_records)
-                grinch_trees[canopy2tree_id[c]].update_and_insert(features)
+                grinch_trees[canopy2tree_id[c]].update_and_insert(features, all_pids)
                 grinch_trees[canopy2tree_id[c]].clear_node_features()
                 grinch_trees[canopy2tree_id[c]].points_set = False
             # torch.save([grinch_trees, canopy2tree_id], statefile)
