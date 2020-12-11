@@ -142,9 +142,9 @@ def run(config, loader, new_canopies, chunks, singleton_list,
                 features = encoding_model.encode(all_records)
                 grinch = grinch_trees[canopy2tree_id[c]]
                 grinch.update_and_insert(features, all_pids)
+                fc = grinch.flat_clustering(weight_model.aux['threshold'])
                 grinch.clear_node_features()
                 grinch.points_set = False
-                fc = grinch.flat_clustering(weight_model.aux['threshold'])
                 canopy2predictions[c] = [[], []]
                 for i in range(grinch.num_points):
                     canopy2predictions[all_canopies[i]][0].append(grinch.all_pids[i])
