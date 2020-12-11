@@ -53,7 +53,8 @@ def main(argv):
 
     for c in canopy_sample:
         mention_sample_canopies[c] = list(loader.assignee_canopies[c])[:5]
-        mention_sample_records[c] = [loader.assignee_mentions[m] for m in mention_sample_canopies[c]]
+        for m in mention_sample_canopies[c]:
+            mention_sample_records[m] = loader.assignee_mentions[m]
 
     with open('data/assignee/tmp.test.assignee_canopies.pkl', 'wb') as fout:
         pickle.dump(mention_sample_canopies, fout)
