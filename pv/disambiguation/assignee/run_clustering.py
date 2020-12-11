@@ -195,7 +195,7 @@ def main(argv):
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
-    if int(config['assignee']['chunk_id']) == 0:
+    if int(config['assignee']['chunk_id']) == -1:
         logging.info('Running singletons!!')
         run_singletons(list(singletons), outdir, job_name='job-singletons', loader=loader)
         with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
