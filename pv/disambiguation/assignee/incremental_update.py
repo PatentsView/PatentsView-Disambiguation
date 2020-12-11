@@ -40,7 +40,7 @@ def run(config, loader, new_canopies, chunks, singleton_list,
 
     encoding_model = AssigneeModel.from_config(config)
     weight_model = LinearAndRuleModel.from_encoding_model(encoding_model)
-    weight_model.aux['threshold'] = 1 / (1 + float(config['assignee']['sim_threshold']))
+    weight_model.aux['threshold'] = config['assignee']['sim_threshold']
 
     for c in new_canopies:
         if c in canopy2chunks:
@@ -60,17 +60,32 @@ def run(config, loader, new_canopies, chunks, singleton_list,
             with open(predfile, 'rb') as fin:
                 canopy2predictions = pickle.load(fin)
 
+            canopies_per_tree = collections.defaultdict(list)
             for c in this_chunk_canopies:
-                all_records = loader.load_canopies([c])
-                all_pids = [x.uuid for x in all_records]
-                all_lbls = -1 * np.ones(len(all_records))
-                all_canopies = [c for c in all_lbls]
+                canopies_per_tree[canopy2tree_id[c]].append(c)
+
+            for tree_id,canopy_list in canopies_per_tree.items():
+
+                all_pids = []
+                all_lbls = []
+                all_records = []
+                all_canopies = []
+                for c in canopy_list:
+                    records = loader.load(c)
+                    pids = [x.uuid for x in records]
+                    lbls = -1 * np.ones(len(records))
+                    all_canopies.extend([c for _ in range(len(pids))])
+                    all_pids.extend(pids)
+                    all_lbls.extend(lbls)
+                    all_records.extend(records)
+
                 features = encoding_model.encode(all_records)
-                grinch = grinch_trees[canopy2tree_id[c]]
+                grinch = grinch_trees[tree_id]
                 grinch.update_and_insert(features, all_pids)
                 grinch.clear_node_features()
                 grinch.points_set = False
                 fc = grinch.flat_clustering(weight_model.aux['threshold'])
+
                 canopy2predictions[c] = [[], []]
                 for i in range(grinch.num_points):
                     canopy2predictions[all_canopies[i]][0].append(grinch.all_pids[i])

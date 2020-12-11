@@ -38,7 +38,7 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
     features = encoding_model.encode(all_records)
     grinch = Agglom(model, features, num_points=len(all_pids))
     grinch.build_dendrogram_hac()
-    fc = grinch.flat_clustering(model.aux['threshold'])
+    fc = grinch.flat_clustering(model.aux['threshold'], pids=all_pids, canopies=all_canopies)
     tree_id = len(trees)
     trees.append(grinch)
     pids_list.append(all_pids)

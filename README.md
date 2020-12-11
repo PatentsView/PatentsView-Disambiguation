@@ -30,6 +30,10 @@ user =
 password =
 ```
 
+### Download Resources
+
+Download pre-trained models for disambiguation, place in `resources` folder: [Google Drive](https://drive.google.com/drive/folders/1KgCytOFCRTrKs-blmFhEbXzLoaZHUgNm?usp=sharing)
+
 ## Inventor
 
 ### Build Features
