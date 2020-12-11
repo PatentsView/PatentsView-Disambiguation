@@ -96,6 +96,10 @@ def run(config, loader, new_canopies, chunks, singleton_list,
 
     os.makedirs(outdir, exist_ok=True)
 
+    results = dict()
+    outfile = os.path.join(outdir, job_name) + '.pkl'
+    outstatefile = os.path.join(outdir, job_name) + 'internals.pkl'
+
     # create a map from canopy to chunk
     canopy2chunks = dict()
     for idx, canopies in enumerate(chunks):
@@ -120,21 +124,42 @@ def run(config, loader, new_canopies, chunks, singleton_list,
 
     for this_chunk_id, this_chunk_canopies in new_canopies_by_chunk.items():
         if this_chunk_id != next_chunk:
+
+            # Load the grinch trees
             statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals.pkl'
             [grinch_trees, canopy2tree_id] = torch.load(statefile)
+
+            # load the old predictions
+            predfile = os.path.join(outdir, job_name) + '.pkl'
+            with open(predfile, 'rb') as fin:
+                canopy2predictions = pickle.load(fin)
+
             for c in this_chunk_canopies:
                 all_records = loader.load_canopies([c])
                 all_pids = [x.uuid for x in all_records]
                 all_lbls = -1 * np.ones(len(all_records))
                 all_canopies = [c for c in all_lbls]
                 features = encoding_model.encode(all_records)
-                grinch_trees[canopy2tree_id[c]].update_and_insert(features, all_pids)
-                grinch_trees[canopy2tree_id[c]].clear_node_features()
-                grinch_trees[canopy2tree_id[c]].points_set = False
-            # torch.save([grinch_trees, canopy2tree_id], statefile)
+                grinch = grinch_trees[canopy2tree_id[c]]
+                grinch.update_and_insert(features, all_pids)
+                grinch.clear_node_features()
+                grinch.points_set = False
+                fc = grinch.flat_clustering(weight_model.aux['threshold'])
+                canopy2predictions[c] = [[], []]
+                for i in range(grinch.num_points):
+                    canopy2predictions[all_canopies[i]][0].append(grinch.all_pids[i])
+                    canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
+
+            statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
+            predfile = os.path.join(outdir, job_name) + '-updated.pkl'
+
+            torch.save([grinch_trees, canopy2tree_id], statefile)
+            with open(predfile, 'wb') as fin:
+                pickle.dump(canopy2predictions, fin)
         else:
             grinch_trees = []
             canopy2tree_id = dict()
+            canopy2predictions = dict()
             for c in this_chunk_canopies:
                 all_records = loader.load_canopies([c])
                 all_pids = [x.uuid for x in all_records]
@@ -146,7 +171,17 @@ def run(config, loader, new_canopies, chunks, singleton_list,
                 canopy2tree_id[c] = len(grinch_trees) - 1
                 grinch_trees[canopy2tree_id[c]].clear_node_features()
                 grinch_trees[canopy2tree_id[c]].points_set = False
-            # torch.save([grinch_trees, canopy2tree_id], statefile)
+                fc = grinch.flat_clustering(weight_model.aux['threshold'])
+                canopy2predictions[c] = [[], []]
+                for i in range(grinch.num_points):
+                    canopy2predictions[all_canopies[i]][0].append(grinch.all_pids[i])
+                    canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
+
+            statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
+            predfile = os.path.join(outdir, job_name) + '-updated.pkl'
+            torch.save([grinch_trees, canopy2tree_id], statefile)
+            with open(predfile, 'wb') as fin:
+                pickle.dump(canopy2predictions, fin)
 
 
 def run_singletons(config, canopy_list, outdir, job_name='disambig'):
