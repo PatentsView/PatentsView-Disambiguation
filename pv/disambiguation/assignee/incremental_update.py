@@ -131,7 +131,7 @@ def main(argv):
     new_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
 
     # setup the output dir
-    outdir = os.path.join(config['assignee']['outprefix'], 'inventor', config['assignee']['run_id'])
+    outdir = os.path.join(config['assignee']['outprefix'], 'assignee', config['assignee']['run_id'])
 
     # determine where the canopies have been stored in chunks and singletons.
     with open(outdir + '/chunk2canopies.pkl', 'rb') as fout:
