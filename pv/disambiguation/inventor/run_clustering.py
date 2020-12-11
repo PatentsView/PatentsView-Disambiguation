@@ -249,10 +249,10 @@ def main(argv):
 
         logging.info('Running singletons!!')
         run_singletons(config, loader, list(singletons), outdir, job_name='job-singletons')
-
-    # run the job for the given batch
-    run_batch(config, chunks[int(config['inventor']['chunk_id'])], outdir,
-              job_name='job-%s' % int(config['inventor']['chunk_id']))
+    else:
+        # run the job for the given batch
+        run_batch(config, chunks[int(config['inventor']['chunk_id'])], outdir,
+                  job_name='job-%s' % int(config['inventor']['chunk_id']))
 
 
 
