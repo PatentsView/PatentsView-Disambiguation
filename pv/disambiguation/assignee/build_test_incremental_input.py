@@ -47,7 +47,7 @@ def main(argv):
     # Find some stats of the data before chunking it
     logging.info('Number of canopies %s ', len(all_canopies))
 
-    canopy_sample = chunks[config['assignee']['chunk_id']]
+    canopy_sample = chunks[int(config['assignee']['chunk_id'])]
     mention_sample_canopies = dict()
     mention_sample_records = dict()
 
