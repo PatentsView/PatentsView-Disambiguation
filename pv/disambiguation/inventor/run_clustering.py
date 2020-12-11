@@ -28,7 +28,7 @@ def handle_singletons(canopy2predictions, singleton_canopies, loader):
     return canopy2predictions
 
 
-def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree, trees):
+def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree, trees, pids_list):
     features = encoding_model.encode(all_records)
     if len(all_pids) > 1:
         grinch = Agglom(model, features, num_points=len(all_pids))
@@ -36,6 +36,7 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
         fc = grinch.flat_clustering(model.aux['threshold'])
         tree_id = len(trees)
         trees.append(grinch)
+        pids_list.append(all_pids)
         for i in range(len(all_pids)):
             canopy2tree[all_canopies[i]] = tree_id
             if all_canopies[i] not in canopy2predictions:
@@ -98,6 +99,7 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
     results = dict()
     canopy2tree_id = dict()
     tree_list = []
+    pids_list = []
     outfile = os.path.join(outdir, job_name) + '.pkl'
     outstatefile = os.path.join(outdir, job_name) + 'internals.pkl'
     num_mentions_processed = 0
@@ -123,7 +125,7 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
             logging.info('[%s] run_batch %s - %s of %s - processed %s mentions', job_name, idx, num_canopies_processed,
                          len(canopy_list),
                          num_mentions_processed)
-            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results, canopy2tree_id, tree_list)
+            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results, canopy2tree_id, tree_list, pids_list)
             num_mentions_processed += len(all_pids)
             num_canopies_processed += np.unique(all_canopies).shape[0]
             if idx % 10 == 0:
@@ -139,8 +141,8 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
 
     logging.info('Beginning to save all tree structures....')
     grinch_trees = []
-    for t in tqdm(tree_list):
-        grinch = WeightedMultiFeatureGrinch.from_agglom(t)
+    for idx,t in tqdm(enumerate(tree_list), total=len(tree_list)):
+        grinch = WeightedMultiFeatureGrinch.from_agglom(t, pids_list[idx])
         grinch.prepare_for_save()
         grinch_trees.append(grinch)
     torch.save([grinch_trees, canopy2tree_id], outstatefile)
