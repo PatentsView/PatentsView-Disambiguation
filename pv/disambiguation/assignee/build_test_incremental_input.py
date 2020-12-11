@@ -13,7 +13,6 @@ import configparser
 from tqdm import tqdm
 
 from pv.disambiguation.assignee.load_name_mentions import Loader
-from pv.disambiguation.inventor.model import InventorModel
 
 logging.set_verbosity(logging.INFO)
 
@@ -25,7 +24,7 @@ def main(argv):
     config.read(['config/database_config.ini', 'config/assignee/run_clustering.ini', 'config/database_tables.ini'])
     logging.info('Config - %s', str(config))
 
-    # A connection to the SQL database that will be used to load the inventor data.
+    # A connection to the SQL database that will be used to load the assignee data.
     loader = Loader.from_config(config)
 
     # Find all of the canopies in the entire dataset.
@@ -34,7 +33,7 @@ def main(argv):
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
                                  reverse=True)
-    num_chunks = int(len(all_canopies_sorted) / int(config['inventor']['chunk_size']))
+    num_chunks = int(len(all_canopies_sorted) / int(config['assignee']['chunk_size']))
 
     logging.info('%s num_chunks', num_chunks)
     logging.info('%s chunk_size', int(config['assignee']['chunk_size']))
