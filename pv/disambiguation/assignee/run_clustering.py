@@ -198,8 +198,6 @@ def main(argv):
         run_singletons(list(singletons), outdir, job_name='job-singletons', loader=loader)
         with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
             pickle.dump(chunks, fout)
-        with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-            pickle.dump(chunks, fout)
 
     run_batch(config, chunks[int(config['assignee']['chunk_id'])], outdir, loader, job_name='job-%s' % int(config['assignee']['chunk_id']))
 
