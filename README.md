@@ -33,7 +33,7 @@ granted_table =
 [DATABASE]
 
 host =
-user =
+username =
 password =
 ```
 
