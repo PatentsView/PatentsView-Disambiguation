@@ -1,17 +1,13 @@
 import collections
+import configparser
 import pickle
 
-import mysql.connector
 from absl import app
-from absl import flags
 from absl import logging
 from pathos.multiprocessing import ProcessingPool
 
-from pv.disambiguation.core import AssigneeMention
 import pv.disambiguation.util.db as pvdb
-
-import os
-import configparser
+from pv.disambiguation.core import AssigneeMention
 
 
 def last_name(im):
@@ -22,7 +18,7 @@ def build_pregrants(config):
     # | id | document_number | sequence | name_first | name_last | organization | type | rawlocation_id | city | state | country | filename | created_date | updated_date |
     cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
-    query = "SELECT * FROM rawassignee;"
+    query = "SELECT id, document_number, sequence, name_first, name_last, organization, type, rawlocation_id, city, state, country FROM rawassignee"
     cursor.execute(query)
     feature_map = collections.defaultdict(list)
     idx = 0
@@ -38,7 +34,7 @@ def build_granted(config):
     # | uuid | patent_id | assignee_id | rawlocation_id | type | name_first | name_last | organization | sequence |
     cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
-    query = "SELECT * FROM rawassignee;"
+    query = "SELECT uuid, patent_id, assignee_id, rawlocation_id, type, name_first, name_last, organization, sequence FROM rawassignee"
     cursor.execute(query)
     feature_map = collections.defaultdict(list)
     idx = 0
