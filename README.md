@@ -4,7 +4,14 @@
 
 ```
 pip install git+git://github.com/iesl/grinch.git
+pip install git+git://github.com/epfml/sent2vec.git
 conda install pytorch==1.2.0 torchvision==0.4.0 cudatoolkit=9.2 -c pytorch
+    `
+    python
+    import nltk
+    nltk.download('stopwords')
+    nltk.download('punkt')
+    `
 ```
 
 ### Database Setup
@@ -26,7 +33,7 @@ granted_table =
 [DATABASE]
 
 host =
-user =
+username =
 password =
 ```
 

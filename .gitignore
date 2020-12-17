@@ -132,3 +132,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 pv/disambiguation/inventor/qc/data
+data/
+.idea/
