@@ -295,6 +295,7 @@ class AssigneeMention(object):
     @staticmethod
     def from_granted_sql_record(rec):
         # | uuid | patent_id | assignee_id | rawlocation_id | type | name_first | name_last | organization | sequence |
+        # | uuid | patent_id | assignee_id | rawlocation_id | type | name_first | name_last | organization | sequence |
         uuid = rec[0]
         patent_id = rec[1]
         assignee_id = rec[2]

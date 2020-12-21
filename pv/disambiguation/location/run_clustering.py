@@ -88,7 +88,7 @@ def run_batch(config, canopy_list, outdir, job_name='disambig'):
 
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
-          batcher(to_run_on, loader, config['location']['min_batch_size'])):
+          batcher(to_run_on, loader, int(config['location']['min_batch_size']))):
             logging.info('[%s] run_batch %s - %s - processed %s mentions', job_name, idx, len(canopy_list),
                          num_mentions_processed)
             run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results)
@@ -139,7 +139,10 @@ def run_singletons(config,canopy_list, outdir, job_name='disambig'):
         with open(outfile, 'rb') as fin:
             results = pickle.load(fin)
 
+    logging.info('loader starting...')
+
     loader = Loader.from_config(config)
+    logging.info('loader ending...')
 
     to_run_on = needs_predicting(canopy_list, results, loader)
     logging.info('had results for %s, running on %s', len(canopy_list) - len(to_run_on), len(to_run_on))
@@ -157,11 +160,12 @@ def run_singletons(config,canopy_list, outdir, job_name='disambig'):
 def main(argv):
     logging.info('Running location clustering - %s ', str(argv))
     config = configparser.ConfigParser()
-    config.read(['config/database_config.ini', 'config/inventor/run_clustering.ini', 
-                 'config/inventor/database_tables.ini'])
+    config.read(['config/database_config.ini', 'config/location/run_clustering.ini',
+                 'config/database_tables.ini'])
 
-    # wandb.init(project="%s-%s" % (config['location']['exp_name'], config['location']['dataset_name']))
-    # wandb.config.update(config)
+    if len(argv) > 0:
+        logging.info('Using cmd line arg for chunk id %s' % argv[1])
+        config['location']['chunk_id'] = argv[1]
 
     loader = Loader.from_config(config)
     all_canopies = set(loader.name_mentions.keys())
@@ -177,16 +181,16 @@ def main(argv):
     num_chunks = int(len(all_canopies_sorted) / int(config['location']['chunk_size']))
     logging.info('%s num_chunks', num_chunks)
     logging.info('%s chunk_size', int(config['location']['chunk_size']))
-    logging.info('%s chunk_id', int(config['location']['chunk_id']))
+    logging.info('%s chunk_id', (config['location']['chunk_id']))
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
-    if int(config['location']['chunk_id']) == 0:
+    if (config['location']['chunk_id']) == 'singletons':
         logging.info('Running singletons!!')
         run_singletons(config, list(singletons), outdir, job_name='job-singletons')
-
-    run_batch(config, chunks[int(config['location']['chunk_id'])], outdir, job_name='job-%s' % int(config['location']['chunk_id']))
+    else:
+        run_batch(config, chunks[int(config['location']['chunk_id'])], outdir, job_name='job-%s' % int(config['location']['chunk_id']))
 
 
 if __name__ == "__main__":

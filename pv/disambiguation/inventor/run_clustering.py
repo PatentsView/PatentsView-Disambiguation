@@ -203,12 +203,17 @@ def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
 
 
 def main(argv):
-    logging.info('Running clustering - %s ', str(argv))
+    logging.info('Running clustering - argv =  %s ', str(argv))
 
     # Load the config files
     config = configparser.ConfigParser()
     config.read(['config/database_config.ini', 'config/inventor/run_clustering.ini', 'config/database_tables.ini'])
     logging.info('Config - %s', str(config))
+
+    # if argv[] is a chunk id, then use this chunkid instead
+    if len(argv) > 0:
+        logging.info('Using cmd line arg for chunk id %s' % argv[1])
+        config['inventor']['chunk_id'] = argv[1]
 
     # A connection to the SQL database that will be used to load the inventor data.
     loader = Loader.from_config(config, 'inventor')
@@ -234,7 +239,7 @@ def main(argv):
 
     logging.info('%s num_chunks', num_chunks)
     logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
-    logging.info('%s chunk_id', int(config['inventor']['chunk_id']))
+    logging.info('%s chunk_id', config['inventor']['chunk_id'])
 
     # chunk all of the data by canopy
     chunks = [[] for _ in range(num_chunks)]
@@ -242,7 +247,7 @@ def main(argv):
         chunks[idx % num_chunks].append(c)
 
     # chunk 0 will write out the meta data and singleton information
-    if int(config['inventor']['chunk_id']) == -1:
+    if (config['inventor']['chunk_id']) == 'singletons':
         logging.info('Saving chunk to canopy map')
         with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
             pickle.dump([chunks, list(singletons)], fout)

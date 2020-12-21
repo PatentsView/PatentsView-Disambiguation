@@ -25,7 +25,7 @@ def build_granted(canopy2mentions, granted_uuid2canopy, config):
     return canopy2mentions
 
 
-def build_pregrants(canopy2mentions, pregranted_uuid2canopy):
+def build_pregrants(canopy2mentions, pregranted_uuid2canopy, config):
     cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
     query = "SELECT * FROM rawlocation;"
@@ -68,7 +68,7 @@ def main(argv):
     logging.info('loading canopies [granted] ... done ')
 
     mentions = collections.defaultdict(list)
-    mentions = build_pregrants(mentions, pregranted_uuid2canopy)
+    mentions = build_pregrants(mentions, pregranted_uuid2canopy, config)
     logging.info('len(mentions) = %s ', len(mentions))
     mentions = build_granted(mentions, granted_uuid2canopy, config)
     logging.info('len(mentions) = %s ', len(mentions))

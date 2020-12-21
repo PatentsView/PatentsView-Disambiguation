@@ -60,7 +60,7 @@ def main(argv):
 
     config = configparser.ConfigParser()
     config.read(['config/database_config.ini', 'config/database_tables.ini',
-                 'config/inventor/upload.ini'])
+                 'config/location/build_inventor_location_mentions.ini'])
 
     logging.info('loading canopies [pregranted] ... ')
 

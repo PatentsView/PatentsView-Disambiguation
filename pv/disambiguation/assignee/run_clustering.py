@@ -36,9 +36,15 @@ def batched_canopy_process(datasets, model, encoding_model):
 
 def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree, trees, pids_list, canopy_list):
     features = encoding_model.encode(all_records)
-    grinch = Agglom(model, features, num_points=len(all_pids))
+    grinch = Agglom(model, features, num_points=len(all_pids), min_allowable_sim=0)
     grinch.build_dendrogram_hac()
     fc = grinch.flat_clustering(model.aux['threshold'])
+    logging.info('run_on_batch - threshold %s, linkages: min %s, max %s, avg %s, std %s',
+                 model.aux['threshold'],
+                 np.min(grinch.all_thresholds()),
+                 np.max(grinch.all_thresholds()),
+                 np.mean(grinch.all_thresholds()),
+                 np.std(grinch.all_thresholds()))
     tree_id = len(trees)
     trees.append(grinch)
     pids_list.append(all_pids)
@@ -104,7 +110,8 @@ def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
 
     encoding_model = AssigneeModel.from_config(config)
     weight_model = LinearAndRuleModel.from_encoding_model(encoding_model)
-    weight_model.aux['threshold'] = 1 / (1 + float(config['assignee']['sim_threshold']))
+    weight_model.aux['threshold'] = 1.0 / (1.0 + float(config['assignee']['sim_threshold']))
+    logging.info('[%s] using threshold %s ', job_name, weight_model.aux['threshold'])
 
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
@@ -172,6 +179,11 @@ def main(argv):
     config.read(['config/database_config.ini', 'config/assignee/run_clustering.ini',
                  'config/database_tables.ini'])
 
+    # if argv[] is a chunk id, then use this chunkid instead
+    if len(argv) > 0:
+        logging.info('Using cmd line arg for chunk id %s' % argv[1])
+        config['assignee']['chunk_id'] = argv[1]
+
     # wandb.init(project="%s-%s" % (config['assignee']['exp_name'], config['assignee']['dataset_name']))
     # wandb.config.update(config)
 
@@ -190,18 +202,19 @@ def main(argv):
     num_chunks = int(len(all_canopies_sorted) / int(config['assignee']['chunk_size']))
     logging.info('%s num_chunks', num_chunks)
     logging.info('%s chunk_size', int(config['assignee']['chunk_size']))
-    logging.info('%s chunk_id', int(config['assignee']['chunk_id']))
+    logging.info('%s chunk_id', (config['assignee']['chunk_id']))
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
-    if int(config['assignee']['chunk_id']) == -1:
+    if config['assignee']['chunk_id'] == 'singletons':
         logging.info('Running singletons!!')
         run_singletons(list(singletons), outdir, job_name='job-singletons', loader=loader)
         with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
             pickle.dump([chunks, list(singletons)], fout)
 
-    run_batch(config, chunks[int(config['assignee']['chunk_id'])], outdir, loader, job_name='job-%s' % int(config['assignee']['chunk_id']))
+    else:
+        run_batch(config, chunks[int(config['assignee']['chunk_id'])], outdir, loader, job_name='job-%s' % int(config['assignee']['chunk_id']))
 
 
 if __name__ == "__main__":

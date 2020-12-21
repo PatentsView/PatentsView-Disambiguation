@@ -41,7 +41,7 @@ def build_granted(granted_uuids, pgranted_uuids, config):
 def build_pregrants(granted_uuids, pgranted_uuids, config):
     canopy2uuids = collections.defaultdict(list)
     uuid2canopy = dict()
-    uuid2entityid = load_disambiguation(granted_uuids, pgranted_uuids)
+    uuid2entityid = load_disambiguation(granted_uuids, pgranted_uuids, config)
     cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
     query = "SELECT id, rawlocation_id FROM rawassignee;"
@@ -52,9 +52,9 @@ def build_pregrants(granted_uuids, pgranted_uuids, config):
     return canopy2uuids, uuid2canopy
 
 
-def collection_location_mentions_granted(config):
+def collection_location_mentions_granted(granted_uuids, pgranted_uuids, config):
     canopy2uuids = collections.defaultdict(list)
-    uuid2entityid = load_disambiguation(config)
+    uuid2entityid = load_disambiguation(granted_uuids, pgranted_uuids, config)
     cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
     query = "SELECT uuid, rawlocation_id FROM rawassignee;"

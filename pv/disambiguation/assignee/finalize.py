@@ -10,10 +10,10 @@ from tqdm import tqdm
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('input', 'exp_out/assignee/run_24', '')
+flags.DEFINE_string('input', 'exp_out/assignee/run_26', '')
 flags.DEFINE_string('assignee_name_mentions', 'data/assignee/assignee_mentions.records.pkl', '')
 
-flags.DEFINE_string('output', 'exp_out/assignee/run_24/disambiguation.tsv', '')
+flags.DEFINE_string('output', 'exp_out/assignee/run_26/disambiguation.tsv', '')
 
 logging.set_verbosity(logging.INFO)
 
@@ -35,7 +35,7 @@ def process_file(point2clusters, clusters, pkl_file):
 
 def process(point2clusters, clusters, rundir):
     num_assign = 0
-    for f in tqdm([f for f in os.listdir(rundir) if f.endswith('.pkl')]):
+    for f in tqdm([f for f in os.listdir(rundir) if f.endswith('.pkl') and 'internals' not in f and 'job' in f]):
         num_assign += process_file(point2clusters, clusters, os.path.join(rundir, f))
     return num_assign
 

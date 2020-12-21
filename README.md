@@ -54,7 +54,7 @@ python -m pv.disambiguation.inventor.build_title_map_sql
 ### Build Canopies
 
 ```
-python -m pv.disambiguation.inventor.build_canopies_sql --source granted
+python -m pv.disambiguation.inventor.build_canopies_sql
 python -m pv.disambiguation.inventor.build_canopies_sql --source pregranted
 ```
 

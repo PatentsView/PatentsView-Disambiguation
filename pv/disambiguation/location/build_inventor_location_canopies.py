@@ -16,20 +16,23 @@ import configparser
 import pv.disambiguation.util.db as pvdb
 
 
-def load_disambiguation():
+def load_disambiguation(config):
     logging.info('disambiguation loading....')
     uuid2entityid = dict()
-    with open(FLAGS.disambiguation, 'r') as fin:
+    with open(config['INVENTOR_LOCATION_CANOPIES']['disambiguation'], 'r') as fin:
         for line in tqdm(fin, desc='load disambiguation', total=18000000):
             splt = line.strip().split('\t')
-            uuid2entityid[splt[0]] = splt[1]
+            if len(splt) == 2:
+                uuid2entityid[splt[0]] = splt[1]
+            else:
+                logging.error('malformed line %s', line)
     return uuid2entityid
 
 
 def build_granted(config):
     canopy2uuids = collections.defaultdict(list)
     uuid2canopy = dict()
-    uuid2entityid = load_disambiguation()
+    uuid2entityid = load_disambiguation(config)
     cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
     query = "SELECT uuid, rawlocation_id FROM rawinventor;"
@@ -43,7 +46,7 @@ def build_granted(config):
 def build_pregrants(config):
     canopy2uuids = collections.defaultdict(list)
     uuid2canopy = dict()
-    uuid2entityid = load_disambiguation()
+    uuid2entityid = load_disambiguation(config)
     cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
     query = "SELECT id, rawlocation_id FROM rawinventor;"
@@ -56,7 +59,7 @@ def build_pregrants(config):
 
 def collection_location_mentions_granted(config):
     canopy2uuids = collections.defaultdict(list)
-    uuid2entityid = load_disambiguation()
+    uuid2entityid = load_disambiguation(config)
     cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
     query = "SELECT uuid, rawlocation_id FROM rawinventor;"
