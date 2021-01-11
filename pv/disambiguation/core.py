@@ -473,7 +473,6 @@ class LocationMention(object):
 
     @staticmethod
     def from_application_sql_record(rec):
-
         #  | id | city | state | country | lattitude | longitude | filename | created_date | updated_date |
         uuid = rec[0]
         city = rec[1] if rec[1] else ''

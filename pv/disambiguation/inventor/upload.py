@@ -33,6 +33,16 @@ def upload(config):
     pregranted_ids = set([y for x in loader.pregranted_canopies.values() for y in x])
     granted_ids = set([y for x in loader.granted_canopies.values() for y in x])
 
+disamb = dict()
+with open(config['INVENTOR_UPLOAD']['input'], 'r') as fin:
+    for line in fin:
+        splt = line.strip().split('\t')
+        if len(splt) != 2:
+            print('error %s' % str(splt))
+        else:
+            disamb[splt[0]] = splt[1]
+
+
     pairs_pregranted = []
     pairs_granted = []
     with open(config['INVENTOR_UPLOAD']['input'], 'r') as fin:

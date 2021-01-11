@@ -21,7 +21,7 @@ def build_granted(granted_uuid2canopy, config):
     canopy2mentions = collections.defaultdict(list)
     cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
-    query = "SELECT * FROM rawlocation;"
+    query = "SELECT id  , location_id  , city , state , country , country_transformed , location_id_transformed FROM rawlocation;"
     cursor.execute(query)
     for rec in tqdm(cursor, 'process', total=18000000):
         lm = LocationMention.from_granted_sql_record(rec)
@@ -34,10 +34,10 @@ def build_granted(granted_uuid2canopy, config):
 def build_pregrants(canopy2mentions, pregranted_uuid2canopy, config):
     cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
-    query = "SELECT * FROM rawlocation;"
+    query = "SELECT id , city , state , country , lattitude , longitude , filename , created_date , updated_date FROM rawlocation;"
     cursor.execute(query)
     for rec in tqdm(cursor, 'process', total=18000000):
-        lm = LocationMention.from_granted_sql_record(rec)
+        lm = LocationMention.from_application_sql_record(rec)
         if lm.uuid in pregranted_uuid2canopy:
             canopy = pregranted_uuid2canopy[lm.uuid]
             canopy2mentions[canopy].append(lm)

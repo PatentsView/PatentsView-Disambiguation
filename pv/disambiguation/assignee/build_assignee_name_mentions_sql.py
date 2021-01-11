@@ -37,7 +37,7 @@ def build_granted(config):
     # | uuid | patent_id | assignee_id | rawlocation_id | type | name_first | name_last | organization | sequence |
     cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
-    query = "SELECT * FROM rawassignee;"
+    query = "SELECT uuid , patent_id , assignee_id , rawlocation_id , type , name_first , name_last , organization , sequence FROM rawassignee;"
     cursor.execute(query)
     feature_map = collections.defaultdict(list)
     idx = 0

@@ -59,7 +59,7 @@ def run(source):
 
 
 def main(argv):
-    logging.info('Building coinventor features')
+    logging.info('Building title features')
     feats = [n for n in ProcessingPool().imap(run, ['granted', 'pregranted'])]
     features = feats[0]
     for i in range(1, len(feats)):
