@@ -11,10 +11,10 @@ class Loader(object):
         return len(self.name_mentions[canopy])
 
     @staticmethod
-    def from_flags(flgs):
-        with open(flgs.inventor_location_name_mentions, 'rb') as fin:
+    def from_config(config):
+        with open(config['location']['inventor_location_name_mentions'], 'rb') as fin:
             inventor_name_mentions = pickle.load(fin)
-        with open(flgs.assignee_location_name_mentions, 'rb') as fin:
+        with open(config['location']['assignee_location_name_mentions'], 'rb') as fin:
             assignee_name_mentions = pickle.load(fin)
         name_mentions = inventor_name_mentions
         name_mentions.update(assignee_name_mentions)

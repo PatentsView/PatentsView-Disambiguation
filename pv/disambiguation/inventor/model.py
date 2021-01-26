@@ -10,10 +10,10 @@ from grinch.features import SingleItemHashingVectorizerFeatures, FastTextFeature
 class InventorModel(object):
 
     @staticmethod
-    def from_flags(flgs):
+    def from_config(config):
         logging.info('Building Inventor Model...')
 
-        with open(flgs.patent_titles, 'rb') as fin:
+        with open(config['inventor']['patent_titles'], 'rb') as fin:
             patent_tile_map = pickle.load(fin)
         logging.info('Loaded Patent Title Map...')
         for idx,(k,v) in enumerate(patent_tile_map.items()):
@@ -31,7 +31,7 @@ class InventorModel(object):
                 logging.warning('Missing title for %s', x.record_id)
                 return ''
 
-        with open(flgs.coinventors, 'rb') as fin:
+        with open(config['inventor']['coinventors'], 'rb') as fin:
             coinventor_map = pickle.load(fin)
         logging.info('Loaded Patent Coinventors Map...')
         for idx,(k,v) in enumerate(coinventor_map.items()):
@@ -49,7 +49,7 @@ class InventorModel(object):
                 logging.warning('Missing coinventors for %s', x.patent_id)
                 return []
 
-        with open(flgs.assignees, 'rb') as fin:
+        with open(config['inventor']['assignees'], 'rb') as fin:
             assignees_map = pickle.load(fin)
         logging.info('Loaded Patent Assignees Map...')
         for idx,(k,v) in enumerate(assignees_map.items()):
@@ -77,7 +77,7 @@ class InventorModel(object):
         canopy_feat = SingleItemHashingVectorizerFeatures('canopy', lambda x: x.canopy())
 
         # Title Features
-        title_model = FastTextFeatures(flgs.title_model, 'title', get_patent_title)
+        title_model = FastTextFeatures(config['inventor']['title_model'], 'title', get_patent_title)
 
         # Co-Inventor Features
         coinventors = HashingVectorizerFeatures('coinventors', lambda x: get_patent_coinventors(x), 'l2')

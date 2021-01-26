@@ -8,9 +8,12 @@ from absl import logging
 from pathos.multiprocessing import ProcessingPool
 
 from pv.disambiguation.core import InventorMention
+import pv.disambiguation.util.db as pvdb
+import configparser
 
-FLAGS = flags.FLAGS
-flags.DEFINE_string('feature_out', 'data/inventor/coinventor_features', '')
+#
+# FLAGS = flags.FLAGS
+# flags.DEFINE_string('feature_out', 'data/inventor/coinventor_features', '')
 
 import os
 
@@ -19,9 +22,8 @@ def last_name(im):
     return im.last_name()[0] if len(im.last_name()) > 0 else im.uuid
 
 
-def build_pregrants():
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='pregrant_publications')
+def build_pregrants(config):
+    cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
     query = "SELECT id, document_number, name_first, name_last FROM rawinventor;"
     cursor.execute(query)
@@ -36,9 +38,8 @@ def build_pregrants():
     return feature_map
 
 
-def build_granted():
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='patent_20200630')
+def build_granted(config):
+    cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
     query = "SELECT uuid, patent_id, name_first, name_last FROM rawinventor;"
     cursor.execute(query)
@@ -54,10 +55,13 @@ def build_granted():
 
 
 def run(source):
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/inventor/build_coinventor_features_sql.ini'])
     if source == 'pregranted':
-        features = build_pregrants()
+        features = build_pregrants(config)
     elif source == 'granted':
-        features = build_granted()
+        features = build_granted(config)
     return features
 
 
@@ -65,9 +69,12 @@ def main(argv):
     logging.info('Building coinventor features')
     feats = [n for n in ProcessingPool().imap(run, ['granted', 'pregranted'])]
     features = feats[0]
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/inventor/build_coinventor_features_sql.ini'])
     for i in range(1, len(feats)):
         features.update(feats[i])
-    with open(FLAGS.feature_out + '.%s.pkl' % 'both', 'wb') as fout:
+    with open(config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out'] + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 
 

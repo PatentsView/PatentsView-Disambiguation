@@ -5,12 +5,10 @@ import mysql.connector
 from absl import app
 from absl import flags
 from absl import logging
+import configparser
 
 from pv.disambiguation.core import InventorMention
-
-FLAGS = flags.FLAGS
-flags.DEFINE_string('canopy_out', 'data/inventor/canopies', '')
-flags.DEFINE_string('source', 'pregranted', 'pregranted or granted')
+import pv.disambiguation.util.db as pvdb
 
 import os
 
@@ -22,9 +20,8 @@ def first_letter_last_name(im):
     return res
 
 
-def build_pregrants():
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='pregrant_publications')
+def build_pregrants(config):
+    cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
     query = "SELECT id, name_first, name_last FROM rawinventor;"
     cursor.execute(query)
@@ -39,9 +36,8 @@ def build_pregrants():
     return canopy2uuids
 
 
-def build_granted():
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='patent_20200630')
+def build_granted(config):
+    cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
     query = "SELECT uuid, name_first, name_last FROM rawinventor;"
     cursor.execute(query)
@@ -58,11 +54,17 @@ def build_granted():
 
 def main(argv):
     logging.info('Building canopies')
-    if FLAGS.source == 'pregranted':
-        canopies = build_pregrants()
-    elif FLAGS.source == 'granted':
-        canopies = build_granted()
-    with open(FLAGS.canopy_out + '.%s.pkl' % FLAGS.source, 'wb') as fout:
+
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/inventor/build_canopies_sql.ini'])
+
+    canopies = build_pregrants(config)
+    with open(config['INVENTOR_BUILD_CANOPIES']['canopy_out'] + '.%s.pkl' % 'pregranted', 'wb') as fout:
+        pickle.dump(canopies, fout)
+
+    canopies = build_granted(config)
+    with open(config['INVENTOR_BUILD_CANOPIES']['canopy_out'] + '.%s.pkl' % 'granted', 'wb') as fout:
         pickle.dump(canopies, fout)
 
 

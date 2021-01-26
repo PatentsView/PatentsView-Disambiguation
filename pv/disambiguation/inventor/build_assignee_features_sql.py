@@ -1,30 +1,24 @@
 import collections
+import configparser
 import pickle
 
-import mysql.connector
 from absl import app
-from absl import flags
 from absl import logging
 from pathos.multiprocessing import ProcessingPool
 
+import pv.disambiguation.util.db as pvdb
 from pv.disambiguation.core import AssigneeMention
-
-FLAGS = flags.FLAGS
-flags.DEFINE_string('feature_out', 'data/inventor/assignee_features', '')
-
-import os
 
 
 def last_name(im):
     return im.last_name()[0] if len(im.last_name()) > 0 else im.uuid
 
 
-def build_pregrants():
+def build_pregrants(config):
     # | id | document_number | sequence | name_first | name_last | organization | type | rawlocation_id | city | state | country | filename | created_date | updated_date |
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='pregrant_publications')
+    cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
-    query = "SELECT * FROM rawassignee;"
+    query = "SELECT id, document_number, sequence, name_first, name_last, organization, type, rawlocation_id, city, state, country FROM rawassignee"
     cursor.execute(query)
     feature_map = collections.defaultdict(list)
     idx = 0
@@ -36,12 +30,11 @@ def build_pregrants():
     return feature_map
 
 
-def build_granted():
+def build_granted(config):
     # | uuid | patent_id | assignee_id | rawlocation_id | type | name_first | name_last | organization | sequence |
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='patent_20200630')
+    cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
-    query = "SELECT * FROM rawassignee;"
+    query = "SELECT uuid, patent_id, assignee_id, rawlocation_id, type, name_first, name_last, organization, sequence FROM rawassignee"
     cursor.execute(query)
     feature_map = collections.defaultdict(list)
     idx = 0
@@ -54,10 +47,13 @@ def build_granted():
 
 
 def run(source):
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/inventor/build_assignee_features_sql.ini'])
     if source == 'pregranted':
-        features = build_pregrants()
+        features = build_pregrants(config)
     elif source == 'granted':
-        features = build_granted()
+        features = build_granted(config)
     return features
 
 
@@ -65,9 +61,12 @@ def main(argv):
     logging.info('Building coinventor features')
     feats = [n for n in ProcessingPool().imap(run, ['granted', 'pregranted'])]
     features = feats[0]
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/inventor/build_assignee_features_sql.ini'])
     for i in range(1, len(feats)):
         features.update(feats[i])
-    with open(FLAGS.feature_out + '.%s.pkl' % 'both', 'wb') as fout:
+    with open(config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out'] + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 
 
