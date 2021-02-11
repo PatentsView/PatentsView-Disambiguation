@@ -75,7 +75,7 @@ class LocationModelWithApps(object):
 
 class LocationAgglom(Agglom):
     def __init__(self, model, features, num_points):
-        super(LocationAgglom, self).__init__(model, features, num_points)
+        super(LocationAgglom, self).__init__(model, features, num_points, min_allowable_sim=0.0)
 
     def csim_multi_feature_knn_torch(self, i, j, record_dict=None):
         len_i = len(i)
