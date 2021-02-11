@@ -83,7 +83,7 @@ def run_batch(config, canopy_list, outdir, job_name='disambig'):
 
     encoding_model = LocationModelWithApps.from_config(config)
     weight_model = LinearAndRuleModel.from_encoding_model(encoding_model)
-    weight_model.aux['threshold'] = 1
+    weight_model.aux['threshold'] = 1-1e5
     loader = Loader.from_config(config)
 
     if to_run_on:
