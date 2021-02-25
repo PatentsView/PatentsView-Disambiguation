@@ -18,10 +18,10 @@ def create_tables(config):
     cnx_pg = pvdb.pregranted_table(config)
     g_cursor = cnx_g.cursor()
     g_cursor.execute(
-        "CREATE TABLE tmp_location_disambiguation_granted2 (uuid VARCHAR(255), disambiguated_id VARCHAR(255))")
+        "CREATE TABLE tmp_location_disambiguation_granted_2021_02_24 (uuid VARCHAR(255), disambiguated_id VARCHAR(255))")
     pg_cursor = cnx_pg.cursor()
     pg_cursor.execute(
-        "CREATE TABLE tmp_location_disambiguation_pregranted2 (uuid VARCHAR(255), disambiguated_id VARCHAR(255))")
+        "CREATE TABLE tmp_location_disambiguation_pregranted_2021_02_24 (uuid VARCHAR(255), disambiguated_id VARCHAR(255))")
     g_cursor.close()
     pg_cursor.close()
 
@@ -32,9 +32,9 @@ def drop_tables(config):
     cnx_pg = pvdb.pregranted_table(config)
 
     g_cursor = cnx_g.cursor()
-    g_cursor.execute("DROP TABLE tmp_location_disambiguation_granted2")
+    g_cursor.execute("DROP TABLE tmp_location_disambiguation_granted_2021_02_24")
     pg_cursor = cnx_pg.cursor()
-    pg_cursor.execute("DROP TABLE tmp_location_disambiguation_pregranted2")
+    pg_cursor.execute("DROP TABLE tmp_location_disambiguation_pregranted_2021_02_24")
     g_cursor.close()
     pg_cursor.close()
 
@@ -86,12 +86,12 @@ def upload(granted_ids, pregranted_ids, config):
     for idx in tqdm(range(len(offsets)), 'adding granted', total=len(offsets)):
         sidx = offsets[idx]
         eidx = min(len(pairs_granted), offsets[idx] + batch_size)
-        sql = "INSERT INTO tmp_location_disambiguation_granted2 (uuid, disambiguated_id) VALUES " + ', '.join(
+        sql = "INSERT INTO tmp_location_disambiguation_granted_2021_02_24 (uuid, disambiguated_id) VALUES " + ', '.join(
             ['("%s", "%s")' % x for x in pairs_granted[sidx:eidx]])
         # logging.log_first_n(logging.INFO, '%s', 1, sql)
         g_cursor.execute(sql)
     cnx_g.commit()
-    g_cursor.execute('alter table tmp_location_disambiguation_granted2 add primary key (uuid)')
+    g_cursor.execute('alter table tmp_location_disambiguation_granted_2021_02_24 add primary key (uuid)')
     cnx_g.close()
 
     pg_cursor = cnx_pg.cursor()
@@ -100,12 +100,12 @@ def upload(granted_ids, pregranted_ids, config):
     for idx in tqdm(range(len(offsets)), 'adding pregranted', total=len(offsets)):
         sidx = offsets[idx]
         eidx = min(len(pairs_pregranted), offsets[idx] + batch_size)
-        sql = "INSERT INTO tmp_location_disambiguation_pregranted2 (uuid, disambiguated_id) VALUES " + ', '.join(
+        sql = "INSERT INTO tmp_location_disambiguation_pregranted_2021_02_24 (uuid, disambiguated_id) VALUES " + ', '.join(
             ['("%s", "%s")' % x for x in pairs_pregranted[sidx:eidx]])
         # logging.log_first_n(logging.INFO, '%s', 1, sql)
         pg_cursor.execute(sql)
     cnx_pg.commit()
-    pg_cursor.execute('alter table tmp_location_disambiguation_pregranted2 add primary key (uuid)')
+    pg_cursor.execute('alter table tmp_location_disambiguation_pregranted_2021_02_24 add primary key (uuid)')
     cnx_pg.close()
 
 

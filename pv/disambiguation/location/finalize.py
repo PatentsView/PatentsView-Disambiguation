@@ -11,8 +11,8 @@ import pickle
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('input', 'exp_out/location/run_11', '')
-flags.DEFINE_string('output', 'exp_out/location/run_11/disambiguation.tsv', '')
+flags.DEFINE_string('input', 'exp_out/location/run_12', '')
+flags.DEFINE_string('output', 'exp_out/location/run_12/disambiguation.tsv', '')
 
 logging.set_verbosity(logging.INFO)
 
