@@ -189,6 +189,8 @@ def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
                 all_canopies = [c for c in all_lbls]
                 features = encoding_model.encode(all_records)
                 grinch = WeightedMultiFeatureGrinch(weight_model, features, len(all_pids))
+                grinch.pids = all_pids
+                grinch.prepare_for_save()
                 grinch_trees.append(grinch)
                 canopy2tree_id[c] = len(grinch_trees)-1
                 grinch_trees[canopy2tree_id[c]].clear_node_features()
