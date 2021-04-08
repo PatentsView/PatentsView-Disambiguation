@@ -64,7 +64,7 @@ def batcher(canopy_list, loader, min_batch_size=1):
         yield all_pids, all_lbls, all_records, all_canopies
 
 
-def run_batch(config, canopy_list, outdir, job_name='disambig'):
+def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
     logging.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
 
     os.makedirs(outdir, exist_ok=True)
@@ -83,8 +83,8 @@ def run_batch(config, canopy_list, outdir, job_name='disambig'):
 
     encoding_model = LocationModelWithApps.from_config(config)
     weight_model = LinearAndRuleModel.from_encoding_model(encoding_model)
-    weight_model.aux['threshold'] = 1-1e5
-    loader = Loader.from_config(config)
+    weight_model.aux['threshold'] = 0.5 + 1e-5
+    # loader = Loader.from_config(config)
 
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
@@ -190,7 +190,7 @@ def main(argv):
         logging.info('Running singletons!!')
         run_singletons(config, list(singletons), outdir, job_name='job-singletons')
     else:
-        run_batch(config, chunks[int(config['location']['chunk_id'])], outdir, job_name='job-%s' % int(config['location']['chunk_id']))
+        run_batch(config, chunks[int(config['location']['chunk_id'])], outdir, loader, job_name='job-%s' % int(config['location']['chunk_id']))
 
 
 if __name__ == "__main__":
