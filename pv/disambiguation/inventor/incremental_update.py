@@ -95,7 +95,7 @@ def run_chunk(args):
 
 def run_chunk_(config, outdir, this_chunk_id, this_chunk_canopies):
     updatedfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
-    if os.path.exists(updatedfile):
+    if os.path.exists(updatedfile) or os.path.exists(os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated2.pkl'):
         return
 
     encoding_model = InventorModel.from_config(config)
@@ -200,7 +200,7 @@ def run_chunk_(config, outdir, this_chunk_id, this_chunk_canopies):
             fc = grinch.flat_clustering(weight_model.aux['threshold'])
             canopy2predictions[c] = [[], []]
             for i in range(grinch.num_points):
-                canopy2predictions[all_canopies[i]][0].append(grinch.all_pids[i])
+                canopy2predictions[c][0].append(grinch.all_pids[i])
                 canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
 
         statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
