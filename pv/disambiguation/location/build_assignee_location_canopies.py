@@ -17,7 +17,9 @@ def load_disambiguation(granted_uuid, pregranted_uuid, config):
     with open(config['ASSIGNEE_LOCATION_CANOPIES']['disambiguation'], 'r') as fin:
         for line in tqdm(fin, desc='load disambiguation', total=9560321):
             splt = line.strip().split('\t')
-            if splt[0] in pregranted_uuid:
+            if granted_uuid is None and pregranted_uuid is None:
+                uuid2entityid[splt[0]] = splt[1]
+            elif splt[0] in pregranted_uuid:
                 uuid2entityid[pregranted_uuid[splt[0]]] = splt[1]
             elif splt[0] in granted_uuid:
                 uuid2entityid[granted_uuid[splt[0]]] = splt[1]
@@ -71,7 +73,10 @@ def main(argv):
     config.read(['config/database_config.ini', 'config/database_tables.ini',
                  'config/location/build_assignee_location_canopies.ini'])
 
-    granted_uuids, pgranted_uuids = pickle.load(open(config['ASSIGNEE_LOCATION_CANOPIES']['uuidmap'], 'rb'))
+    if config['ASSIGNEE_LOCATION_CANOPIES']['uuidmap'] == 'None':
+        granted_uuids, pgranted_uuids = None, None
+    else:
+        granted_uuids, pgranted_uuids = pickle.load(open(config['ASSIGNEE_LOCATION_CANOPIES']['uuidmap'], 'rb'))
     source = 'pregranted'
     canopies, uuid2canopy = build_pregrants(granted_uuids, pgranted_uuids, config)
     with open(config['ASSIGNEE_LOCATION_CANOPIES']['canopy_out'] + '.%s.pkl' % source, 'wb') as fout:

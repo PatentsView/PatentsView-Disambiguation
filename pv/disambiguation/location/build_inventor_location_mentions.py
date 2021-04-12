@@ -34,7 +34,7 @@ def build_granted(granted_uuid2canopy, config):
 def build_pregrants(canopy2mentions, pregranted_uuid2canopy, config):
     cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
-    query = "SELECT id , city , state , country , lattitude , longitude , filename , created_date , updated_date FROM rawlocation;"
+    query = "SELECT id , city , state , country , latitude , longitude , filename , created_date , updated_date FROM rawlocation;"
     cursor.execute(query)
     for rec in tqdm(cursor, 'process', total=18000000):
         lm = LocationMention.from_application_sql_record(rec)
