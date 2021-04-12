@@ -29,23 +29,44 @@ def handle_singletons(canopy2predictions, singleton_canopies, loader):
 
 
 def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree, trees, pids_list):
+    """
+
+    :param all_pids: Ids of the records we are running on
+    :param all_lbls: Labels (or blank labels if they are not available)
+    :param all_records: The records (i.e. features - python strings of the inventor name, assignee etc)
+    :param all_canopies: The canopies of each record (right now this is always all the same canopy)
+    :param model: linear scoring / similarity model which takes in two feature vectors and gives a similarity
+    :param encoding_model: mapping from all_records gives you something that is input to model
+    :param canopy2predictions: where results are stored
+    :param canopy2tree: where results are stored
+    :param trees: where results are stored
+    :param pids_list: where results are stored
+    :return:
+    """
+    # extracting features
     features = encoding_model.encode(all_records)
     if len(all_pids) > 1:
+        # running clustering
         grinch = Agglom(model, features, num_points=len(all_pids))
         grinch.build_dendrogram_hac()
         fc = grinch.flat_clustering(model.aux['threshold'])
+        # storing the state of the clustering for the intremental setting
         tree_id = len(trees)
+        # store the tree that is build for this canopy
         trees.append(grinch)
         pids_list.append(all_pids)
         for i in range(len(all_pids)):
+            # record mapping from canopy to the tree id
             canopy2tree[all_canopies[i]] = tree_id
             if all_canopies[i] not in canopy2predictions:
                 canopy2predictions[all_canopies[i]] = [[], []]
                 canopy2tree[all_canopies[i]] = tree_id
+            # save predictions (used in the non incremental setting)
             canopy2predictions[all_canopies[i]][0].append(all_pids[i])
             canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
         return canopy2predictions
     else:
+        raise Exception('Must have non-singleton canopies')
         fc = [0]
         for i in range(len(all_pids)):
             if all_canopies[i] not in canopy2predictions:
@@ -193,8 +214,6 @@ def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
                 grinch.prepare_for_save()
                 grinch_trees.append(grinch)
                 canopy2tree_id[c] = len(grinch_trees)-1
-                grinch_trees[canopy2tree_id[c]].clear_node_features()
-                grinch_trees[canopy2tree_id[c]].points_set = False
         torch.save([grinch_trees, canopy2tree_id], statefile)
 
     if to_run_on:

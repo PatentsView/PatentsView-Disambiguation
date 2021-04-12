@@ -18,32 +18,38 @@ def last_name(im):
 
 
 def build_pregrants(config):
+    feature_map = dict()
     cnx = pvdb.pregranted_table(config)
+    if cnx is None:
+        return feature_map
     cursor = cnx.cursor()
     query = "select document_number,invention_title from application;"
     cursor.execute(query)
-    feature_map = dict()
     idx = 0
     for rec in cursor:
         record_id = 'pg-%s' % rec[0]
         feature_map[record_id] = rec[1]
         idx += 1
         logging.log_every_n(logging.INFO, 'Processed %s pregrant records - %s features', 10000, idx, len(feature_map))
+    logging.log(logging.INFO, 'Processed %s pregrant records - %s features', idx, len(feature_map))
     return feature_map
 
 
 def build_granted(config):
+    feature_map = dict()
     cnx = pvdb.granted_table(config)
+    if cnx is None:
+        return feature_map
     cursor = cnx.cursor()
     query = "SELECT id,title FROM patent;"
     cursor.execute(query)
-    feature_map = dict()
     idx = 0
     for rec in cursor:
         record_id = '%s' % rec[0]
         feature_map[record_id] = rec[1]
         idx += 1
         logging.log_every_n(logging.INFO, 'Processed %s grant records - %s features', 10000, idx, len(feature_map))
+    logging.log(logging.INFO, 'Processed %s grant records - %s features', idx, len(feature_map))
     return feature_map
 
 
@@ -60,14 +66,21 @@ def run(source):
 
 def main(argv):
     logging.info('Building title features')
+
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/inventor/build_title_map_sql.ini'])
+
+    # create output folder if it doesn't exist
+    logging.info('writing results to folder: %s',
+                 os.path.dirname(config['INVENTOR_BUILD_TITLES']['feature_out']))
+    os.makedirs(os.path.dirname(config['INVENTOR_BUILD_TITLES']['feature_out']), exist_ok=True)
+
     feats = [n for n in ProcessingPool().imap(run, ['granted', 'pregranted'])]
     features = feats[0]
     for i in range(1, len(feats)):
         features.update(feats[i])
 
-    config = configparser.ConfigParser()
-    config.read(['config/database_config.ini', 'config/database_tables.ini',
-                 'config/inventor/build_title_map_sql.ini'])
     with open(config['INVENTOR_BUILD_TITLES']['feature_out'] + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 
