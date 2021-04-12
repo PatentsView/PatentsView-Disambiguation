@@ -174,8 +174,8 @@ def run_chunk_(config, outdir, this_chunk_id, this_chunk_canopies):
                 en_sav_pred = time.time()
                 logging.info('[canopy2predictions save] time %s', en_sav_pred - st_sav_pred)
 
-        statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated2.pkl'
-        predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '-updated2.pkl'
+        statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
+        predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '-updated.pkl'
 
         torch.save([grinch_trees, canopy2tree_id], statefile)
         with open(predfile, 'wb') as fin:
@@ -203,8 +203,8 @@ def run_chunk_(config, outdir, this_chunk_id, this_chunk_canopies):
                 canopy2predictions[all_canopies[i]][0].append(grinch.all_pids[i])
                 canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
 
-        statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated2.pkl'
-        predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '-updated2.pkl'
+        statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
+        predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '-updated.pkl'
         torch.save([grinch_trees, canopy2tree_id], statefile)
         with open(predfile, 'wb') as fin:
             pickle.dump(canopy2predictions, fin)
