@@ -16,6 +16,8 @@ import os
 def first_letter_last_name(im):
     fi = im.first_letter()[0] if len(im.first_letter()) > 0 else im.uuid
     lastname = im.last_name()[0] if len(im.last_name()) > 0 else im.uuid
+    lastname = lastname.replace(' ', '')
+    lastname = lastname.replace('-', '')
     res = 'fl:%s_ln:%s' % (fi, lastname)
     return res
 
