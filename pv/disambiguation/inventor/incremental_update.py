@@ -259,7 +259,7 @@ def run(config, loader, new_canopies, chunks, singleton_list,
     logging.info('using n cores %s', num_cores)
 
     batches = [(config, outdir, this_chunk_id, this_chunk_canopies) for this_chunk_id, this_chunk_canopies in new_canopies_by_chunk.items()]
-    results = [n for n in ProcessingPool().imap(run_chunk, batches)]
+    results = [n for n in ProcessingPool(num_cores).imap(run_chunk, batches)]
 
     # for this_chunk_id, this_chunk_canopies in tqdm(new_canopies_by_chunk.items(), 'chunks'):
     #     run_chunk_(config, outdir, this_chunk_id, this_chunk_canopies)
