@@ -3,13 +3,13 @@ import pickle
 
 import numpy as np
 import torch
-import wandb
 from absl import app
 from absl import flags
 from absl import logging
 from grinch.agglom import Agglom
 from grinch.multifeature_grinch import WeightedMultiFeatureGrinch
 import configparser
+import time
 from tqdm import tqdm
 
 from pv.disambiguation.inventor.load_mysql import Loader
@@ -90,6 +90,126 @@ def batch(canopy_list, loader, min_batch_size=800):
             yield all_pids, all_lbls, all_records, all_canopies
 
 
+def run_chunk(args):
+    return run_chunk_(args[0], args[1], args[2], args[3])
+
+def run_chunk_(config, outdir, this_chunk_id, this_chunk_canopies):
+    updatedfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
+    if os.path.exists(updatedfile):
+        return
+
+    encoding_model = InventorModel.from_config(config)
+    weight_model = torch.load(config['inventor']['model']).eval()
+    loader = Loader.from_config(config, 'inventor')
+
+    statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals.pkl'
+    if os.path.exists(statefile):
+        logging.info('chunk: %s - process %s', this_chunk_id, len(this_chunk_canopies))
+
+        # Load the grinch trees
+        logging.info('starting load....')
+        [grinch_trees, canopy2tree_id] = torch.load(statefile)
+        logging.info('end load....')
+
+        # load the old predictions
+        predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '.pkl'
+        with open(predfile, 'rb') as fin:
+            canopy2predictions = pickle.load(fin)
+
+        chunk_st = time.time()
+        for idx, c in enumerate(this_chunk_canopies):
+            logging.info('Working on canopy %s', c)
+            logging.info('chunk: %s - processed %s of %s - elapsed %s', this_chunk_id, idx, len(this_chunk_canopies),
+                         time.time() - chunk_st)
+
+            all_records = loader.load_canopies([c])
+            all_pids = [x.uuid for x in all_records]
+            all_lbls = -1 * np.ones(len(all_records))
+            all_canopies = [c for c in all_lbls]
+            features = encoding_model.encode(all_records)
+            logging.info('Tree ID %s', canopy2tree_id[c])
+            if canopy2tree_id[c] is None:
+                logging.info('we were missing a tree for canopy %s running now!', c)
+                grinch = WeightedMultiFeatureGrinch(weight_model, features, len(all_pids), pids=all_pids)
+                grinch.perform_graft = False
+                grinch.build_dendrogram()
+                fc = grinch.flat_clustering(weight_model.aux['threshold'])
+                grinch.clear_node_features()
+                grinch.points_set = False
+                canopy2predictions[c] = [[], []]
+                logging.info('len(all_pids) %s', len(all_pids))
+                logging.info('grinch.num_points %s', grinch.num_points)
+                logging.info('grinch.pids %s', len(grinch.pids))
+                logging.info('fc %s', str(fc))
+                for i in range(grinch.num_points):
+                    canopy2predictions[c][0].append(grinch.pids[i])
+                    canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
+                grinch_trees.append(grinch)
+                canopy2tree_id[c] = len(grinch_trees)
+
+            else:
+                grinch = grinch_trees[canopy2tree_id[c]]
+                st_up = time.time()
+                grinch.perform_graft = False
+                grinch.update_and_insert(features, all_pids)
+                en_up = time.time()
+                logging.info('[update_and_insert] time %s', en_up - st_up)
+
+                st_fc = time.time()
+                fc = grinch.flat_clustering(weight_model.aux['threshold'])
+                en_fc = time.time()
+                logging.info('[flat_clustering] time %s', en_fc - st_fc)
+
+                st_cl = time.time()
+                grinch.clear_node_features()
+                en_cl = time.time()
+                logging.info('[clear_node_features] time %s', en_cl - st_cl)
+
+                st_sav_pred = time.time()
+                grinch.points_set = False
+                canopy2predictions[c] = [[], []]
+                for i in range(grinch.num_points):
+                    canopy2predictions[c][0].append(grinch.pids[i])
+                    canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
+                en_sav_pred = time.time()
+                logging.info('[canopy2predictions save] time %s', en_sav_pred - st_sav_pred)
+
+        statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated2.pkl'
+        predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '-updated2.pkl'
+
+        torch.save([grinch_trees, canopy2tree_id], statefile)
+        with open(predfile, 'wb') as fin:
+            pickle.dump(canopy2predictions, fin)
+    else:
+        grinch_trees = []
+        canopy2tree_id = dict()
+        canopy2predictions = dict()
+        for c in this_chunk_canopies:
+            all_records = loader.load_canopies([c])
+            all_pids = [x.uuid for x in all_records]
+            all_lbls = -1 * np.ones(len(all_records))
+            all_canopies = [c for c in all_lbls]
+            features = encoding_model.encode(all_records)
+            grinch = WeightedMultiFeatureGrinch(weight_model, features, len(all_pids))
+            grinch.perform_graft = False
+            grinch.build_dendrogram()
+            grinch_trees.append(grinch)
+            canopy2tree_id[c] = len(grinch_trees) - 1
+            grinch_trees[canopy2tree_id[c]].clear_node_features()
+            grinch_trees[canopy2tree_id[c]].points_set = False
+            fc = grinch.flat_clustering(weight_model.aux['threshold'])
+            canopy2predictions[c] = [[], []]
+            for i in range(grinch.num_points):
+                canopy2predictions[all_canopies[i]][0].append(grinch.all_pids[i])
+                canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
+
+        statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated2.pkl'
+        predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '-updated2.pkl'
+        torch.save([grinch_trees, canopy2tree_id], statefile)
+        with open(predfile, 'wb') as fin:
+            pickle.dump(canopy2predictions, fin)
+
+
 def run(config, loader, new_canopies, chunks, singleton_list,
               outdir, job_name='disambig'):
     logging.info('need to run on %s canopies = %s ...', len(new_canopies), str(new_canopies[:5]))
@@ -113,77 +233,37 @@ def run(config, loader, new_canopies, chunks, singleton_list,
     new_canopies_by_chunk = collections.defaultdict(list)
     next_chunk = len(chunks)
 
-    encoding_model = InventorModel.from_config(config)
-    weight_model = torch.load(config['inventor']['model']).eval()
-
     for c in new_canopies:
         if c in canopy2chunks:
             new_canopies_by_chunk[canopy2chunks[c]].append(c)
         else:
             new_canopies_by_chunk[next_chunk].append(c)
 
+    logging.info('number of chunks to process %s', len(new_canopies_by_chunk))
+    total_canopies_to_process = 0
     for this_chunk_id, this_chunk_canopies in new_canopies_by_chunk.items():
-        if this_chunk_id != next_chunk:
+        logging.info('chunk: %s - process %s', this_chunk_id, len(this_chunk_canopies))
+        total_canopies_to_process += len(this_chunk_canopies)
 
-            # Load the grinch trees
-            statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals.pkl'
-            [grinch_trees, canopy2tree_id] = torch.load(statefile)
+    logging.info('number of canopies to process %s', total_canopies_to_process)
+    # yn = input('continue? ')
+    # if yn == 'n':
+    #     import sys
+    #     sys.exit(0)
 
-            # load the old predictions
-            predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '.pkl'
-            with open(predfile, 'rb') as fin:
-                canopy2predictions = pickle.load(fin)
+    chunk_st = time.time()
 
-            for c in this_chunk_canopies:
-                logging.info('Working on canopy %s', c)
-                all_records = loader.load_canopies([c])
-                all_pids = [x.uuid for x in all_records]
-                all_lbls = -1 * np.ones(len(all_records))
-                all_canopies = [c for c in all_lbls]
-                features = encoding_model.encode(all_records)
-                logging.info('Tree ID %s', canopy2tree_id[c])
-                grinch = grinch_trees[canopy2tree_id[c]]
-                grinch.update_and_insert(features, all_pids)
-                fc = grinch.flat_clustering(weight_model.aux['threshold'])
-                grinch.clear_node_features()
-                grinch.points_set = False
-                canopy2predictions[c] = [[], []]
-                for i in range(grinch.num_points):
-                    canopy2predictions[c][0].append(grinch.pids[i])
-                    canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
+    from pathos.multiprocessing import ProcessingPool
+    num_cores = int(config['inventor']['ncpus'])
 
-            statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
-            predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '-updated.pkl'
+    logging.info('using n cores %s', num_cores)
 
-            torch.save([grinch_trees, canopy2tree_id], statefile)
-            with open(predfile, 'wb') as fin:
-                pickle.dump(canopy2predictions, fin)
-        else:
-            grinch_trees = []
-            canopy2tree_id = dict()
-            canopy2predictions = dict()
-            for c in this_chunk_canopies:
-                all_records = loader.load_canopies([c])
-                all_pids = [x.uuid for x in all_records]
-                all_lbls = -1 * np.ones(len(all_records))
-                all_canopies = [c for c in all_lbls]
-                features = encoding_model.encode(all_records)
-                grinch = WeightedMultiFeatureGrinch(weight_model, features, len(all_pids))
-                grinch_trees.append(grinch)
-                canopy2tree_id[c] = len(grinch_trees) - 1
-                grinch_trees[canopy2tree_id[c]].clear_node_features()
-                grinch_trees[canopy2tree_id[c]].points_set = False
-                fc = grinch.flat_clustering(weight_model.aux['threshold'])
-                canopy2predictions[c] = [[], []]
-                for i in range(grinch.num_points):
-                    canopy2predictions[all_canopies[i]][0].append(grinch.all_pids[i])
-                    canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
+    batches = [(config, outdir, this_chunk_id, this_chunk_canopies) for this_chunk_id, this_chunk_canopies in new_canopies_by_chunk.items()]
+    results = [n for n in ProcessingPool().imap(run_chunk, batches)]
 
-            statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
-            predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '-updated.pkl'
-            torch.save([grinch_trees, canopy2tree_id], statefile)
-            with open(predfile, 'wb') as fin:
-                pickle.dump(canopy2predictions, fin)
+    # for this_chunk_id, this_chunk_canopies in tqdm(new_canopies_by_chunk.items(), 'chunks'):
+    #     run_chunk_(config, outdir, this_chunk_id, this_chunk_canopies)
+
 
 
 def run_singletons(config, canopy_list, outdir, job_name='disambig'):
@@ -230,6 +310,7 @@ def main(argv):
 
     # note that this is a map from canopy_name to mention_id
     new_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
+    # new_canopies = [x for x in new_canopies if loader.num_records(x) == 12]
 
     # setup the output dir
     outdir = os.path.join(config['inventor']['outprefix'], 'inventor', config['inventor']['run_id'])
@@ -240,9 +321,13 @@ def main(argv):
 
     logging.info('Number of new canopies %s ', len(new_canopies))
 
+    s = time.time()
     # run the job for the given batch
     run(config, loader, list(new_canopies), chunks, list(singletons), outdir,
               job_name='job-incremental')
+    t = time.time()
+
+    logging.info('total time for incremental update: %s', t-s)
 
 
 

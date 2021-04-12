@@ -23,11 +23,13 @@ def last_name(im):
 
 
 def build_pregrants(config):
+    feature_map = collections.defaultdict(list)
     cnx = pvdb.pregranted_table(config)
+    if cnx is None:
+        return feature_map
     cursor = cnx.cursor()
     query = "SELECT id, document_number, name_first, name_last FROM rawinventor;"
     cursor.execute(query)
-    feature_map = collections.defaultdict(list)
     idx = 0
     for uuid, document_number, name_first, name_last in cursor:
         im = InventorMention(uuid, None, '', name_first if name_first else '', name_last if name_last else '', '', '',
@@ -35,15 +37,18 @@ def build_pregrants(config):
         feature_map[im.record_id].append(last_name(im))
         idx += 1
         logging.log_every_n(logging.INFO, 'Processed %s pregrant records - %s features', 10000, idx, len(feature_map))
+    logging.log(logging.INFO, 'Processed %s pregrant records - %s features', idx, len(feature_map))
     return feature_map
 
 
 def build_granted(config):
+    feature_map = collections.defaultdict(list)
     cnx = pvdb.granted_table(config)
+    if cnx is None:
+        return feature_map
     cursor = cnx.cursor()
     query = "SELECT uuid, patent_id, name_first, name_last FROM rawinventor;"
     cursor.execute(query)
-    feature_map = collections.defaultdict(list)
     idx = 0
     for uuid, patent_id, name_first, name_last in cursor:
         im = InventorMention(uuid, patent_id, '', name_first if name_first else '', name_last if name_last else '', '',
@@ -51,6 +56,7 @@ def build_granted(config):
         feature_map[im.record_id].append(last_name(im))
         idx += 1
         logging.log_every_n(logging.INFO, 'Processed %s granted records - %s features', 10000, idx, len(feature_map))
+    logging.log(logging.INFO, 'Processed %s granted records - %s features', idx, len(feature_map))
     return feature_map
 
 
@@ -67,11 +73,18 @@ def run(source):
 
 def main(argv):
     logging.info('Building coinventor features')
-    feats = [n for n in ProcessingPool().imap(run, ['granted', 'pregranted'])]
-    features = feats[0]
+
     config = configparser.ConfigParser()
     config.read(['config/database_config.ini', 'config/database_tables.ini',
                  'config/inventor/build_coinventor_features_sql.ini'])
+
+    # create output folder if it doesn't exist
+    logging.info('writing results to folder: %s', os.path.dirname(config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out']))
+    os.makedirs(os.path.dirname(config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out']), exist_ok=True)
+
+    feats = [n for n in ProcessingPool().imap(run, ['granted', 'pregranted'])]
+    features = feats[0]
+
     for i in range(1, len(feats)):
         features.update(feats[i])
     with open(config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out'] + '.%s.pkl' % 'both', 'wb') as fout:
