@@ -163,7 +163,7 @@ def main(argv):
     config.read(['config/database_config.ini', 'config/location/run_clustering.ini',
                  'config/database_tables.ini'])
 
-    if len(argv) > 0:
+    if len(argv) > 1:
         logging.info('Using cmd line arg for chunk id %s' % argv[1])
         config['location']['chunk_id'] = argv[1]
 
@@ -190,7 +190,9 @@ def main(argv):
         logging.info('Running singletons!!')
         run_singletons(config, list(singletons), outdir, job_name='job-singletons')
     else:
-        run_batch(config, chunks[int(config['location']['chunk_id'])], outdir, job_name='job-%s' % int(config['location']['chunk_id']))
+        for chunk_id in range(0, num_chunks):
+            print("Starting Chunk ID: {cid}".format(cid=chunk_id))
+            run_batch(config, chunks[chunk_id], outdir, job_name='job-%s' % int(chunk_id))
 
 
 if __name__ == "__main__":

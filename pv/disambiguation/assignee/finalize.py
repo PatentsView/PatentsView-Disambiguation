@@ -13,7 +13,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('input', 'exp_out/assignee/run_26', '')
 flags.DEFINE_string('assignee_name_mentions', 'data/assignee/assignee_mentions.records.pkl', '')
 
-flags.DEFINE_string('output', 'exp_out/assignee/run_26/disambiguation.tsv', '')
+flags.DEFINE_string('output', 'exp_out/assignee/run_26/disambiguation_debug.tsv', '')
 
 logging.set_verbosity(logging.INFO)
 

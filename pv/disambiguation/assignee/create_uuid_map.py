@@ -28,7 +28,7 @@ def create_uuid_map(config):
         granted_uuids['%s-%s' % (patent_id, seq)] = uuid
 
     pg_cursor = cnx_pg.cursor()
-    pg_cursor.execute("SELECT id, document_number, sequence FROM rawassignee;")
+    pg_cursor.execute("SELECT id, document_number, sequence-1 as sequence FROM rawassignee;")
     pgranted_uuids = dict()
     for uuid, doc_id, seq in tqdm(pg_cursor, 'pregranted uuids'):
         pgranted_uuids['pg-%s-%s' % (doc_id, seq)] = uuid

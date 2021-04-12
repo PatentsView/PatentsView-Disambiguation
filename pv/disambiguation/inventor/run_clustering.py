@@ -189,6 +189,8 @@ def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
                 all_canopies = [c for c in all_lbls]
                 features = encoding_model.encode(all_records)
                 grinch = WeightedMultiFeatureGrinch(weight_model, features, len(all_pids))
+                grinch.pids = all_pids
+                grinch.prepare_for_save()
                 grinch_trees.append(grinch)
                 canopy2tree_id[c] = len(grinch_trees)-1
                 grinch_trees[canopy2tree_id[c]].clear_node_features()
@@ -211,9 +213,9 @@ def main(argv):
     logging.info('Config - %s', str(config))
 
     # if argv[] is a chunk id, then use this chunkid instead
-    if len(argv) > 0:
-        logging.info('Using cmd line arg for chunk id %s' % argv[1])
-        config['inventor']['chunk_id'] = argv[1]
+    #if len(argv) > 0:
+    #    logging.info('Using cmd line arg for chunk id %s' % argv[1])
+    #    config['inventor']['chunk_id'] = argv[1]
 
     # A connection to the SQL database that will be used to load the inventor data.
     loader = Loader.from_config(config, 'inventor')
@@ -256,9 +258,10 @@ def main(argv):
         run_singletons(config, loader, list(singletons), outdir, job_name='job-singletons')
     else:
         # run the job for the given batch
-        run_batch(config, chunks[int(config['inventor']['chunk_id'])], outdir,
-                  job_name='job-%s' % int(config['inventor']['chunk_id']))
-
+        for chunk_id in range(0, num_chunks):
+            print("Starting Chunk ID: {cid}".format(cid=chunk_id))
+            run_batch(config, chunks[chunk_id],outdir,
+                  job_name='job-%s' % chunk_id)
 
 
 if __name__ == "__main__":

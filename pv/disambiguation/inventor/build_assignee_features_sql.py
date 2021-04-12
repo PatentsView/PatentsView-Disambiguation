@@ -18,7 +18,7 @@ def build_pregrants(config):
     # | id | document_number | sequence | name_first | name_last | organization | type | rawlocation_id | city | state | country | filename | created_date | updated_date |
     cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
-    query = "SELECT id, document_number, sequence, name_first, name_last, organization, type, rawlocation_id, city, state, country FROM rawassignee"
+    query = "SELECT id, document_number, sequence-1 as sequence, name_first, name_last, organization, type, rawlocation_id, city, state, country FROM rawassignee"
     cursor.execute(query)
     feature_map = collections.defaultdict(list)
     idx = 0

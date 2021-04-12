@@ -87,7 +87,7 @@ def get_pregrants(ids, cnx, max_query_size=300000):
     feature_map = dict()
     for idx in range(0, len(ids), max_query_size):
         id_str = ", ".join(['"%s"' % x for x in ids[idx:idx + max_query_size]])
-        query = "SELECT id, document_number, name_first, name_last, sequence, designation, deceased, rawlocation_id, city, state, country, filename, created_date, updated_date FROM rawinventor WHERE id in (%s);" % id_str
+        query = "SELECT id, document_number, name_first, name_last, sequence-1 as sequence, designation, deceased, rawlocation_id, city, state, country, filename, created_date, updated_date FROM rawinventor WHERE id in (%s);" % id_str
         cursor.execute(query)
         for rec in cursor:
             am = InventorMention.from_application_sql_record(rec)

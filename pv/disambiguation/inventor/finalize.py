@@ -8,8 +8,8 @@ from tqdm import tqdm
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('input', 'exp_out/inventor/run_24', '')
-flags.DEFINE_string('output', 'exp_out/inventor/run_24/disambiguation.tsv', '')
+flags.DEFINE_string('input', 'exp_out/inventor/run_27', '')
+flags.DEFINE_string('output', 'exp_out/inventor/run_27/disambiguation.tsv', '')
 
 logging.set_verbosity(logging.INFO)
 

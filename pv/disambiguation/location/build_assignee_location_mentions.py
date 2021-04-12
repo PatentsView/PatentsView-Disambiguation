@@ -15,7 +15,7 @@ import configparser
 def build_granted(canopy2mentions, granted_uuid2canopy, config):
     cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
-    query = "SELECT id , location_id , city  , state, country, country_transformed, location_id,_transformed  FROM rawlocation;"
+    query = "SELECT id , location_id , city  , state, country, country_transformed, location_id_transformed  FROM rawlocation;"
     cursor.execute(query)
     for rec in tqdm(cursor, 'working on granted patents', total=29032921):
         lm = LocationMention.from_granted_sql_record(rec)

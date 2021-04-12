@@ -180,7 +180,7 @@ def main(argv):
                  'config/database_tables.ini'])
 
     # if argv[] is a chunk id, then use this chunkid instead
-    if len(argv) > 0:
+    if len(argv) > 1:
         logging.info('Using cmd line arg for chunk id %s' % argv[1])
         config['assignee']['chunk_id'] = argv[1]
 
@@ -214,7 +214,9 @@ def main(argv):
             pickle.dump([chunks, list(singletons)], fout)
 
     else:
-        run_batch(config, chunks[int(config['assignee']['chunk_id'])], outdir, loader, job_name='job-%s' % int(config['assignee']['chunk_id']))
+        for i in range(0, num_chunks):
+            config['assignee']['chunk_id'] = str(i)
+            run_batch(config, chunks[int(config['assignee']['chunk_id'])], outdir, loader, job_name='job-%s' % int(config['assignee']['chunk_id']))
 
 
 if __name__ == "__main__":
