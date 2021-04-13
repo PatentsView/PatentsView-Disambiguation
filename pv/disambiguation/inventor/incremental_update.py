@@ -191,6 +191,7 @@ def run_chunk_(config, outdir, this_chunk_id, this_chunk_canopies):
             all_canopies = [c for c in all_lbls]
             features = encoding_model.encode(all_records)
             grinch = WeightedMultiFeatureGrinch(weight_model, features, len(all_pids))
+            grinch.pids = all_pids
             grinch.perform_graft = False
             grinch.build_dendrogram()
             grinch_trees.append(grinch)
