@@ -196,13 +196,13 @@ def run_chunk_(config, outdir, this_chunk_id, this_chunk_canopies):
             grinch.build_dendrogram()
             grinch_trees.append(grinch)
             canopy2tree_id[c] = len(grinch_trees) - 1
-            grinch_trees[canopy2tree_id[c]].clear_node_features()
-            grinch_trees[canopy2tree_id[c]].points_set = False
             fc = grinch.flat_clustering(weight_model.aux['threshold'])
             canopy2predictions[c] = [[], []]
             for i in range(grinch.num_points):
-                canopy2predictions[c][0].append(grinch.all_pids[i])
+                canopy2predictions[c][0].append(grinch.pids[i])
                 canopy2predictions[c][1].append('%s-%s' % (c, fc[i]))
+            grinch_trees[canopy2tree_id[c]].clear_node_features()
+            grinch_trees[canopy2tree_id[c]].points_set = False
 
         statefile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
         predfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + '-updated.pkl'
