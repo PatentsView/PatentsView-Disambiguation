@@ -95,8 +95,8 @@ def run_chunk(args):
 
 def run_chunk_(config, outdir, this_chunk_id, this_chunk_canopies):
     updatedfile = os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated.pkl'
-    if os.path.exists(updatedfile) or os.path.exists(os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated2.pkl'):
-        return
+    # if os.path.exists(updatedfile) or os.path.exists(os.path.join(outdir, 'job-%s' % this_chunk_id) + 'internals-updated2.pkl'):
+    #     return
 
     encoding_model = InventorModel.from_config(config)
     weight_model = torch.load(config['inventor']['model']).eval()
@@ -260,10 +260,11 @@ def run(config, loader, new_canopies, chunks, singleton_list,
     logging.info('using n cores %s', num_cores)
 
     batches = [(config, outdir, this_chunk_id, this_chunk_canopies) for this_chunk_id, this_chunk_canopies in new_canopies_by_chunk.items()]
-    results = [n for n in ProcessingPool(num_cores).imap(run_chunk, batches)]
+    # results = [n for n in ProcessingPool(num_cores).imap(run_chunk, batches)]
 
-    # for this_chunk_id, this_chunk_canopies in tqdm(new_canopies_by_chunk.items(), 'chunks'):
-    #     run_chunk_(config, outdir, this_chunk_id, this_chunk_canopies)
+    for this_chunk_id, this_chunk_canopies in tqdm(new_canopies_by_chunk.items(), 'chunks'):
+        if this_chunk_id == 110 or this_chunk_id == '110':
+            run_chunk_(config, outdir, this_chunk_id, this_chunk_canopies)
 
 
 
