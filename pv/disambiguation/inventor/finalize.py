@@ -22,7 +22,7 @@ def process_file(fout, pkl_file):
 
 
 def process(fout, rundir):
-    for f in tqdm([f for f in os.listdir(rundir) if f.endswith('.pkl') and 'internals' not in f and 'job' in f]):
+    for f in tqdm([f for f in os.listdir(rundir) if f.endswith('.pkl') and 'internals' not in f and 'job' in f and 'updated' in f]):
         process_file(fout, os.path.join(rundir, f))
 
 
