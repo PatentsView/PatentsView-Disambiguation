@@ -23,8 +23,8 @@ Set the following files / values:
 ```
 [DATABASE]
 
-pregranted_table =
-granted_table =
+granted_patent_database =
+pregrant_database =
 ```
 
 #####  config/database_config.ini
@@ -55,7 +55,6 @@ python -m pv.disambiguation.inventor.build_title_map_sql
 
 ```
 python -m pv.disambiguation.inventor.build_canopies_sql
-python -m pv.disambiguation.inventor.build_canopies_sql --source pregranted
 ```
 
 ### Run clustering

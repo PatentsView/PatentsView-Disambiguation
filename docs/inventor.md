@@ -358,41 +358,112 @@ fc = grinch.flat_clustering(weight_model.aux['threshold'])
 Each of these scripts can be run in parallel:
 
 ```bash
-
+python -m pv.disambiguation.inventor.build_assignee_features_sql
+python -m pv.disambiguation.inventor.build_coinventor_features_sql
+python -m pv.disambiguation.inventor.build_title_map_sql
+python -m pv.disambiguation.inventor.build_canopies_sql
 ```
 
-The output of the canopy creation is:
+Each will output a dictionary stored in pickle file(s)
 
-```bash
+The canopies script wil store:
 
+```
+canopies2uuid[canopy_name] = [list_of_uuids]
+e.g.
+canopies2uuid['fl:m_ln:ramaseshan'] = ['3essf45kxyx93pbr234ja64mc', '3wamwmh4wq8no3vberf1h320p', '48ho20qpwccw36wbiyblnu6wv', '6dtd8bga0klz896qjd4f8feqn', '9gwzhan13q4l7vj7y8d2if50h', 'esc86tobe7ureqzafay0b0fqq', 'pmxr0hekf36ujci0bwfuq74z4', 'rrv2yarv9uuc8x3arbbuwfamb', 'tz02w97mt6ag5expzbjfwqorw', 'wo8zrvcquvvs8i5vilbvv2hzo', 'zeaw2bhoonft48zi56sei89ho']
 ```
 
 The output of the assignee features is:
 
 ```bash
-
+features[patent_id] = [list_of_assignee_names]
+e.g.
+features['8022252'] = ['Tranzyme Pharma Inc.']
 ```
 
 The output of the title map is:
 
 ```bash
-
+features[patent_id] = patent_title
+e.g.
+features['pg-20180280413'] = Compositions and Methods For Increasing Telomerase Activity]
 ```
 
 Note that the title features will be vectors.
 
-```
+The output of the co-inventor map is:
 
+```bash
+features['pg-20050119169] = ['deslongchamps', 'dory', 'ouellet', 'villeneuve', 'ramaseshan', 'fortin', 'peterson', 'hoveyda', 'beaubien', 'marsault']
 ```
 
 ### Running Full Batch Clustering
 
 ```
+python -m pv.disambiguation.inventor.run_clustering
+```
+
+We will run this command `num_chunks+1` times (one for each chunk,
+once for the chunk of singletons). We will do so by updating in
+the config file which chunk is to be executed:
 
 ```
+$ vi config/inventor/run_clustering.ini
+chunk_id = singletons
+
+$ vi config/inventor/run_clustering.ini
+chunk_id = 0
+
+$ vi config/inventor/run_clustering.ini
+chunk_id = 1
+
+etc.
+```
+
+Of course this can be done programmatically.
+Also, each chunk can be run independently in
+parallel.
+
 
 ### Running Incremental Updates
 
+To perform an incremental update,
+we will assume that there is a
+new database table that we would like to run
+the disambiguation on.
+
+We will update the corresponding database
+config files to point to those tables:
+
+```
+$ vi config/database_tables.ini
+
+[DATABASE]
+
+granted_patent_database =
+pregrant_database =
 ```
 
+We will update each of the other config files with
+new filenames for the incremental approach: e.g.,
+```
+[INVENTOR_BUILD_ASSIGNEE_FEAT]
+
+feature_out = data/inventor/update_2021_04_11/assignee_features
+```
+
+We then re-run:
+
+```bash
+python -m pv.disambiguation.inventor.build_assignee_features_sql
+python -m pv.disambiguation.inventor.build_coinventor_features_sql
+python -m pv.disambiguation.inventor.build_title_map_sql
+python -m pv.disambiguation.inventor.build_canopies_sql
+```
+
+Now, we can run:
+
+```python
+python -m pv.disambiguation.inventor.incremental_update
 ```
