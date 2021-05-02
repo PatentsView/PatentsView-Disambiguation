@@ -237,42 +237,88 @@ fc = grinch.flat_clustering(model.aux['threshold'])
 #### Partitioning the data
 
 To run the clustering in a more parallelizable way,
-we partition based on canopies.
+we partition based on canopies/blocks.
+
+Each canopy is defined by the first letter & last name of the inventor
+e.g., `'fl:m_ln:ramaseshan'`
 
 We do this by grouping the canopies into chunks:
 
 ```Python
+# grab all the canopies in the dataset
+all_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
 
+# singletons will be treated as their own chunk
+singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
+
+# we sort so that we roughly evenly partition the data into equal sized chunks
+all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
+                             reverse=True)
+
+
+# chunk all of the data by canopy
+chunks = [[] for _ in range(num_chunks)]
+for idx, c in enumerate(all_canopies_sorted):
+    chunks[idx % num_chunks].append(c)
 ```
 
 That is done at the time that `run_clustering.py` is called.
 It will write these chunks to a file:
 
 ```Python
-
+logging.info('Saving chunk to canopy map')
+with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+    pickle.dump([chunks, list(singletons)], fout)
 ```
 
-The type of this data is:
-
-```Python
-
-```
+`chunks` is a list of lists, `chunks[i]` gives the canopies in the ith
+chunk. `singletons` are all the canopies with just a single mention.
+Canopies for inventors are given by strings such as `'fl:m_ln:ramaseshan'`.
 
 
 ### Storage of Results
 
-We store the results of the clustering in two ways:
+The results of disambiguation will be stored in two ways. The first
+will be the results to populate the resulting database,
+the second will support incremental additions.
 
-First we will store the flat clustering results:
+
+First we will store the flat clustering results. These will
+be in a dictionary `canopy2predictions` updated by
 
 ```Python
+# all_pids is a list of UUIDs for the mentions
+# all_canopies is a list of the canopies for the mentions (typically will be all the same canopy)
+canopy2predictions[all_canopies[i]][0].append(all_pids[i])
+canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
 
+# these will be saved in pickle files:
+job_name='chunk-%s' % chunk_number
+results = canopy2predictions
+outfile = os.path.join(outdir, job_name) + '.pkl'
+with open(outfile, 'wb') as fin:
+    pickle.dump(results, fin)
 ```
 
-Then we will store the tree structures built:
-
+Next, we will store the resulting tree structures
+for the sake of incremental additions.
 ```Python
+# trees is a list of all the trees
+tree_id = len(trees)
+# store the tree that is build for this canopy
+trees.append(grinch)
+for i in range(len(all_pids)):
+    # record mapping from canopy to the tree id
+    canopy2tree_id[all_canopies[i]] = tree_id
 
+# we need to use torch to save this pickle file because we store
+# the inventor model as a torch object
+grinch_trees = []
+for idx,t in tqdm(enumerate(tree_list), total=len(tree_list)):
+    grinch = WeightedMultiFeatureGrinch.from_agglom(t, pids_list[idx])
+    grinch.prepare_for_save()
+    grinch_trees.append(grinch)
+torch.save([grinch_trees, canopy2tree_id], outstatefile)
 ```
 
 There will be one file for each chunk.
