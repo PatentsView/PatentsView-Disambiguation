@@ -5,11 +5,11 @@
 
 We'll look at five key steps in disambiguation:
 
-1. Loading data
-2. Featurizing data
-3. Clustering data
-4. Storing results
-5. Incremental additions
+1. [Loading data](#Loading-data)
+2. [Featurizing data](#Featurizing-data)
+3. [Clustering data](#Clustering-data)
+4. [Storing results](#Storing-results)
+5. [Incremental additions](#Incremental-additions)
 
 We will then review how these five steps are called
 in a run of the disambiguation algorithm in the
