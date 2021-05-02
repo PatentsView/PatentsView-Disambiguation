@@ -11,13 +11,14 @@ We'll look at five key steps in disambiguation:
 4. Storing results
 5. Incremental additions
 
-We will then put this all together with pointers in the code
-for how this is run.
+We will then review how these five steps are called
+in a run of the disambiguation algorithm in the
+[Putting it all Together](#Putting-it-all-Together) section.
 
 ### Loading data
 
 The base data structure used in inventor disambiguation is
-an [InventorMention](pv/disambiguation/core.py)
+an [InventorMention](../pv/disambiguation/core.py)
 
 ```Python
 from pv.disambiguation.core import InventorMention
@@ -27,7 +28,7 @@ We can build these objects from a row in the SQL table:
 
 ```Python
 # methods for grabbing data from SQL
-from pv.disambiguation.inventor.load_mysql import get_granted, get_pregranted
+from pv.disambiguation.inventor.load_mysql import get_granted, get_pregrants
 
 # connection to database
 from pv.disambiguation.util.db import granted_table, pregranted_table
@@ -41,7 +42,7 @@ config.read(['config/database_config.ini', 'config/database_tables.ini'])
 granted = granted_table(config)
 
 # build inventor mentions
-id_set = []
+id_set = ['3essf45kxyx93pbr234ja64mc', '3wamwmh4wq8no3vberf1h320p', '48ho20qpwccw36wbiyblnu6wv', '6dtd8bga0klz896qjd4f8feqn', '9gwzhan13q4l7vj7y8d2if50h', 'esc86tobe7ureqzafay0b0fqq', 'pmxr0hekf36ujci0bwfuq74z4', 'rrv2yarv9uuc8x3arbbuwfamb', 'tz02w97mt6ag5expzbjfwqorw', 'wo8zrvcquvvs8i5vilbvv2hzo', 'zeaw2bhoonft48zi56sei89ho']
 # internally this calls mentions = [InventorMention.from_granted_sql_record(r) for r in records]
 mentions = get_granted(id_set, granted)
 ```
@@ -50,6 +51,34 @@ Each of these inventor mentions stores relevant info for disambiguation:
 
 ```Python
 print(mentions[0].__dict__))
+```
+
+```
+{'uuid': '3essf45kxyx93pbr234ja64mc',
+ 'patent_id': '8022252',
+ 'rawlocation_id': 'lhissxq7fdourrpl9zgswsddb',
+ 'raw_last': 'Ramaseshan',
+ 'raw_first': 'Mahesh',
+ 'sequence': '5',
+ 'rule_47': 'FALSE',
+ 'deceased': 'FALSE',
+ 'name': 'Mahesh Ramaseshan',
+ 'document_number': None,
+ 'mention_id': '8022252-5',
+ 'assignees': [],
+ 'title': None,
+ 'coinventors': [],
+ '_first_name': ['mahesh'],
+ '_first_initial': ['m'],
+ '_first_letter': ['m'],
+ '_middle_name': [],
+ '_middle_initial': [],
+ '_suffixes': [],
+ '_last_name': ['ramaseshan'],
+ 'city': None,
+ 'state': None,
+ 'country': None,
+ 'record_id': '8022252'}
 ```
 
 #### Canopies
@@ -69,10 +98,10 @@ loader = Loader.from_config(config, 'inventor')
 We can load data for a particular canopy:
 
 ```Python
-mentions = loader.load_canopies([''])
+mentions = loader.load_canopies(['fl:m_ln:ramaseshan'])
 ```
 
-We'll see how to create these files in the Putting It All Together section.
+We'll see how to create these files in the [Putting it all Together](#Putting-it-all-Together) section.
 
 
 ### Featurizing Data
@@ -84,6 +113,7 @@ To do so,  we need to load the model which will provide
 the features:
 
 ```Python
+from pv.disambiguation.inventor.model import InventorModel
 encoding_model = InventorModel.from_config(config)
 ```
 
@@ -96,17 +126,15 @@ print(list(map(encoding_model.feature_list),lambda x: x.name)))
 Notice that the model uses these features:
 
 ```
-
+['title', 'first_name', 'middle_initial', 'middle_name', 'suffix', 'canopy', 'coinventors', 'assignees']
 ```
 
-Each feature will have a name and information about how it is computed:
+Each feature has a name and information about how it is computed:
 
 ```Python
+# (name, computation, how to aggregate feature in cluster, is must link constraint, is must not link constraint)
 (first_name, FeatCalc.NO_MATCH, CentroidType.BINARY, False, True)
-```
-
-```Python
-(title_model, FeatCalc.DOT, CentroidType.NORMED, False, False)
+(title_model, FeatCalc.DOT, CentroidType.NORMED, False, False),
 ```
 
 Given a set of records, we extract their features using:
@@ -121,7 +149,69 @@ The result is a list of tuples:
 print(features)
 ```
 
+```
+[('title',
+  True,
+  700,
+  array([[-0.02830344, -0.02209232, -0.06242473, ..., -0.02439391,
+           0.04169574, -0.03287862],
+         [-0.02812981, -0.02057877, -0.01793056, ..., -0.019576  ,
+           0.02303531, -0.07892601],
+         [-0.04294564, -0.05394144,  0.02167187, ..., -0.02340932,
+          -0.02886444, -0.07576558],
+         ...,
+         [-0.0297003 , -0.0040316 , -0.04299174, ...,  0.00533789,
+           0.01088064, -0.06962568],
+         [-0.00942719,  0.01676086,  0.01141414, ..., -0.02976037,
+          -0.04124262,  0.0052724 ],
+         [-0.04569396, -0.03412756, -0.01593411, ..., -0.00681357,
+           0.01439461, -0.04614205]], dtype=float32),
+  <FeatCalc.DOT: 2>,
+  <CentroidType.NORMED: 2>),
+ ('first_name',
+  True,
+  1,
+  array([[244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674],
+         [244674]], dtype=int32),
+ ('coinventors',
+  False,
+  1048576,
+  <24x1048576 sparse matrix of type '<class 'numpy.float32'>'
+        with 173 stored elements in Compressed Sparse Row format>,
+  <FeatCalc.DOT: 2>,
+  <CentroidType.NORMED: 2>),
+  ...]
+```
+
 These features will form the basis of our clustering model.
+Each tuple in the list has the form
+ `(name, is_dense_feature, dim, features (num mentions by dim), how to compute feature, how to compute aggregate)`
+A couple of things to note about the features: title features
+are vector embeddings from the Sent2Vec model, name features are hashes
+of the names of the inventor, coinventor names are also hashed and
+stored as sparse vectors in a scipy CSR matrix.
 
 ### Clustering model
 
@@ -136,13 +226,13 @@ model = torch.load(config['inventor']['model']).eval()
 Run the clustering:
 
 ```Python
+from grinch.agglom import Agglom
 grinch = Agglom(model, features, num_points=len(mentions))
 grinch.build_dendrogram_hac()
 fc = grinch.flat_clustering(model.aux['threshold'])
 ```
 
-
-Want to know more about what goes on inside this code?
+`fc[i]` gives the cluster assignment of the `i`th record in `mentions`.
 
 #### Partitioning the data
 
@@ -215,7 +305,7 @@ grinch.update_and_insert(features, all_pids)
 fc = grinch.flat_clustering(weight_model.aux['threshold'])
 ```
 
-## Putting it all together
+## Putting it all Together
 
 ### Canopies & Featurizers
 
