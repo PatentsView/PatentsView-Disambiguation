@@ -132,7 +132,7 @@ Notice that the model uses these features:
 Each feature has a name and information about how it is computed:
 
 ```Python
-# (name, computation, how to aggregate feature in cluster, is must link constraint, is must not link constraint)
+# (encoder, computation, how to aggregate feature in cluster, is must link constraint, is must not link constraint)
 (first_name, FeatCalc.NO_MATCH, CentroidType.BINARY, False, True)
 (title_model, FeatCalc.DOT, CentroidType.NORMED, False, False),
 ```
