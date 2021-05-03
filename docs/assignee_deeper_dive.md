@@ -174,4 +174,17 @@ class Agglom(object):
 HAC will produce a tree structure. We then will extract a flat clustering
 using `flat_clustering` which cuts the tree according to a given threshold.
 
+## Pain Points & Remedies
+
+We observe:
+
+1. Issues with canopies & string similarity in some cases
+
+We will:
+
+1. Implement stop fixes in form of constraints
+2. Analyze performance of alternative string similarity & canopy definitions
+3. Incorporate additional entity KB information or features into assignee disambiguation model.
+
+
 

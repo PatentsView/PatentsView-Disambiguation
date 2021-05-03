@@ -28,7 +28,7 @@ We load the `AssigneeNameMention`s from a precomputed pickle file of data.
 from pv.disambiguation.core import AssigneeNameMention
 ```
 
-We can build these objects from a row in the SQL table:
+We load these mentions by:
 
 ```Python
 from pv.disambiguation.assignee.load_name_mentions import Loader
