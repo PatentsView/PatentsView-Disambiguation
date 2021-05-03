@@ -141,22 +141,166 @@ using the linear model to combine them as seen [here](https://github.com/iesl/gr
 
 ### Clustering Algorithms
 
+We use [hierarchical agglomerative clustering (HAC)](https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html)
+for clustering in the batch setting and [Grinch](https://github.com/iesl/grinch) for the incremental setting.
+
+Let's start by discussing HAC. To cluster a canopy of `N` points,
+we will need to build the full `N^2` similarity matrix, which is
+done using the model described above. We use a wrapper around
+scipy's [linkage](https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html) function [agglom.py](https://github.com/iesl/grinch/blob/main/src/python/grinch/agglom.py).
+
+This wrapper class looks like this:
+
+```Python
+class Agglom(object):
+    """ Hierarchical agglomerative clustering with learned linear model w/ rules."""
+
+    def __init__(self, model, features, num_points, min_allowable_sim=-20000.0):
+        """ Constructor for Agglom.
+
+        :param model: Pairwise linear scoring function
+        :param features: features used in linear model.
+        :param num_points: number of points that we are clustering
+        :param min_allowable_sim: minimum allowable similarity (used for rule-based models)
+        """
+
+        self.model = model
+        self.features = features
+        self.num_points = num_points
+
+        logging.info('Using len(features)=%s', len(features))
+        self.dense_features = [(fn, is_dense, dim, feat_mat, feat_calc, centroid_type)
+                               for fn, is_dense, dim, feat_mat, feat_calc, centroid_type in features if is_dense]
+        self.sparse_features = [(fn, is_dense, dim, feat_mat, feat_calc, centroid_type)
+                                for fn, is_dense, dim, feat_mat, feat_calc, centroid_type in features if not is_dense]
+
+        logging.info('%s dense features: %s', len(self.dense_features), ', '.join([x[0] for x in self.dense_features]))
+        logging.info('%s sparse features: %s', len(self.sparse_features),
+                     ', '.join([x[0] for x in self.sparse_features]))
+
+        self.min_allowable_sim = min_allowable_sim
+
+        self.dense_point_features = []
+        self.sparse_point_features = []
+        self.dense_feature_id = dict()
+        for idx, (fn, is_dense, dim, feat_mat, _, _) in enumerate(self.dense_features):
+            self.dense_feature_id[fn] = idx
+            self.dense_point_features.append(feat_mat)
+
+        self.sparse_feature_id = dict()
+        for idx, (fn, is_dense, dim, feat_mat, _, _) in enumerate(self.sparse_features):
+            self.sparse_feature_id[fn] = idx
+            # analyze_sparsity(feat_mat, fn)
+            self.sparse_point_features.append(feat_mat)
+
+        self.dists = None
+        self.Z = None
+
+    def all_thresholds(self):
+        """All possible ways to cut a tree."""
+        return self.Z[:, 2]
+
+    def flat_clustering(self, threshold):
+        """A flat clustering extracted from the tree by cutting at the given distance threshold.
+
+        :param threshold: distance threshold
+        :return: res - N element array such that res[i] is the cluster id of the ith point.
+        """
+        return fcluster(self.Z, threshold, criterion='distance')
+
+    def build_dendrogram_hac(self):
+        """Run HAC inference."""
+        st_sims = time.time()
+        sims = self.csim_multi_feature_knn_batched(np.arange(self.num_points), np.arange(self.num_points))
+        self.sims = sims
+        en_sims = time.time()
+        logging.info('Time to compute sims: %s', en_sims - st_sims)
+        logging.info('Finished batched similarities!')
+        st_prep = time.time()
+        pos_sim = np.maximum(sims, self.min_allowable_sim) - np.minimum(0.0, self.min_allowable_sim)
+        dists = 1 / (1 + pos_sim)
+        dists = (dists + dists.T) / 2.0
+        np.fill_diagonal(dists, 0.0)
+        dists = squareform(dists)
+        self.dists = dists
+        en_prep = time.time()
+        logging.info('Time to compute sims: %s', en_prep - st_prep)
+        logging.info('Finished preparing distances!')
+        logging.info('Running hac')
+        st_linkage = time.time()
+        Z = linkage(dists, method='average')
+        self.Z = Z
+        en_linkage = time.time()
+        logging.info('Time to run HAC: %s', en_linkage - st_linkage)
+        logging.info('Finished hac!')
+```
+
+HAC will produce a tree structure. We then will extract a flat clustering
+using `flat_clustering` which cuts the tree according to a given threshold.
+
+The HAC algorithm does not define how to add incrementally arriving
+data to an existing tree structure and so we use Grinch which provides
+incremental updates.
+
+We will serialize the tree structure built using HAC:
+
+```Python
+logging.info('Beginning to save all tree structures....')
+grinch_trees = []
+for idx,t in tqdm(enumerate(tree_list), total=len(tree_list)):
+    grinch = WeightedMultiFeatureGrinch.from_agglom(t, pids_list[idx])
+    grinch.prepare_for_save()
+    grinch_trees.append(grinch)
+torch.save([grinch_trees, canopy2tree_id], outstatefile)
+```
+
+This serialized tree stores all of the features and all of the information
+about the mentions needed to provide an updated disambiguation. Notable
+it has the UUIDs (pids).
+
+`TODO: Walk through of update procedure`
+
 ### Storage of data
 
 ### Training a model
 
-## Pain Points
+We have a script to train the pairwise model:
+
+```
+python -m pv.disambiguation.inventor.train_model --training_data data/inventor-train/eval_common_characteristics.train --dev_data data/inventor-train/eval_common_characteristics.dev --max_num_dev_canopies 200
+```
+
+`TODO: Additional details`
+
+## Pain Points & Remedies
 
 ### Memory Usage
 
+High memory usage comes from:
+
+1. Feature maps sitting in memory
+2. Sent2Vec model sitting in memory
+3. Computing full O(N^2) similarity matrix for HAC.
+
+To remedy this, we will:
+1. On-the-fly construct the feature maps using SQL queries
+2. Reduce dimensionality of Sent2Vec model or [quantize](https://fasttext.cc/docs/en/faqs.html) it
+3. Switch to HAC / Grinch using a sparse k-NN graph ~O(NK) space (typically, comparable or better accuracy in practice)
+
 ### Disk Usage
 
-### Chunking of canopies
+High disk usage comes from:
+1. Storing the featurized representations in the serialized trees for incremental updates
 
-## Proposed Changes
+To remedy this we will:
+1. We will not store featurized representations, but recompute features using the on-the-fly feature maps described above.
 
-### Reduce Feature Map sizes
+### Static, file-based chunking of canopies
 
-### Run Specific Canopies
+Debugging and organization issue:
 
-### Sparse + Constraints
+1. Currently we create a partition of the data by canopy that is static
+and causes bulky chunk-based parallelism that can require too much recomputation when debugging
+
+To remedy this we will:
+1. Store serialized tree structures in a database rather than pickle files
