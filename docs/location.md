@@ -122,7 +122,7 @@ These features correspond to:
 We use a custom similarity for LocationData.
 This is a rule-based method:
 
-```
+```Python
 class LocationAgglom(Agglom):
     def __init__(self, model, features, num_points):
         super(LocationAgglom, self).__init__(model, features, num_points, min_allowable_sim=0.0)
