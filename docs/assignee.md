@@ -18,7 +18,7 @@ in a run of the disambiguation algorithm in the
 There are two kinds of mentions that we will be using:
 
 - [AssigneeMention](../pv/disambiguation/core.py#L174) - Corresponds to one row in the rawassignee table
-- [AssigneeNameMention](../pv/disambiguation/core.py#L312) - Corresponds to one unique string spelling of an assignee
+- [AssigneeNameMention](../pv/disambiguation/core.py#L312) - Corresponds to one unique string spelling (using the relaxed string match) of an assignee
 
 Recall that we assume that if two assignee names have identical spelling that the two are the same assignee.
 
