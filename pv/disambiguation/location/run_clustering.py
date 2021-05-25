@@ -15,9 +15,9 @@ from pv.disambiguation.location.model import LocationAgglom, LocationModelWithAp
 logging.set_verbosity(logging.INFO)
 
 
-def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions):
+def run_on_batch(config, all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions):
     features = encoding_model.encode(all_records)
-    grinch = LocationAgglom(model, features, num_points=len(all_pids))
+    grinch = LocationAgglom(model, features, num_points=len(all_pids),relaxed_sim_threshold=float(config['location']['relaxed_sim_threshold']))
     grinch.build_dendrogram_hac()
     fc = grinch.flat_clustering(model.aux['threshold'])
     canopy2cluster2mentions = dict()
@@ -91,7 +91,7 @@ def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
           batcher(to_run_on, loader, int(config['location']['min_batch_size']))):
             logging.info('[%s] run_batch %s - %s - processed %s mentions', job_name, idx, len(canopy_list),
                          num_mentions_processed)
-            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results)
+            run_on_batch(config,all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results)
             # if idx % 10000 == 0:
             #     wandb.log({'computed': idx + int(config['location']['chunk_id']) * int(config['location']['chunk_size']), 'num_mentions': num_mentions_processed})
             #     logging.info('[%s] caching results for job', job_name)
@@ -193,6 +193,8 @@ def main(argv):
         for chunk_id in range(0, num_chunks):
             print("Starting Chunk ID: {cid}".format(cid=chunk_id))
             run_batch(config, chunks[chunk_id], outdir, job_name='job-%s' % int(chunk_id))
+        # print("Starting Chunk ID: {cid}".format(cid=config['location']['chunk_id']))
+        # run_batch(config, chunks[int(config['location']['chunk_id'])], outdir, loader, job_name='job-%s' % int(int(config['location']['chunk_id'])))
 
 
 if __name__ == "__main__":
