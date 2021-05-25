@@ -8,8 +8,8 @@ from tqdm import tqdm
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('input', 'exp_out/inventor/run_27', '')
-flags.DEFINE_string('output', 'exp_out/inventor/run_27/disambiguation.tsv', '')
+flags.DEFINE_string('input', 'exp_out/inventor/run_32', '')
+flags.DEFINE_string('output', 'exp_out/inventor/run_32/disambiguation.tsv', '')
 
 logging.set_verbosity(logging.INFO)
 
@@ -22,7 +22,7 @@ def process_file(fout, pkl_file):
 
 
 def process(fout, rundir):
-    for f in tqdm([f for f in os.listdir(rundir) if f.endswith('.pkl') and 'internals' not in f and 'job' in f and 'updated' in f]):
+    for f in tqdm([f for f in os.listdir(rundir) if f.endswith('.pkl') and 'internals' not in f and 'job' in f and 'update' not in f]):
         process_file(fout, os.path.join(rundir, f))
 
 

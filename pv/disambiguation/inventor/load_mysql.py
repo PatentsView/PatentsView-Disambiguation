@@ -13,13 +13,14 @@ class Loader(object):
         self.granted_canopies = granted_canopies
         self.cnx_g = pvdb.granted_table(config)
         self.cnx_pg = pvdb.pregranted_table(config)
-
+        self.cnx_g_inc = pvdb.incremental_granted_table(config)
+        self.cnx_pg_inc = pvdb.incremental_pregranted_table(config)
 
     def load(self, canopy):
         return load_canopy(canopy,
                            self.pregranted_canopies[canopy] if canopy in self.pregranted_canopies else [],
                            self.granted_canopies[canopy] if canopy in self.granted_canopies else [],
-                           self.cnx_pg, self.cnx_g)
+                           self.cnx_pg, self.cnx_g, self.cnx_pg_inc, self.cnx_g_inc)
 
     def ids_for(self, canopies):
         return [x for canopy in canopies for x in
@@ -33,7 +34,7 @@ class Loader(object):
                             (self.pregranted_canopies[canopy] if canopy in self.pregranted_canopies else [])],
                            [x for canopy in canopies for x in
                             (self.granted_canopies[canopy] if canopy in self.granted_canopies else [])],
-                           self.cnx_pg, self.cnx_g)
+                           self.cnx_pg, self.cnx_g, self.cnx_pg_inc, self.cnx_g_inc)
 
     def num_records(self, canopy):
         return len(self.pregranted_canopies[canopy] if canopy in self.pregranted_canopies else []) + len(
@@ -68,11 +69,15 @@ class Loader(object):
         l = Loader(pregranted_canopies, granted_canopies, config)
         return l
 
-def load_canopy(canopy_name, pregrant_ids, granted_ids, cnx_pg, cnx_g):
+def load_canopy(canopy_name, pregrant_ids, granted_ids, cnx_pg, cnx_g, cnx_pg_inc=None, cnx_g_inc=None):
     logging.info('Loading data from canopy %s, %s pregranted, %s granted', canopy_name, len(pregrant_ids),
                  len(granted_ids))
     rec = (get_pregrants(pregrant_ids, cnx_pg) if pregrant_ids else []) + (
         get_granted(granted_ids, cnx_g) if granted_ids else [])
+    if cnx_pg_inc is not None:
+        rec.extend(get_pregrants(pregrant_ids, cnx_pg_inc) if pregrant_ids else [])
+    if cnx_g_inc is not None:
+        rec.extend(get_granted(granted_ids, cnx_g_inc) if pregrant_ids else [])
     return rec
 
 
@@ -88,7 +93,7 @@ def get_granted(ids, cnx, max_query_size=300000):
             am = InventorMention.from_granted_sql_record(rec)
             feature_map[am.uuid] = am
     missed = [x for x in ids if x not in feature_map]
-    logging.warning('[get_granted] missing %s ids: %s', len(missed), str(missed))
+    logging.warning('[get_granted] got: %s, missing %s', len(feature_map), len(missed))
     return [feature_map[x] for x in ids if x in feature_map]  # sorted order.
 
 
@@ -105,5 +110,5 @@ def get_pregrants(ids, cnx, max_query_size=300000):
             feature_map[am.uuid] = am
             idx += 1
     missed = [x for x in ids if x not in feature_map]
-    logging.warning('[get_pregrants] missing %s ids: %s', len(missed), str(missed))
+    logging.warning('[get_pregrants] got: %s, missing %s', len(feature_map), len(missed))
     return [feature_map[x] for x in ids if x in feature_map]  # sorted order.

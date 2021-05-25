@@ -160,13 +160,13 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
 
-    logging.info('Beginning to save all tree structures....')
-    grinch_trees = []
-    for idx,t in tqdm(enumerate(tree_list), total=len(tree_list)):
-        grinch = WeightedMultiFeatureGrinch.from_agglom(t, pids_list[idx])
-        grinch.prepare_for_save()
-        grinch_trees.append(grinch)
-    torch.save([grinch_trees, canopy2tree_id], outstatefile)
+    # logging.info('Beginning to save all tree structures....')
+    # grinch_trees = []
+    # for idx,t in tqdm(enumerate(tree_list), total=len(tree_list)):
+    #     grinch = WeightedMultiFeatureGrinch.from_agglom(t, pids_list[idx])
+    #     grinch.prepare_for_save()
+    #     grinch_trees.append(grinch)
+    # torch.save([grinch_trees, canopy2tree_id], outstatefile)
 
 def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
     logging.info('need to run on %s canopies = %s ...', len(singleton_list), str(singleton_list[:5]))
@@ -199,22 +199,22 @@ def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
     for c in singleton_list:
         new_canopies_by_chunk['singletons'].append(c)
 
-    for this_chunk_id, this_chunk_canopies in new_canopies_by_chunk.items():
-        grinch_trees = []
-        canopy2tree_id = dict()
-        for c in this_chunk_canopies:
-            all_records = loader.load_canopies([c])
-            if len(all_records) > 0:
-                all_pids = [x.uuid for x in all_records]
-                all_lbls = -1 * np.ones(len(all_records))
-                all_canopies = [c for c in all_lbls]
-                features = encoding_model.encode(all_records)
-                grinch = WeightedMultiFeatureGrinch(weight_model, features, len(all_pids))
-                grinch.pids = all_pids
-                grinch.prepare_for_save()
-                grinch_trees.append(grinch)
-                canopy2tree_id[c] = len(grinch_trees)-1
-        torch.save([grinch_trees, canopy2tree_id], statefile)
+    # for this_chunk_id, this_chunk_canopies in tqdm(new_canopies_by_chunk.items()):
+    #     grinch_trees = []
+    #     canopy2tree_id = dict()
+    #     for c in this_chunk_canopies:
+    #         all_records = loader.load_canopies([c])
+    #         if len(all_records) > 0:
+    #             all_pids = [x.uuid for x in all_records]
+    #             all_lbls = -1 * np.ones(len(all_records))
+    #             all_canopies = [c for c in all_lbls]
+    #             features = encoding_model.encode(all_records)
+    #             grinch = WeightedMultiFeatureGrinch(weight_model, features, len(all_pids))
+    #             grinch.pids = all_pids
+    #             grinch.prepare_for_save()
+    #             grinch_trees.append(grinch)
+    #             canopy2tree_id[c] = len(grinch_trees)-1
+    #     torch.save([grinch_trees, canopy2tree_id], statefile)
 
     if to_run_on:
         handle_singletons(results, to_run_on, loader)
@@ -256,7 +256,7 @@ def main(argv):
     outdir = os.path.join(config['inventor']['outprefix'], 'inventor', config['inventor']['run_id'])
 
     # the number of chunks based on the specified chunksize
-    num_chunks = int(len(all_canopies_sorted) / int(config['inventor']['chunk_size']))
+    num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])) )
 
     logging.info('%s num_chunks', num_chunks)
     logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
