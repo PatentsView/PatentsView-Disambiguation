@@ -190,9 +190,11 @@ def main(argv):
         logging.info('Running singletons!!')
         run_singletons(config, list(singletons), outdir, job_name='job-singletons')
     else:
-        # for chunk_id in range(0, num_chunks):
-        print("Starting Chunk ID: {cid}".format(cid=config['location']['chunk_id']))
-        run_batch(config, chunks[int(config['location']['chunk_id'])], outdir, loader, job_name='job-%s' % int(int(config['location']['chunk_id'])))
+        for chunk_id in range(0, num_chunks):
+            print("Starting Chunk ID: {cid}".format(cid=chunk_id))
+            run_batch(config, chunks[chunk_id], outdir, job_name='job-%s' % int(chunk_id))
+        # print("Starting Chunk ID: {cid}".format(cid=config['location']['chunk_id']))
+        # run_batch(config, chunks[int(config['location']['chunk_id'])], outdir, loader, job_name='job-%s' % int(int(config['location']['chunk_id'])))
 
 
 if __name__ == "__main__":
