@@ -192,7 +192,7 @@ def main(argv):
     else:
         for chunk_id in range(0, num_chunks):
             print("Starting Chunk ID: {cid}".format(cid=chunk_id))
-            run_batch(config, chunks[chunk_id], outdir, job_name='job-%s' % int(chunk_id))
+            run_batch(config, chunks[chunk_id], outdir, loader=loader, job_name='job-%s' % int(chunk_id))
         # print("Starting Chunk ID: {cid}".format(cid=config['location']['chunk_id']))
         # run_batch(config, chunks[int(config['location']['chunk_id'])], outdir, loader, job_name='job-%s' % int(int(config['location']['chunk_id'])))
 
