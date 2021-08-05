@@ -6,46 +6,46 @@ from absl import app
 from absl import flags
 from absl import logging
 from tqdm import tqdm
+import configparser
 
 from pv.disambiguation.inventor import load_mysql
-
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string('input', 'exp_out/inventor/run_24/disambiguation.tsv', '')
-flags.DEFINE_string('uuidmap', 'data/inventor/uuid2mentionid.tsv', '')
-flags.DEFINE_string('output', 'exp_out/inventor/run_24/disambiguation.tsv.toScore', '')
-
-flags.DEFINE_string('pregranted_canopies', 'data/inventor/canopies.pregranted.pkl', '')
-flags.DEFINE_string('granted_canopies', 'data/inventor/canopies.granted.pkl', '')
-flags.DEFINE_boolean('create_tables', False, '')
+import pv.disambiguation.util.db as pvdb
 
 logging.set_verbosity(logging.INFO)
 
 
-def create_tables():
-    cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                    database='patent_20200630')
-    cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                     database='pregrant_publications')
+def create_tables(config):
+    cnx_g = pvdb.granted_table(config)
+    cnx_pg = pvdb.pregranted_table(config)
 
     g_cursor = cnx_g.cursor()
     g_cursor.execute(
-        "CREATE TABLE tmp_inventor_disambiguation_granted (uuid VARCHAR(255), disambiguated_id VARCHAR(255))")
+        "CREATE TABLE tmp_inventor_disambiguation_granted2 (uuid VARCHAR(255), disambiguated_id VARCHAR(255))")
     pg_cursor = cnx_pg.cursor()
     pg_cursor.execute(
-        "CREATE TABLE tmp_inventor_disambiguation_pregranted (uuid VARCHAR(255), disambiguated_id VARCHAR(255))")
+        "CREATE TABLE tmp_inventor_disambiguation_pregranted2 (uuid VARCHAR(255), disambiguated_id VARCHAR(255))")
     g_cursor.close()
     pg_cursor.close()
 
 
-def upload():
-    loader = load_mysql.Loader.from_flags(FLAGS)
+def upload(config):
+    loader = load_mysql.Loader.from_config(config)
     pregranted_ids = set([y for x in loader.pregranted_canopies.values() for y in x])
     granted_ids = set([y for x in loader.granted_canopies.values() for y in x])
 
+    disamb = dict()
+    with open(config['INVENTOR_UPLOAD']['input'], 'r') as fin:
+        for line in fin:
+            splt = line.strip().split('\t')
+            if len(splt) != 2:
+                print('error %s' % str(splt))
+            else:
+                disamb[splt[0]] = splt[1]
+
+
     pairs_pregranted = []
     pairs_granted = []
-    with open(FLAGS.input, 'r') as fin:
+    with open(config['INVENTOR_UPLOAD']['input'], 'r') as fin:
         for line in fin:
             splt = line.strip().split('\t')
             if splt[0] in pregranted_ids:
@@ -53,10 +53,8 @@ def upload():
             elif splt[0] in granted_ids:
                 pairs_granted.append((splt[0], splt[1]))
 
-    cnx_g = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                    database='patent_20200630')
-    cnx_pg = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                     database='pregrant_publications')
+    cnx_g = pvdb.granted_table(config)
+    cnx_pg = pvdb.pregranted_table(config)
 
     g_cursor = cnx_g.cursor()
     batch_size = 100000
@@ -64,12 +62,12 @@ def upload():
     for idx in tqdm(range(len(offsets)), 'adding granted', total=len(offsets)):
         sidx = offsets[idx]
         eidx = min(len(pairs_granted), offsets[idx] + batch_size)
-        sql = "INSERT INTO tmp_inventor_disambiguation_granted (uuid, disambiguated_id) VALUES " + ', '.join(
+        sql = "INSERT INTO tmp_inventor_disambiguation_granted2 (uuid, disambiguated_id) VALUES " + ', '.join(
             ['("%s", "%s")' % x for x in pairs_granted[sidx:eidx]])
         # logging.log_first_n(logging.INFO, '%s', 1, sql)
         g_cursor.execute(sql)
     cnx_g.commit()
-    g_cursor.execute('alter table tmp_inventor_disambiguation_granted add primary key (uuid)')
+    g_cursor.execute('alter table tmp_inventor_disambiguation_granted2 add primary key (uuid)')
     cnx_g.close()
 
     pg_cursor = cnx_pg.cursor()
@@ -78,19 +76,22 @@ def upload():
     for idx in tqdm(range(len(offsets)), 'adding pregranted', total=len(offsets)):
         sidx = offsets[idx]
         eidx = min(len(pairs_pregranted), offsets[idx] + batch_size)
-        sql = "INSERT INTO tmp_inventor_disambiguation_pregranted (uuid, disambiguated_id) VALUES " + ', '.join(
+        sql = "INSERT INTO tmp_inventor_disambiguation_pregranted2 (uuid, disambiguated_id) VALUES " + ', '.join(
             ['("%s", "%s")' % x for x in pairs_pregranted[sidx:eidx]])
         # logging.log_first_n(logging.INFO, '%s', 1, sql)
         pg_cursor.execute(sql)
     cnx_pg.commit()
-    pg_cursor.execute('alter table tmp_inventor_disambiguation_pregranted add primary key (uuid)')
+    pg_cursor.execute('alter table tmp_inventor_disambiguation_pregranted2 add primary key (uuid)')
     cnx_pg.close()
 
 
 def main(argv):
-    if FLAGS.create_tables:
-        create_tables()
-    upload()
+
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/inventor/upload.ini', 'config/inventor/run_clustering.ini'])
+
+    upload(config)
 
 
 if __name__ == "__main__":

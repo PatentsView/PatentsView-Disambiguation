@@ -7,39 +7,14 @@ from absl import app
 from absl import flags
 from absl import logging
 from grinch.agglom import Agglom
+from grinch.multifeature_grinch import WeightedMultiFeatureGrinch
 from grinch.model import LinearAndRuleModel
-
+import torch
 from pv.disambiguation.assignee.load_name_mentions import Loader
 from pv.disambiguation.assignee.model import AssigneeModel
+from tqdm import tqdm
 
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string('assignee_canopies', 'data/assignee/assignee_mentions.canopies.pkl', '')
-flags.DEFINE_string('assignee_mentions', 'data/assignee/assignee_mentions.records.pkl', '')
-flags.DEFINE_string('assignee_name_model', 'data/assignee/permid/permid_vectorizer.pkl', '')
-
-flags.DEFINE_string('model', 'exp_out/disambiguation-inventor-patentsview/solo/1rib1zt6/model-1000.torch', '')
-
-flags.DEFINE_string('patent_titles', 'data/inventor/title_features.both.pkl', '')
-flags.DEFINE_string('coinventors', 'data/inventor/coinventor_features.both.pkl', '')
-flags.DEFINE_string('assignees', 'data/inventor/assignee_features.both.pkl', '')
-flags.DEFINE_string('title_model', 'exp_out/sent2vec/patents/2020-05-10-15-08-42/model.bin', '')
-
-flags.DEFINE_string('rawinventor', '/iesl/data/patentsview/2020-06-10/rawinventor.tsv', 'data path')
-flags.DEFINE_string('outprefix', 'exp_out', 'data path')
-flags.DEFINE_string('run_id', 'run_3', 'data path')
-
-flags.DEFINE_string('dataset_name', 'patentsview', '')
-flags.DEFINE_string('exp_name', 'disambiguation-inventor', '')
-
-flags.DEFINE_string('base_id_file', '', '')
-
-flags.DEFINE_integer('chunk_size', 10000, '')
-flags.DEFINE_integer('chunk_id', 1000, '')
-flags.DEFINE_integer('min_batch_size', 900, '')
-
-flags.DEFINE_integer('max_canopy_size', 900, '')
-flags.DEFINE_float('sim_threshold', 0.80, '')
+import configparser
 
 logging.set_verbosity(logging.INFO)
 
@@ -59,16 +34,25 @@ def batched_canopy_process(datasets, model, encoding_model):
     return run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model)
 
 
-def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions):
+def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree, trees, pids_list, canopy_list):
     features = encoding_model.encode(all_records)
     grinch = Agglom(model, features, num_points=len(all_pids), min_allowable_sim=0)
     grinch.build_dendrogram_hac()
     fc = grinch.flat_clustering(model.aux['threshold'])
-    # import pdb
-    # pdb.set_trace()
+    logging.info('run_on_batch - threshold %s, linkages: min %s, max %s, avg %s, std %s',
+                 model.aux['threshold'],
+                 np.min(grinch.all_thresholds()),
+                 np.max(grinch.all_thresholds()),
+                 np.mean(grinch.all_thresholds()),
+                 np.std(grinch.all_thresholds()))
+    tree_id = len(trees)
+    trees.append(grinch)
+    pids_list.append(all_pids)
+    canopy_list.append(all_canopies)
     for i in range(len(all_pids)):
         if all_canopies[i] not in canopy2predictions:
             canopy2predictions[all_canopies[i]] = [[], []]
+            canopy2tree[all_canopies[i]] = tree_id
         canopy2predictions[all_canopies[i]][0].append(all_pids[i])
         canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
     return canopy2predictions
@@ -101,13 +85,19 @@ def batcher(canopy_list, loader, min_batch_size=800):
         yield all_pids, all_lbls, all_records, all_canopies
 
 
-def run_batch(canopy_list, outdir, loader, job_name='disambig'):
+def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
     logging.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
 
     os.makedirs(outdir, exist_ok=True)
     results = dict()
+    canopy2tree_id = dict()
+    tree_list = []
+    pids_list = []
+    pids_canopy_list = []
     outfile = os.path.join(outdir, job_name) + '.pkl'
+    outstatefile = os.path.join(outdir, job_name) + 'internals.pkl'
     num_mentions_processed = 0
+    num_canopies_processed = 0
     if os.path.exists(outfile):
         with open(outfile, 'rb') as fin:
             results = pickle.load(fin)
@@ -118,24 +108,36 @@ def run_batch(canopy_list, outdir, loader, job_name='disambig'):
     if len(to_run_on) == 0:
         logging.info('already had all canopies completed! wrapping up here...')
 
-    encoding_model = AssigneeModel.from_flags(FLAGS)
+    encoding_model = AssigneeModel.from_config(config)
     weight_model = LinearAndRuleModel.from_encoding_model(encoding_model)
-    weight_model.aux['threshold'] = 1 / (1 + FLAGS.sim_threshold)
+    weight_model.aux['threshold'] = 1.0 / (1.0 + float(config['assignee']['sim_threshold']))
+    logging.info('[%s] using threshold %s ', job_name, weight_model.aux['threshold'])
 
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
-          batcher(to_run_on, loader, FLAGS.min_batch_size)):
+          batcher(to_run_on, loader, int(config['assignee']['min_batch_size']))):
             logging.info('[%s] run_batch %s - %s - processed %s mentions', job_name, idx, len(canopy_list),
                          num_mentions_processed)
-            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results)
+            num_mentions_processed += len(all_pids)
+            num_canopies_processed += np.unique(all_canopies).shape[0]
+            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results, canopy2tree_id, tree_list, pids_list, pids_canopy_list)
             if idx % 10 == 0:
-                wandb.log({'computed': idx + FLAGS.chunk_id * FLAGS.chunk_size, 'num_mentions': num_mentions_processed})
-                logging.info('[%s] caching results for job', job_name)
-                with open(outfile, 'wb') as fin:
-                    pickle.dump(results, fin)
+                logging.info({'computed': idx + int(config['assignee']['chunk_id']) * int(config['assignee']['chunk_size']), 'num_mentions': num_mentions_processed})
+            #     logging.info('[%s] caching results for job', job_name)
+            #     with open(outfile, 'wb') as fin:
+            #         pickle.dump(results, fin)
 
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
+
+    logging.info('Beginning to save all tree structures....')
+    grinch_trees = []
+    for idx,t in tqdm(enumerate(tree_list),total=len(tree_list)):
+        grinch = WeightedMultiFeatureGrinch.from_agglom(t, pids_list[idx], pids_canopy_list[idx])
+        grinch.clear_node_features()
+        grinch.points_set = False
+        grinch_trees.append(grinch)
+    torch.save([grinch_trees, canopy2tree_id], outstatefile)
 
 
 def handle_singletons(canopy2predictions, singleton_canopies, loader):
@@ -172,12 +174,22 @@ def run_singletons(canopy_list, outdir, loader, job_name='disambig'):
 
 def main(argv):
     logging.info('Running clustering - %s ', str(argv))
-    wandb.init(project="%s-%s" % (FLAGS.exp_name, FLAGS.dataset_name))
-    wandb.config.update(flags.FLAGS)
 
-    loader = Loader.from_flags(FLAGS)
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/assignee/run_clustering.ini',
+                 'config/database_tables.ini'])
+
+    # if argv[] is a chunk id, then use this chunkid instead
+    if len(argv) > 1:
+        logging.info('Using cmd line arg for chunk id %s' % argv[1])
+        config['assignee']['chunk_id'] = argv[1]
+
+    # wandb.init(project="%s-%s" % (config['assignee']['exp_name'], config['assignee']['dataset_name']))
+    # wandb.config.update(config)
+
+    loader = Loader.from_config(config)
     all_canopies = set(loader.assignee_canopies.keys())
-    all_canopies = set([x for x in all_canopies if loader.num_records(x) < FLAGS.max_canopy_size])
+    all_canopies = set([x for x in all_canopies if loader.num_records(x) < int(config['assignee']['max_canopy_size'])])
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
                                  reverse=True)
@@ -186,20 +198,25 @@ def main(argv):
     logging.info('Largest canopies - ')
     for c in all_canopies_sorted[:10]:
         logging.info('%s - %s records', c, loader.num_records(c))
-    outdir = os.path.join(FLAGS.outprefix, 'assignee', FLAGS.run_id)
-    num_chunks = int(len(all_canopies_sorted) / FLAGS.chunk_size)
+    outdir = os.path.join(config['assignee']['outprefix'], 'assignee', config['assignee']['run_id'])
+    num_chunks = int(len(all_canopies_sorted) / int(config['assignee']['chunk_size']))
     logging.info('%s num_chunks', num_chunks)
-    logging.info('%s chunk_size', FLAGS.chunk_size)
-    logging.info('%s chunk_id', FLAGS.chunk_id)
+    logging.info('%s chunk_size', int(config['assignee']['chunk_size']))
+    logging.info('%s chunk_id', (config['assignee']['chunk_id']))
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
-    if FLAGS.chunk_id == 0:
+    if config['assignee']['chunk_id'] == 'singletons':
         logging.info('Running singletons!!')
         run_singletons(list(singletons), outdir, job_name='job-singletons', loader=loader)
+        with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+            pickle.dump([chunks, list(singletons)], fout)
 
-    run_batch(chunks[FLAGS.chunk_id], outdir, loader, job_name='job-%s' % FLAGS.chunk_id)
+    else:
+        for i in range(0, num_chunks):
+            config['assignee']['chunk_id'] = str(i)
+            run_batch(config, chunks[int(config['assignee']['chunk_id'])], outdir, loader, job_name='job-%s' % int(config['assignee']['chunk_id']))
 
 
 if __name__ == "__main__":

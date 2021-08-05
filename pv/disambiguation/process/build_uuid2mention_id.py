@@ -1,9 +1,7 @@
 
 import collections
 import mysql.connector
-from er.patents.core import InventorMention
 from absl import logging
-import pickle
 from tqdm import tqdm
 
 from absl import app
@@ -14,10 +12,13 @@ flags.DEFINE_string('output', 'data/inventor/uuid2mentionid.tsv', '')
 flags.DEFINE_string('source', 'pregranted', 'pregranted or granted')
 
 import os
+import configparser
+import pv.disambiguation.util.db as pvdb
 
 
-def build_granted(fout):
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'],'.mylogin.cnf'), database='patent_20200630')
+
+def build_granted(fout,config):
+    cnx =  pvdb.granted_table(config)
     cursor = cnx.cursor()
     query = "SELECT uuid, patent_id, sequence FROM rawinventor;"
     cursor.execute(query)
@@ -26,8 +27,11 @@ def build_granted(fout):
 
 def main(argv):
     logging.info('Building uuid2mid')
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini'])
+
     with open(FLAGS.output, 'w') as fout:
-        build_granted(fout)
+        build_granted(fout, config)
 
 if __name__ == "__main__":
     app.run(main)

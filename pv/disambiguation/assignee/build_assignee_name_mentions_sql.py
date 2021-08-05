@@ -5,11 +5,10 @@ import mysql.connector
 from absl import app
 from absl import flags
 from absl import logging
+import configparser
 
 from pv.disambiguation.core import AssigneeMention, AssigneeNameMention
-
-FLAGS = flags.FLAGS
-flags.DEFINE_string('feature_out', 'data/assignee/assignee_mentions', '')
+import pv.disambiguation.util.db as pvdb
 
 import os
 
@@ -18,12 +17,11 @@ def last_name(im):
     return im.last_name()[0] if len(im.last_name()) > 0 else im.uuid
 
 
-def build_pregrants():
+def build_pregrants(config):
     # | id | document_number | sequence | name_first | name_last | organization | type | rawlocation_id | city | state | country | filename | created_date | updated_date |
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='pregrant_publications')
+    cnx = pvdb.pregranted_table(config)
     cursor = cnx.cursor()
-    query = "SELECT * FROM rawassignee;"
+    query = "SELECT id, document_number, sequence -1 as sequence, name_first, name_last, organization, type, rawlocation_id, city, state, country FROM rawassignee"
     cursor.execute(query)
     feature_map = collections.defaultdict(list)
     idx = 0
@@ -35,12 +33,11 @@ def build_pregrants():
     return feature_map
 
 
-def build_granted():
+def build_granted(config):
     # | uuid | patent_id | assignee_id | rawlocation_id | type | name_first | name_last | organization | sequence |
-    cnx = mysql.connector.connect(option_files=os.path.join(os.environ['HOME'], '.mylogin.cnf'),
-                                  database='patent_20200630')
+    cnx = pvdb.granted_table(config)
     cursor = cnx.cursor()
-    query = "SELECT * FROM rawassignee;"
+    query = "SELECT uuid , patent_id , assignee_id , rawlocation_id , type , name_first , name_last , organization , sequence FROM rawassignee;"
     cursor.execute(query)
     feature_map = collections.defaultdict(list)
     idx = 0
@@ -52,17 +49,23 @@ def build_granted():
     return feature_map
 
 
-def run(source):
+def run(args):
+    source, config = args[0], args[1]
     if source == 'pregranted':
-        features = build_pregrants()
+        features = build_pregrants(config)
     elif source == 'granted':
-        features = build_granted()
+        features = build_granted(config)
     return features
 
 
 def main(argv):
     logging.info('Building assignee mentions')
-    feats = [n for n in map(run, ['granted', 'pregranted'])]
+
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/assignee/build_name_mentions_sql.ini'])
+
+    feats = [n for n in map(run, [('granted',config), ('pregranted',config)])]
     # feats = [run('granted')]
     logging.info('finished loading mentions %s', len(feats))
     name_mentions = set(feats[0].keys()).union(set(feats[1].keys()))
@@ -77,9 +80,9 @@ def main(argv):
             canopies[c].add(anm.uuid)
         records[anm.uuid] = anm
 
-    with open(FLAGS.feature_out + '.%s.pkl' % 'records', 'wb') as fout:
+    with open(config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out'] + '.%s.pkl' % 'records', 'wb') as fout:
         pickle.dump(records, fout)
-    with open(FLAGS.feature_out + '.%s.pkl' % 'canopies', 'wb') as fout:
+    with open(config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out'] + '.%s.pkl' % 'canopies', 'wb') as fout:
         pickle.dump(canopies, fout)
 
 

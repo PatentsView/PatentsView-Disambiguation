@@ -11,8 +11,8 @@ import pickle
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('input', 'exp_out/location/run_8', '')
-flags.DEFINE_string('output', 'exp_out/location/run_8/disambiguation.tsv', '')
+flags.DEFINE_string('input', 'exp_out/location/run_12', '')
+flags.DEFINE_string('output', 'exp_out/location/run_12/disambiguation.tsv', '')
 
 logging.set_verbosity(logging.INFO)
 
@@ -24,7 +24,7 @@ def process_file(fout, pkl_file):
             fout.write('%s\t%s\n' % (res[0][idx], res[1][idx]))
 
 def process(fout, rundir):
-    for f in tqdm([f for f in os.listdir(rundir) if f.endswith('.pkl')]):
+    for f in tqdm([f for f in os.listdir(rundir) if f.endswith('.pkl') and 'internals' not in f and 'job' in f]):
         process_file(fout, os.path.join(rundir, f))
 
 def main(argv):

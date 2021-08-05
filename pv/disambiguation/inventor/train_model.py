@@ -1,7 +1,6 @@
 import os
 import pickle
 
-import wandb
 from absl import app
 from absl import flags
 from absl import logging
@@ -12,7 +11,8 @@ from tqdm import tqdm
 
 from pv.disambiguation.core import load_inventor_mentions
 from pv.disambiguation.inventor.model import InventorModel
-from pv.disambiguation.inventor.run_clustering import FLAGS
+from absl.flags import FLAGS
+import configparser
 
 flags.DEFINE_string('training_data',
                     'data/evaluation-data/inventor/handlabeled/gold-labels.txt',
@@ -43,15 +43,15 @@ flags.DEFINE_integer('max_num_dev_canopies', 50, '')
 
 flags.DEFINE_string('canopy2record_dict', 'data/inventor/canopy2record_first_letter_last_name_dict.pkl', '')
 flags.DEFINE_string('record2canopy_dict', 'data/inventor/record2canopy_first_letter_last_name_dict.pkl', '')
+flags.DEFINE_string('rawinventor', 'data/patentsview/2020-06-10/rawinventor.tsv', 'data path')
+flags.DEFINE_string('outprefix', 'exp_out', '')
 
 
 def main(argv):
     logging.info('Running clustering with argv %s', str(argv))
-    wandb.init(project="%s-%s" % (FLAGS.exp_name, FLAGS.dataset_name))
-    wandb.config.update(flags.FLAGS)
-
-    outdir = os.path.join(FLAGS.outprefix, wandb.env.get_project(), os.environ.get(wandb.env.SWEEP_ID, 'solo'),
-                          wandb.env.get_run())
+    import uuid
+    run_id = str(uuid.uuid4())
+    outdir = os.path.join(FLAGS.outprefix, run_id)
 
     logging.info('outdir %s', outdir)
 
@@ -183,7 +183,13 @@ def main(argv):
     logging.info('Number of train canopies: %s', len(train_datasets))
     logging.info('Number of dev canopies: %s', len(dev_datasets))
 
-    encoding_model = InventorModel.from_flags(FLAGS)
+    # Load the config files
+
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/inventor/run_clustering.ini', 'config/database_tables.ini'])
+    logging.info('Config - %s', str(config))
+
+    encoding_model = InventorModel.from_config(config)
 
     model = LinearAndRuleModel.from_encoding_model(encoding_model)
 

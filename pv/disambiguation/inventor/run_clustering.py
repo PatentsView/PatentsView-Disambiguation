@@ -8,37 +8,14 @@ from absl import app
 from absl import flags
 from absl import logging
 from grinch.agglom import Agglom
+from grinch.multifeature_grinch import WeightedMultiFeatureGrinch
+import configparser
+from tqdm import tqdm
 
 from pv.disambiguation.inventor.load_mysql import Loader
 from pv.disambiguation.inventor.model import InventorModel
 
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string('pregranted_canopies', 'data/inventor/canopies.pregranted.pkl', '')
-flags.DEFINE_string('granted_canopies', 'data/inventor/canopies.granted.pkl', '')
-
-flags.DEFINE_string('model', 'exp_out/disambiguation-inventor-patentsview/solo/1gylsq4m/model-1000.torch', '')
-
-flags.DEFINE_string('patent_titles', 'data/inventor/title_features.both.pkl', '')
-flags.DEFINE_string('coinventors', 'data/inventor/coinventor_features.both.pkl', '')
-flags.DEFINE_string('assignees', 'data/inventor/assignee_features.both.pkl', '')
-flags.DEFINE_string('title_model', 'exp_out/sent2vec/patents/2020-05-10-15-08-42/model.bin', '')
-
-flags.DEFINE_string('rawinventor', '/iesl/data/patentsview/2020-06-10/rawinventor.tsv', 'data path')
-flags.DEFINE_string('outprefix', 'exp_out', 'data path')
-flags.DEFINE_string('run_id', 'run_3', 'data path')
-
-flags.DEFINE_string('dataset_name', 'patentsview', '')
-flags.DEFINE_string('exp_name', 'disambiguation-inventor', '')
-
-flags.DEFINE_string('base_id_file', '', '')
-
-flags.DEFINE_integer('chunk_size', 10000, '')
-flags.DEFINE_integer('chunk_id', 1000, '')
-flags.DEFINE_integer('min_batch_size', 900, '')
-
 logging.set_verbosity(logging.INFO)
-
 
 def handle_singletons(canopy2predictions, singleton_canopies, loader):
     for s in singleton_canopies:
@@ -51,19 +28,53 @@ def handle_singletons(canopy2predictions, singleton_canopies, loader):
     return canopy2predictions
 
 
-def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions):
+def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree, trees, pids_list):
+    """
+
+    :param all_pids: Ids of the records we are running on
+    :param all_lbls: Labels (or blank labels if they are not available)
+    :param all_records: The records (i.e. features - python strings of the inventor name, assignee etc)
+    :param all_canopies: The canopies of each record (right now this is always all the same canopy)
+    :param model: linear scoring / similarity model which takes in two feature vectors and gives a similarity
+    :param encoding_model: mapping from all_records gives you something that is input to model
+    :param canopy2predictions: where results are stored
+    :param canopy2tree: where results are stored
+    :param trees: where results are stored
+    :param pids_list: where results are stored
+    :return:
+    """
+    # extracting features
     features = encoding_model.encode(all_records)
-    # grinch = WeightedMultiFeatureGrinch(model, features, num_points=len(all_pids), max_nodes=3 * len(all_pids))
-    grinch = Agglom(model, features, num_points=len(all_pids))
-    grinch.build_dendrogram_hac()
-    # grinch.get_score_batch(grinch.all_valid_internal_nodes())
-    fc = grinch.flat_clustering(model.aux['threshold'])
-    for i in range(len(all_pids)):
-        if all_canopies[i] not in canopy2predictions:
-            canopy2predictions[all_canopies[i]] = [[], []]
-        canopy2predictions[all_canopies[i]][0].append(all_pids[i])
-        canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
-    return canopy2predictions
+    if len(all_pids) > 1:
+        # running clustering
+        grinch = Agglom(model, features, num_points=len(all_pids))
+        grinch.build_dendrogram_hac()
+        fc = grinch.flat_clustering(model.aux['threshold'])
+        # storing the state of the clustering for the intremental setting
+        tree_id = len(trees)
+        # store the tree that is build for this canopy
+        trees.append(grinch)
+        pids_list.append(all_pids)
+        for i in range(len(all_pids)):
+            # record mapping from canopy to the tree id
+            canopy2tree[all_canopies[i]] = tree_id
+            if all_canopies[i] not in canopy2predictions:
+                canopy2predictions[all_canopies[i]] = [[], []]
+                canopy2tree[all_canopies[i]] = tree_id
+            # save predictions (used in the non incremental setting)
+            canopy2predictions[all_canopies[i]][0].append(all_pids[i])
+            canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
+        return canopy2predictions
+    else:
+        raise Exception('Must have non-singleton canopies')
+        fc = [0]
+        for i in range(len(all_pids)):
+            if all_canopies[i] not in canopy2predictions:
+                canopy2predictions[all_canopies[i]] = [[], []]
+                canopy2tree[all_canopies[i]] = None
+            canopy2predictions[all_canopies[i]][0].append(all_pids[i])
+            canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
+        return canopy2predictions
 
 
 def needs_predicting(canopy_list, results, loader):
@@ -102,19 +113,23 @@ def batch(canopy_list, loader, min_batch_size=800):
             yield all_pids, all_lbls, all_records, all_canopies
 
 
-def run_batch(canopy_list, outdir, job_name='disambig', singletons=None):
+def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None):
     logging.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
 
     os.makedirs(outdir, exist_ok=True)
     results = dict()
+    canopy2tree_id = dict()
+    tree_list = []
+    pids_list = []
     outfile = os.path.join(outdir, job_name) + '.pkl'
+    outstatefile = os.path.join(outdir, job_name) + 'internals.pkl'
     num_mentions_processed = 0
     num_canopies_processed = 0
     if os.path.exists(outfile):
         with open(outfile, 'rb') as fin:
             results = pickle.load(fin)
 
-    loader = Loader.from_flags(FLAGS)
+    loader = Loader.from_config(config, 'inventor')
 
     to_run_on = needs_predicting(canopy_list, results, loader)
     logging.info('had results for %s, running on %s', len(canopy_list) - len(to_run_on), len(to_run_on))
@@ -122,33 +137,50 @@ def run_batch(canopy_list, outdir, job_name='disambig', singletons=None):
     if len(to_run_on) == 0:
         logging.info('already had all canopies completed! wrapping up here...')
 
-    encoding_model = InventorModel.from_flags(FLAGS)
-    weight_model = torch.load(FLAGS.model).eval()
+    encoding_model = InventorModel.from_config(config)
+    weight_model = torch.load(config['inventor']['model']).eval()
 
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
-          batch(to_run_on, loader, FLAGS.min_batch_size)):
+          batch(to_run_on, loader, int(config['inventor']['min_batch_size']))):
             logging.info('[%s] run_batch %s - %s of %s - processed %s mentions', job_name, idx, num_canopies_processed,
                          len(canopy_list),
                          num_mentions_processed)
-            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results)
+            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results, canopy2tree_id, tree_list, pids_list)
             num_mentions_processed += len(all_pids)
             num_canopies_processed += np.unique(all_canopies).shape[0]
             if idx % 10 == 0:
-                wandb.log({'computed': idx + FLAGS.chunk_id * FLAGS.chunk_size, 'num_mentions': num_mentions_processed,
+                logging.info({'computed': idx + int(config['inventor']['chunk_id']) * int(config['inventor']['chunk_size']),
+                           'num_mentions': num_mentions_processed,
                            'num_canopies_processed': num_canopies_processed})
-                logging.info('[%s] caching results for job', job_name)
-                with open(outfile, 'wb') as fin:
-                    pickle.dump(results, fin)
+            #     logging.info('[%s] caching results for job', job_name)
+            #     with open(outfile, 'wb') as fin:
+            #         pickle.dump(results, fin)
 
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
 
+    # logging.info('Beginning to save all tree structures....')
+    # grinch_trees = []
+    # for idx,t in tqdm(enumerate(tree_list), total=len(tree_list)):
+    #     grinch = WeightedMultiFeatureGrinch.from_agglom(t, pids_list[idx])
+    #     grinch.prepare_for_save()
+    #     grinch_trees.append(grinch)
+    # torch.save([grinch_trees, canopy2tree_id], outstatefile)
 
-def run_singletons(canopy_list, outdir, job_name='disambig'):
-    logging.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
+def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
+    logging.info('need to run on %s canopies = %s ...', len(singleton_list), str(singleton_list[:5]))
 
     os.makedirs(outdir, exist_ok=True)
+    statefile = os.path.join(outdir, job_name) + 'internals.pkl'
+
+    import collections
+
+    new_canopies_by_chunk = collections.defaultdict(list)
+
+    encoding_model = InventorModel.from_config(config)
+    weight_model = torch.load(config['inventor']['model']).eval()
+
     results = dict()
     outfile = os.path.join(outdir, job_name) + '.pkl'
     num_mentions_processed = 0
@@ -156,13 +188,33 @@ def run_singletons(canopy_list, outdir, job_name='disambig'):
         with open(outfile, 'rb') as fin:
             results = pickle.load(fin)
 
-    loader = Loader.from_flags(FLAGS)
+    loader = Loader.from_config(config, 'inventor')
 
-    to_run_on = needs_predicting(canopy_list, results, loader)
-    logging.info('had results for %s, running on %s', len(canopy_list) - len(to_run_on), len(to_run_on))
+    to_run_on = needs_predicting(singleton_list, results, loader)
+    logging.info('had results for %s, running on %s', len(singleton_list) - len(to_run_on), len(to_run_on))
 
     if len(to_run_on) == 0:
         logging.info('already had all canopies completed! wrapping up here...')
+
+    for c in singleton_list:
+        new_canopies_by_chunk['singletons'].append(c)
+
+    # for this_chunk_id, this_chunk_canopies in tqdm(new_canopies_by_chunk.items()):
+    #     grinch_trees = []
+    #     canopy2tree_id = dict()
+    #     for c in this_chunk_canopies:
+    #         all_records = loader.load_canopies([c])
+    #         if len(all_records) > 0:
+    #             all_pids = [x.uuid for x in all_records]
+    #             all_lbls = -1 * np.ones(len(all_records))
+    #             all_canopies = [c for c in all_lbls]
+    #             features = encoding_model.encode(all_records)
+    #             grinch = WeightedMultiFeatureGrinch(weight_model, features, len(all_pids))
+    #             grinch.pids = all_pids
+    #             grinch.prepare_for_save()
+    #             grinch_trees.append(grinch)
+    #             canopy2tree_id[c] = len(grinch_trees)-1
+    #     torch.save([grinch_trees, canopy2tree_id], statefile)
 
     if to_run_on:
         handle_singletons(results, to_run_on, loader)
@@ -172,34 +224,63 @@ def run_singletons(canopy_list, outdir, job_name='disambig'):
 
 
 def main(argv):
-    logging.info('Running clustering - %s ', str(argv))
-    wandb.init(project="%s-%s" % (FLAGS.exp_name, FLAGS.dataset_name))
-    wandb.config.update(flags.FLAGS)
+    logging.info('Running clustering - argv =  %s ', str(argv))
 
-    loader = Loader.from_flags(FLAGS)
+    # Load the config files
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/inventor/run_clustering.ini', 'config/database_tables.ini'])
+    logging.info('Config - %s', str(config))
+
+    # if argv[] is a chunk id, then use this chunkid instead
+    #if len(argv) > 0:
+    #    logging.info('Using cmd line arg for chunk id %s' % argv[1])
+    #    config['inventor']['chunk_id'] = argv[1]
+
+    # A connection to the SQL database that will be used to load the inventor data.
+    loader = Loader.from_config(config, 'inventor')
+
+    # Find all of the canopies in the entire dataset.
     all_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
                                  reverse=True)
+
+    # Find some stats of the data before chunking it
     logging.info('Number of canopies %s ', len(all_canopies_sorted))
     logging.info('Number of singletons %s ', len(singletons))
     logging.info('Largest canopies - ')
     for c in all_canopies_sorted[:10]:
         logging.info('%s - %s records', c, loader.num_records(c))
-    outdir = os.path.join(FLAGS.outprefix, 'inventor', FLAGS.run_id)
-    num_chunks = int(len(all_canopies_sorted) / FLAGS.chunk_size)
+
+    # setup the output dir
+    outdir = os.path.join(config['inventor']['outprefix'], 'inventor', config['inventor']['run_id'])
+
+    # the number of chunks based on the specified chunksize
+    num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])) )
+
     logging.info('%s num_chunks', num_chunks)
-    logging.info('%s chunk_size', FLAGS.chunk_size)
-    logging.info('%s chunk_id', FLAGS.chunk_id)
+    logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
+    logging.info('%s chunk_id', config['inventor']['chunk_id'])
+
+    # chunk all of the data by canopy
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
-    if FLAGS.chunk_id == 0:
-        logging.info('Running singletons!!')
-        run_singletons(list(singletons), outdir, job_name='job-singletons')
+    # chunk 0 will write out the meta data and singleton information
+    if (config['inventor']['chunk_id']) == 'singletons':
+        logging.info('Saving chunk to canopy map')
+        with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+            pickle.dump([chunks, list(singletons)], fout)
 
-    run_batch(chunks[FLAGS.chunk_id], outdir, job_name='job-%s' % FLAGS.chunk_id)
+        logging.info('Running singletons!!')
+        run_singletons(config, loader, list(singletons), outdir, job_name='job-singletons')
+    else:
+        # run the job for the given batch
+        for chunk_id in range(0, num_chunks):
+            print("Starting Chunk ID: {cid}".format(cid=chunk_id))
+            run_batch(config, chunks[chunk_id],outdir,
+                  job_name='job-%s' % chunk_id)
 
 
 if __name__ == "__main__":
