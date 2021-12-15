@@ -3,8 +3,8 @@ import configparser
 import pickle
 
 from absl import app
-from absl import logging
 from pathos.multiprocessing import ProcessingPool
+from absl import logging
 
 import pv.disambiguation.util.db as pvdb
 from pv.disambiguation.core import AssigneeMention

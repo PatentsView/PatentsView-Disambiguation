@@ -123,6 +123,18 @@ class InventorMention(object):
             return InventorMention(splt[0], splt[1], splt[3], splt[4], splt[5], splt[6], splt[7], splt[8])
 
     @staticmethod
+    def from_sql_record_dict(rec):
+        return InventorMention(uuid=rec.get('uuid', None),
+                               patent_id=rec.get('patent_id', None),
+                               rawlocation_id=rec.get('rawlocation_id', None),
+                               name_first=rec.get('name_first', None),
+                               name_last=rec.get('name_last', None),
+                               sequence=rec.get('sequence', None), rule_47=rec.get('rule_47', None),
+                               deceased=rec.get('deceased', None), document_number=rec.get('document_number', None),
+                               city=rec.get('city', None), state=rec.get('state', None),
+                               country=rec.get('country', None))
+
+    @staticmethod
     def from_application_sql_record(rec):
         # | id | document_number | name_first | name_last | sequence | designation | deceased | rawlocation_id | city | state | country | filename | created_date | updated_date |
         uuid = rec[0]
@@ -274,6 +286,18 @@ class AssigneeMention(object):
             return None
         else:
             return AssigneeMention(splt[0], splt[1], splt[3], splt[4], splt[5], splt[6], splt[7], splt[8])
+
+    @staticmethod
+    def from_sql_records(rec: dict):
+        return AssigneeMention(uuid=rec.get('uuid', rec.get('id', None)),
+                               patent_id=rec.get('patent_id', None),
+                               rawlocation_id=rec.get('rawlocation_id'),
+                               assignee_type=rec.get('type'),
+                               raw_first=rec.get('name_first'), raw_last=rec.get('name_last'),
+                               organization=rec.get('organization'), sequence=rec.get('sequence'),
+                               city=rec.get('city'), state=rec.get('state'), country=rec.get('coutnry'),
+                               document_number=rec.get('document_number', None)
+                               )
 
     @staticmethod
     def from_application_sql_record(rec):

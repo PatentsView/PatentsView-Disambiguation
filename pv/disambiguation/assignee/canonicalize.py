@@ -47,7 +47,7 @@ SELECT app_ra.assignee_id, organization, name_first, name_last, p.date as doc_da
     """
     assignee_core_query = assignee_core_template.format(limit=limit,
                                                         offset=offset)
-    assignee_data_query = assignee_data_template.format(pgpubs_database=config['DATABASE']['PGPUBS_DATABASE'],
+    assignee_data_query = assignee_data_template.format(pgpubs_database=config['DATABASE_SETUP']['PGPUBS_DATABASE'],
                                                         inv_core_query=assignee_core_query)
 
     current_assignee_data = pd.read_sql_query(sql=assignee_data_query, con=engine)
@@ -81,7 +81,7 @@ def precache_assignee(config):
     SELECT distinct assignee_id from rawassignee
     UNION
     SELECT distinct assignee_id from {pgpubs_database}.rawassignee;
-    """.format(pgpubs_database=config['DATABASE']['PGPUBS_DATABASE'])
+    """.format(pgpubs_database=config['DATABASE_SETUP']['PGPUBS_DATABASE'])
     engine = create_engine(get_connection_string(config, "NEW_DB"))
     engine.execute(assignee_cache_query)
 

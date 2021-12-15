@@ -1,21 +1,20 @@
+import configparser
+import multiprocessing as mp
 import os
 import pickle
 
 import numpy as np
 import torch
-import wandb
 from absl import app
-from absl import flags
 from absl import logging
 from grinch.agglom import Agglom
-from grinch.multifeature_grinch import WeightedMultiFeatureGrinch
-import configparser
-from tqdm import tqdm
 
 from pv.disambiguation.inventor.load_mysql import Loader
 from pv.disambiguation.inventor.model import InventorModel
+from pv.disambiguation.util.config_util import prepare_inventor_config
 
 logging.set_verbosity(logging.INFO)
+
 
 def handle_singletons(canopy2predictions, singleton_canopies, loader):
     for s in singleton_canopies:
@@ -28,7 +27,8 @@ def handle_singletons(canopy2predictions, singleton_canopies, loader):
     return canopy2predictions
 
 
-def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree, trees, pids_list):
+def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree,
+                 trees, pids_list):
     """
 
     :param all_pids: Ids of the records we are running on
@@ -142,17 +142,19 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
 
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
-          batch(to_run_on, loader, int(config['inventor']['min_batch_size']))):
+                batch(to_run_on, loader, int(config['inventor']['min_batch_size']))):
             logging.info('[%s] run_batch %s - %s of %s - processed %s mentions', job_name, idx, num_canopies_processed,
                          len(canopy_list),
                          num_mentions_processed)
-            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results, canopy2tree_id, tree_list, pids_list)
+            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results,
+                         canopy2tree_id, tree_list, pids_list)
             num_mentions_processed += len(all_pids)
             num_canopies_processed += np.unique(all_canopies).shape[0]
             if idx % 10 == 0:
-                logging.info({'computed': idx + int(config['inventor']['chunk_id']) * int(config['inventor']['chunk_size']),
-                           'num_mentions': num_mentions_processed,
-                           'num_canopies_processed': num_canopies_processed})
+                logging.info(
+                    {'computed': idx + int(config['inventor']['chunk_id']) * int(config['inventor']['chunk_size']),
+                     'num_mentions': num_mentions_processed,
+                     'num_canopies_processed': num_canopies_processed})
             #     logging.info('[%s] caching results for job', job_name)
             #     with open(outfile, 'wb') as fin:
             #         pickle.dump(results, fin)
@@ -167,6 +169,7 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
     #     grinch.prepare_for_save()
     #     grinch_trees.append(grinch)
     # torch.save([grinch_trees, canopy2tree_id], outstatefile)
+
 
 def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
     logging.info('need to run on %s canopies = %s ...', len(singleton_list), str(singleton_list[:5]))
@@ -223,21 +226,9 @@ def run_singletons(config, loader, singleton_list, outdir, job_name='disambig'):
         pickle.dump(results, fin)
 
 
-def main(argv):
-    logging.info('Running clustering - argv =  %s ', str(argv))
-
-    # Load the config files
-    config = configparser.ConfigParser()
-    config.read(['config/database_config.ini', 'config/inventor/run_clustering.ini', 'config/database_tables.ini'])
-    logging.info('Config - %s', str(config))
-
-    # if argv[] is a chunk id, then use this chunkid instead
-    #if len(argv) > 0:
-    #    logging.info('Using cmd line arg for chunk id %s' % argv[1])
-    #    config['inventor']['chunk_id'] = argv[1]
-
+def run_clustering(config):
     # A connection to the SQL database that will be used to load the inventor data.
-    loader = Loader.from_config(config, 'inventor')
+    loader = Loader.from_config(config)
 
     # Find all of the canopies in the entire dataset.
     all_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
@@ -253,10 +244,10 @@ def main(argv):
         logging.info('%s - %s records', c, loader.num_records(c))
 
     # setup the output dir
-    outdir = os.path.join(config['inventor']['outprefix'], 'inventor', config['inventor']['run_id'])
+    outdir = config['inventor']['clustering_output_folder']
 
     # the number of chunks based on the specified chunksize
-    num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])) )
+    num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])))
 
     logging.info('%s num_chunks', num_chunks)
     logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
@@ -266,21 +257,29 @@ def main(argv):
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
-
+    pool = mp.Pool()
+    argument_list = [(config, chunks[x], outdir, 'job-%s' % x) for x in range(0, num_chunks)]
+    dev_null = [
+        n for n in pool.starmap(
+            run_batch, argument_list)
+    ]
     # chunk 0 will write out the meta data and singleton information
-    if (config['inventor']['chunk_id']) == 'singletons':
-        logging.info('Saving chunk to canopy map')
-        with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-            pickle.dump([chunks, list(singletons)], fout)
+    logging.info('Saving chunk to canopy map')
+    with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+        pickle.dump([chunks, list(singletons)], fout)
 
-        logging.info('Running singletons!!')
-        run_singletons(config, loader, list(singletons), outdir, job_name='job-singletons')
-    else:
-        # run the job for the given batch
-        for chunk_id in range(0, num_chunks):
-            print("Starting Chunk ID: {cid}".format(cid=chunk_id))
-            run_batch(config, chunks[chunk_id],outdir,
-                  job_name='job-%s' % chunk_id)
+    logging.info('Running singletons!!')
+    run_singletons(config, loader, list(singletons), outdir, job_name='job-singletons')
+
+
+def main(argv):
+    logging.info('Running clustering - argv =  %s ', str(argv))
+
+    # Load the config files
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/inventor/run_clustering.ini', 'config/database_tables.ini'])
+    logging.info('Config - %s', str(config))
+    run_clustering(config)
 
 
 if __name__ == "__main__":
