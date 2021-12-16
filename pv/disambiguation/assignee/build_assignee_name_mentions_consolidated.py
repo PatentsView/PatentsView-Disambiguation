@@ -13,7 +13,7 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
     cnx = pvdb.connect_to_disambiguation_database(config, dbtype=source)
     cursor = cnx.cursor(dictionary=True)
     incremental_components = generate_incremental_components(config, source,
-                                                             db_table_prefix='ri')
+                                                             db_table_prefix='ra')
     query = """
     SELECT {id_field}, {document_id_field}, {sequence_field} as sequence, name_first,
      name_last, organization, type, rawlocation_id, city, state, country
