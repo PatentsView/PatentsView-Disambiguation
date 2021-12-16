@@ -39,6 +39,8 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
             ['("%s", "%s")' % x for x in pairs[sidx:eidx]])
         # logging.log_first_n(logging.INFO, '%s', 1, sql)
         g_cursor.execute(sql)
+    g_cursor.execute(
+        'alter table {table_name} add primary key (uuid)'.format(table_name=config['INVENTOR_UPLOAD']['target_table']))
     cnx_g.commit()
     cnx_g.close()
 

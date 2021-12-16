@@ -1,20 +1,19 @@
+import configparser
+import multiprocessing as mp
 import os
 import pickle
 
 import numpy as np
-import wandb
+import torch
 from absl import app
-from absl import flags
 from absl import logging
 from grinch.agglom import Agglom
-from grinch.multifeature_grinch import WeightedMultiFeatureGrinch
 from grinch.model import LinearAndRuleModel
-import torch
-from pv.disambiguation.assignee.load_name_mentions import Loader
-from pv.disambiguation.assignee.model import AssigneeModel
+from grinch.multifeature_grinch import WeightedMultiFeatureGrinch
 from tqdm import tqdm
 
-import configparser
+from pv.disambiguation.assignee.load_name_mentions import Loader
+from pv.disambiguation.assignee.model import AssigneeModel
 
 logging.set_verbosity(logging.INFO)
 
@@ -34,7 +33,8 @@ def batched_canopy_process(datasets, model, encoding_model):
     return run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model)
 
 
-def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree, trees, pids_list, canopy_list):
+def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree,
+                 trees, pids_list, canopy_list):
     features = encoding_model.encode(all_records)
     grinch = Agglom(model, features, num_points=len(all_pids), min_allowable_sim=0)
     grinch.build_dendrogram_hac()
@@ -115,14 +115,17 @@ def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
 
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
-          batcher(to_run_on, loader, int(config['assignee']['min_batch_size']))):
+                batcher(to_run_on, loader, int(config['assignee']['min_batch_size']))):
             logging.info('[%s] run_batch %s - %s - processed %s mentions', job_name, idx, len(canopy_list),
                          num_mentions_processed)
             num_mentions_processed += len(all_pids)
             num_canopies_processed += np.unique(all_canopies).shape[0]
-            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results, canopy2tree_id, tree_list, pids_list, pids_canopy_list)
+            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results,
+                         canopy2tree_id, tree_list, pids_list, pids_canopy_list)
             if idx % 10 == 0:
-                logging.info({'computed': idx + int(config['assignee']['chunk_id']) * int(config['assignee']['chunk_size']), 'num_mentions': num_mentions_processed})
+                logging.info(
+                    {'computed': idx + int(config['assignee']['chunk_id']) * int(config['assignee']['chunk_size']),
+                     'num_mentions': num_mentions_processed})
             #     logging.info('[%s] caching results for job', job_name)
             #     with open(outfile, 'wb') as fin:
             #         pickle.dump(results, fin)
@@ -132,7 +135,7 @@ def run_batch(config, canopy_list, outdir, loader, job_name='disambig'):
 
     logging.info('Beginning to save all tree structures....')
     grinch_trees = []
-    for idx,t in tqdm(enumerate(tree_list),total=len(tree_list)):
+    for idx, t in tqdm(enumerate(tree_list), total=len(tree_list)):
         grinch = WeightedMultiFeatureGrinch.from_agglom(t, pids_list[idx], pids_canopy_list[idx])
         grinch.clear_node_features()
         grinch.points_set = False
@@ -172,21 +175,7 @@ def run_singletons(canopy_list, outdir, loader, job_name='disambig'):
         pickle.dump(results, fin)
 
 
-def main(argv):
-    logging.info('Running clustering - %s ', str(argv))
-
-    config = configparser.ConfigParser()
-    config.read(['config/database_config.ini', 'config/assignee/run_clustering.ini',
-                 'config/database_tables.ini'])
-
-    # if argv[] is a chunk id, then use this chunkid instead
-    if len(argv) > 1:
-        logging.info('Using cmd line arg for chunk id %s' % argv[1])
-        config['assignee']['chunk_id'] = argv[1]
-
-    # wandb.init(project="%s-%s" % (config['assignee']['exp_name'], config['assignee']['dataset_name']))
-    # wandb.config.update(config)
-
+def run_clustering(config):
     loader = Loader.from_config(config)
     all_canopies = set(loader.assignee_canopies.keys())
     all_canopies = set([x for x in all_canopies if loader.num_records(x) < int(config['assignee']['max_canopy_size'])])
@@ -198,7 +187,7 @@ def main(argv):
     logging.info('Largest canopies - ')
     for c in all_canopies_sorted[:10]:
         logging.info('%s - %s records', c, loader.num_records(c))
-    outdir = os.path.join(config['assignee']['outprefix'], 'assignee', config['assignee']['run_id'])
+    outdir = config['assignees']['clustering_output_folder']
     num_chunks = int(len(all_canopies_sorted) / int(config['assignee']['chunk_size']))
     logging.info('%s num_chunks', num_chunks)
     logging.info('%s chunk_size', int(config['assignee']['chunk_size']))
@@ -207,16 +196,33 @@ def main(argv):
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
-    if config['assignee']['chunk_id'] == 'singletons':
-        logging.info('Running singletons!!')
-        run_singletons(list(singletons), outdir, job_name='job-singletons', loader=loader)
-        with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-            pickle.dump([chunks, list(singletons)], fout)
+    pool = mp.Pool()
+    argument_list = [(config, chunks[x], outdir, loader, 'job-%s' % x) for x in range(0, num_chunks)]
+    dev_null = [
+        n for n in pool.starmap(
+            run_batch, argument_list)
+    ]
 
-    else:
-        for i in range(0, num_chunks):
-            config['assignee']['chunk_id'] = str(i)
-            run_batch(config, chunks[int(config['assignee']['chunk_id'])], outdir, loader, job_name='job-%s' % int(config['assignee']['chunk_id']))
+    logging.info('Running singletons!!')
+    run_singletons(list(singletons), outdir, job_name='job-singletons', loader=loader)
+    with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+        pickle.dump([chunks, list(singletons)], fout)
+
+
+def main(argv):
+    logging.info('Running clustering - %s ', str(argv))
+
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/assignee/run_clustering.ini',
+                 'config/database_tables.ini'])
+
+    # if argv[] is a chunk id, then use this chunkid instead
+    if len(argv) > 1:
+        logging.info('Using cmd line arg for chunk id %s' % argv[1])
+        config['assignee']['chunk_id'] = argv[1]
+    run_clustering(config)
+    # wandb.init(project="%s-%s" % (config['assignee']['exp_name'], config['assignee']['dataset_name']))
+    # wandb.config.update(config)
 
 
 if __name__ == "__main__":

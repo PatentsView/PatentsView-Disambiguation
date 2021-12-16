@@ -11,7 +11,6 @@ from grinch.agglom import Agglom
 
 from pv.disambiguation.inventor.load_mysql import Loader
 from pv.disambiguation.inventor.model import InventorModel
-from pv.disambiguation.util.config_util import prepare_inventor_config
 
 logging.set_verbosity(logging.INFO)
 
