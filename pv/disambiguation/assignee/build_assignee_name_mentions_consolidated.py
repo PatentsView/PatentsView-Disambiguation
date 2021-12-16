@@ -16,7 +16,7 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
     query = """
     SELECT {id_field}, {document_id_field}, {sequence_field} as sequence, name_first,
      name_last, organization, type, rawlocation_id, rl.city, rl.state, rl.country
-      FROM rawassignee ra join rawlocation rl on rl.id = ra.rawlocation_id
+      FROM rawassignee ra left join rawlocation rl on rl.id = ra.rawlocation_id
     """.format(
         id_field=incremental_components.get('id_field'),
         document_id_field=incremental_components.get("document_id_field"),

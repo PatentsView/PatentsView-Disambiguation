@@ -38,7 +38,7 @@ def build_assignee_mentions_for_type(config, source='granted_patent_database'):
     query = """
         SELECT ra.{id_field}, ra.{document_id_field},  ra.{sequence_field} as sequence, ra.name_first,
          ra.name_last, ra.organization, ra.type, ra.rawlocation_id, rl.city, rl.state, rl.country
-        FROM rawassignee ra join rawlocation rl on rl.id = ra.rawlocation_id {where_clause}
+        FROM rawassignee ra left join rawlocation rl on rl.id = ra.rawlocation_id {where_clause}
     """.format(where_clause=where_clause, id_field=id_field, sequence_field=sequence_field,
                document_id_field=document_id_field)
     cursor = cnx.cursor(dictionary=True)
