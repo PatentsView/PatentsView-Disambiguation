@@ -87,7 +87,7 @@ def precache_assignee(config):
 
 
 def create_assignee(update_config):
-    entity_kb = EntityKBFeatures('resources/permid_entity_info.pkl', None, None)
+    entity_kb = EntityKBFeatures('clustering_resources/permid_entity_info.pkl', None, None)
     engine = create_engine(get_connection_string(update_config, "NEW_DB"))
     limit = 10000
     offset = 0

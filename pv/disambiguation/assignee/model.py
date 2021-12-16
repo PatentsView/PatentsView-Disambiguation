@@ -79,7 +79,7 @@ class AssigneeModel(object):
         locations = HashingVectorizerFeatures('locations', lambda x: x.location_strings)
 
         canopy_feat = HashingVectorizerFeatures('canopy', lambda x: x.canopies)
-        entity_kb_feat = EntityKBFeatures('resources/permid_entity_info.pkl', 'entitykb', lambda x: x)
+        entity_kb_feat = EntityKBFeatures('clustering_resources/permid_entity_info.pkl', 'entitykb', lambda x: x)
         # PatentID Features
         # patent_id = HashingVectorizerFeatures('patentid', lambda x: x.record_id)
         name_tfidf = SKLearnVectorizerFeatures(config['assignee']['assignee_name_model'],

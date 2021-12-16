@@ -16,7 +16,7 @@ def normalize_name(name):
 
 def load_assignee_stopwords():
     r = set()
-    with open('resources/assignee-stopwords-lowercase.txt') as fin:
+    with open('clustering_resources/assignee-stopwords-lowercase.txt') as fin:
         for line in fin:
             r.add(line.strip())
     return r
