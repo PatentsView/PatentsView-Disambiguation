@@ -5,7 +5,6 @@ import pickle
 from absl import logging, app
 
 
-
 def build_assignee_mentions_for_source(config, source='granted_patent_database'):
     import pv.disambiguation.util.db as pvdb
     from pv.disambiguation.core import AssigneeMention
@@ -16,7 +15,7 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
                                                              db_table_prefix='ra')
     query = """
     SELECT {id_field}, {document_id_field}, {sequence_field} as sequence, name_first,
-     name_last, organization, type, rawlocation_id, city, state, country
+     name_last, organization, type, rawlocation_id, rl.city, rl.state, rl.country
       FROM rawassignee ra join rawlocation rl on rl.id = ra.rawlocation_id
     """.format(
         id_field=incremental_components.get('id_field'),
@@ -34,7 +33,7 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
 
 
 def generate_assignee_mentions(config):
-    from pv.disambiguation.core import  AssigneeNameMention
+    from pv.disambiguation.core import AssigneeNameMention
     logging.info('Building assignee features')
     features = collections.defaultdict(list)
     # Generate mentions from granted and pregrant databases
