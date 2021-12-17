@@ -13,7 +13,7 @@ def generate_incremental_components(config, source, db_table_prefix):
     id_field = "{table_prefix}.id"
     document_id_field = "document_number"
     sequence_field = "{table_prefix}.sequence - 1"
-    title_table = "{table_prefix}.application"
+    title_table = "application"
     title_field = "{table_prefix}.invention_title"
     record_id_format = "pg-%s"
     if source == "granted_patent_database":
@@ -21,7 +21,7 @@ def generate_incremental_components(config, source, db_table_prefix):
         document_id_field = "{table_prefix}.id"
         sequence_field = "{table_prefix}.sequence"
         title_field = "{table_prefix}.title"
-        title_table = "{table_prefix}.patent"
+        title_table = "patent"
         record_id_format = "%s"
 
     return {"id_field": id_field.format(table_prefix=db_table_prefix),
