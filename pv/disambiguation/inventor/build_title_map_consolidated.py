@@ -17,8 +17,8 @@ def build_title_map_for_source(config, source='granted_patent_database'):
         return feature_map
     incremental_components = generate_incremental_components(config, source, 'a')
     cursor = cnx.cursor(dictionary=True)
-    query = "select {document_id_field},{title_field} from {title_table} a {filter};".format(
-        document_id_field=incremental_components.get('document_id_field'),
+    query = "select {central_entity_field},{title_field} from {title_table} a {filter};".format(
+        central_entity_field=incremental_components.get('central_entity_field'),
         title_field=incremental_components.get('title_field'),
         filter=incremental_components.get('filter'),
         title_table=incremental_components.get('title_table'))
