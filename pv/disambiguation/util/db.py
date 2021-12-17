@@ -8,7 +8,7 @@ def connect_to_disambiguation_database(config, dbtype='granted_patent_database')
         return None
     else:
         logging.info('[{%s}] trying to connect to %s', dbtype,
-                     config['DISAMBIGUATION']['granted_patent_database'])
+                     config['DISAMBIGUATION'][dbtype])
         return mysql.connector.connect(host=config['DATABASE_SETUP']['host'],
                                        user=config['DATABASE_SETUP']['username'],
                                        password=config['DATABASE_SETUP']['password'],
