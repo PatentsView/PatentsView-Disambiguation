@@ -23,7 +23,7 @@ def build_coinventor_mentions_for_type(config, source='granted_patent_database')
     # | id | document_number | sequence | name_first | name_last | organization | type |
     # rawlocation_id | city | state | country | filename | created_date | updated_date |
     query = """
-        SELECT ri.{id_field}, ri.{document_id_field},   ri.name_first,
+        SELECT {id_field}, {document_id_field},   ri.name_first,
          ri.name_last
         FROM rawinventor ri {filter}
     """.format(filter=incremental_components.get('filter'),
