@@ -63,9 +63,9 @@ def prepare_config(config):
     path = config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
     config['assignee']['assignee_canopies'] = "{out_path}.canopies.pkl".format(out_path=path)
     config['assignee']['assignee_mentions'] = "{out_path}.records.pkl".format(out_path=path)
-    config['assignees']['patent_titles'] = config['inventor']['patent_titles']
-    config['assignees']['coinventors'] = config['inventor']['patent_titles']
-    config['assignees']['assignees'] = config['inventor']['patent_titles']
+    config['assignee']['patent_titles'] = config['inventor']['patent_titles']
+    config['assignee']['coinventors'] = config['inventor']['patent_titles']
+    config['assignee']['assignees'] = config['inventor']['patent_titles']
 
     config['assignee']['clustering_output_folder'] = os.path.join(config['assignee']['outprefix'], 'inventor',
                                                                   config['assignee']['run_id'])
