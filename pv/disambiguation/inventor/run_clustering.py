@@ -112,7 +112,7 @@ def batch(canopy_list, loader, min_batch_size=800):
             yield all_pids, all_lbls, all_records, all_canopies
 
 
-def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None):
+def run_batch(config, canopy_list, outdir, chunk_id, job_name='disambig'):
     logging.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
 
     os.makedirs(outdir, exist_ok=True)
@@ -151,7 +151,7 @@ def run_batch(config, canopy_list, outdir, job_name='disambig', singletons=None)
             num_canopies_processed += np.unique(all_canopies).shape[0]
             if idx % 10 == 0:
                 logging.info(
-                    {'computed': idx + int(config['inventor']['chunk_id']) * int(config['inventor']['chunk_size']),
+                    {'computed': idx + int(chunk_id) * int(config['inventor']['chunk_size']),
                      'num_mentions': num_mentions_processed,
                      'num_canopies_processed': num_canopies_processed})
             #     logging.info('[%s] caching results for job', job_name)
@@ -250,14 +250,13 @@ def run_clustering(config):
 
     logging.info('%s num_chunks', num_chunks)
     logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
-    logging.info('%s chunk_id', config['inventor']['chunk_id'])
 
     # chunk all of the data by canopy
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
     pool = mp.Pool()
-    argument_list = [(config, chunks[x], outdir, 'job-%s' % x) for x in range(0, num_chunks)]
+    argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
     dev_null = [
         n for n in pool.starmap(
             run_batch, argument_list)
