@@ -69,5 +69,6 @@ def main(argv):
                  'config/inventor/build_title_map_sql.ini'])
     generate_title_maps(config)
 
+
 if __name__ == "__main__":
     app.run(main)

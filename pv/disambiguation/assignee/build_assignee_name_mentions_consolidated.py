@@ -14,7 +14,7 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
     incremental_components = generate_incremental_components(config, source,
                                                              db_table_prefix='ra')
     query = """
-    SELECT {id_field}, {document_id_field}, {sequence_field} as sequence, name_first,
+    SELECT ra.{id_field}, ra.{document_id_field}, ra.{sequence_field} as sequence, name_first,
      name_last, organization, type, rawlocation_id, rl.city, rl.state, rl.country
       FROM rawassignee ra left join rawlocation rl on rl.id = ra.rawlocation_id
     """.format(

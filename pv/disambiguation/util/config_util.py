@@ -10,19 +10,19 @@ def generate_incremental_components(config, source, db_table_prefix):
             start_date=config['DATES']['START_DATE'], end_date=config['DATES']['END_DATE'])
         # | id | document_number | sequence | name_first | name_last | organization | type |
         # rawlocation_id | city | state | country | filename | created_date | updated_date |
-    id_field = "{table_prefix}.id"
-    document_id_field = "{table_prefix}.document_number"
-    central_entity_field = "{table_prefix}.document_number"
-    sequence_field = "{table_prefix}.sequence - 1"
+    id_field = "id"
+    document_id_field = "document_number"
+    central_entity_field = "document_number"
+    sequence_field = "sequence - 1"
     title_table = "application"
-    title_field = "{table_prefix}.invention_title"
+    title_field = "invention_title"
     record_id_format = "pg-%s"
     if source == "granted_patent_database":
-        id_field = "{table_prefix}.uuid"
-        document_id_field = "{table_prefix}.patent_id"
-        central_entity_field = "{table_prefix}.id"
-        sequence_field = "{table_prefix}.sequence"
-        title_field = "{table_prefix}.title"
+        id_field = "uuid"
+        document_id_field = "patent_id"
+        central_entity_field = "id"
+        sequence_field = "sequence"
+        title_field = "title"
         title_table = "patent"
         record_id_format = "%s"
 
