@@ -16,6 +16,7 @@ def create_tables(config):
 
     g_cursor = cnx_g.cursor()
     table_name = config['ASSIGNEE_UPLOAD']['target_table']
+    logging.log(logging.INFO, 'Creating target tables with name {}'.format(table_name))
     g_cursor.execute(
         "CREATE TABLE IF NOT EXISTS {table_name} (uuid VARCHAR(255), assignee_id VARCHAR(255))".format(
             table_name=table_name))
@@ -32,10 +33,12 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
     g_cursor = cnx_g.cursor()
     batch_size = 100000
     offsets = [x for x in range(0, len(pairs), batch_size)]
+    sql_template = "INSERT INTO {table_name} (uuid, assignee_id) VALUES "
+    logging.log(logging.INFO, 'Inserting records with format {template}'.format(template=sql_template))
     for idx in tqdm(range(len(offsets)), 'adding %s' % target, total=len(offsets)):
         sidx = offsets[idx]
         eidx = min(len(pairs), offsets[idx] + batch_size)
-        sql = "INSERT INTO {table_name} (uuid, assignee_id) VALUES ".format(
+        sql = sql_template.format(
             table_name=config['ASSIGNEE_UPLOAD']['target_table']) + ', '.join(
             ['("%s", "%s")' % x for x in pairs[sidx:eidx]])
         # logging.log_first_n(logging.INFO, '%s', 1, sql)
@@ -49,6 +52,7 @@ def upload(config):
     pairs_pregranted = []
     pairs_granted = []
     finalize_output_file = "{}/disambiguation.tsv".format(config['assignee']['clustering_output_folder'])
+    logging.log(logging.INFO, 'Loading results from {}'.format(finalize_output_file))
     with open(finalize_output_file, 'r') as fin:
         for line in fin:
             splt = line.strip().split('\t')
@@ -56,7 +60,7 @@ def upload(config):
                 pairs_pregranted.append((pgranted_uuids[splt[0]], splt[1]))
             elif splt[0] in granted_uuids:
                 pairs_granted.append((granted_uuids[splt[0]], splt[1]))
-
+    create_tables(config)
     load_target_from_source(config, pairs_granted, target='granted_patent_database')
     load_target_from_source(config, pairs_pregranted, target='granted_patent_database')
 
