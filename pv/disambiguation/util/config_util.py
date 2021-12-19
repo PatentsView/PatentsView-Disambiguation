@@ -67,7 +67,7 @@ def prepare_config(config):
     config['assignee']['coinventors'] = config['inventor']['patent_titles']
     config['assignee']['assignees'] = config['inventor']['patent_titles']
 
-    config['assignee']['clustering_output_folder'] = os.path.join(config['assignee']['outprefix'], 'inventor',
+    config['assignee']['clustering_output_folder'] = os.path.join(config['assignee']['outprefix'], 'assignee',
                                                                   config['assignee']['run_id'])
     config['ASSIGNEE_UPLOAD']['target_table'] = "assignee_disambiguation_mapping_{}".format(suffix)
 
