@@ -15,6 +15,7 @@ def build_title_map_for_source(config, source='granted_patent_database'):
     cnx = pvdb.connect_to_disambiguation_database(config, dbtype=source)
     if cnx is None:
         return feature_map
+    #id_field | document_id_field | central_entity_field | sequence_field | title_table | title_field | record_id_format
     incremental_components = generate_incremental_components(config, source, 'a')
     cursor = cnx.cursor(dictionary=True)
     query = "select {central_entity_field},{title_field} from {title_table} a {filter};".format(
@@ -26,7 +27,7 @@ def build_title_map_for_source(config, source='granted_patent_database'):
     idx = 0
     for rec in cursor:
         record_id = incremental_components.get('record_id_format') % rec.get(
-            incremental_components.get('document_id_field'))
+            incremental_components.get('central_entity_field'))
         feature_map[record_id] = rec.get(incremental_components.get('title_field'))
         idx += 1
         logging.log_every_n(logging.INFO, 'Processed %s %s records - %s features', 10000, source, idx, len(feature_map))
