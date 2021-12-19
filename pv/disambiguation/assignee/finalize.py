@@ -1,19 +1,11 @@
 import collections
+import numpy as np
 import os
 import pickle
-
-import numpy as np
 from absl import app
 from absl import flags
 from absl import logging
 from tqdm import tqdm
-
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string('input', 'exp_out/assignee/run_26', '')
-flags.DEFINE_string('assignee_name_mentions', 'data/assignee/assignee_mentions.records.pkl', '')
-
-flags.DEFINE_string('output', 'exp_out/assignee/run_26/disambiguation_debug.tsv', '')
 
 logging.set_verbosity(logging.INFO)
 
@@ -40,11 +32,11 @@ def process(point2clusters, clusters, rundir):
     return num_assign
 
 
-def main(argv):
+def finalize_results(config):
     point2clusters = collections.defaultdict(list)
     cluster_dict = dict()
     logging.info('loading canopy results..')
-    total_num_assignments = process(point2clusters, cluster_dict, FLAGS.input)
+    total_num_assignments = process(point2clusters, cluster_dict, config['assignee']['clustering_output_folder'])
     logging.info('total_num_clusters %s', len(cluster_dict))
     logging.info('total_num_assignments %s', total_num_assignments)
     logging.info('loading canopy results...done')
@@ -61,9 +53,6 @@ def main(argv):
         # pdb.set_trace()
         overall_idx += len(clusters)
         pid2idx[pid] = idx
-
-    # import pdb
-    # pdb.set_trace()
     from scipy.sparse import coo_matrix
     mat = coo_matrix((data, (row, col)),
                      shape=(len(cluster_dict) + len(point2clusters), len(cluster_dict) + len(point2clusters)))
@@ -72,11 +61,8 @@ def main(argv):
     n_cc, lbl_cc = connected_components(mat, directed=True, connection='weak')
     logging.info('running cc...done')
 
-    # import pdb
-    # pdb.set_trace()
-
     logging.info('loading mentions...')
-    with open(FLAGS.assignee_name_mentions, 'rb') as fin:
+    with open(config['assignee']['assignee_mentions'], 'rb') as fin:
         assignee_mentions = pickle.load(fin)
 
     import uuid
@@ -96,13 +82,26 @@ def main(argv):
             for rid in m.mention_ids:
                 missing_mid2eid[rid] = m.uuid
     logging.info('writing output ...')
-    with open(FLAGS.output, 'w') as fout:
+    output_file = "{path}/disambiguation.tsv".format(path=config['assignee']['clustering_output_folder'])
+    with open(output_file, 'w') as fout:
         for m, e in mid2eid.items():
             fout.write('%s\t%s\n' % (m, e))
         for m, e in missing_mid2eid.items():
             if m not in mid2eid:
                 fout.write('%s\t%s\n' % (m, e))
     logging.info('writing output ... done.')
+
+
+def main(argv):
+    pass
+
+
+# import pdb
+# pdb.set_trace()
+
+
+# import pdb
+# pdb.set_trace()
 
 
 if __name__ == "__main__":
