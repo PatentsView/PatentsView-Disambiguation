@@ -62,7 +62,7 @@ def upload(config):
                 pairs_granted.append((granted_uuids[splt[0]], splt[1]))
     create_tables(config)
     load_target_from_source(config, pairs_granted, target='granted_patent_database')
-    load_target_from_source(config, pairs_pregranted, target='granted_patent_database')
+    load_target_from_source(config, pairs_pregranted, target='pregrant_database')
 
 
 def main(argv):
