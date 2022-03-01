@@ -42,6 +42,7 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
             table_name=config['ASSIGNEE_UPLOAD']['target_table']) + ', '.join(
             ['("%s", "%s")' % x for x in pairs[sidx:eidx]])
         # logging.log_first_n(logging.INFO, '%s', 1, sql)
+        print(sql)
         g_cursor.execute(sql)
     cnx_g.commit()
     cnx_g.close()

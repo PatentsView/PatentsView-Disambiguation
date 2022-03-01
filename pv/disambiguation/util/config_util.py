@@ -4,7 +4,7 @@ import os
 
 def generate_incremental_components(config, source, db_table_prefix):
     where_clause = ""
-    if config['DISAMBIGUATION']['INCREMENTAL'] == "1":
+    if config['DISAMBIGUATION']['INCREMENTAL'] == "0":
         where_clause = "where {prefix}.version_indicator <= '{end_date}'".format(
             prefix=db_table_prefix,
             start_date=config['DATES']['START_DATE'], end_date=config['DATES']['END_DATE'])
