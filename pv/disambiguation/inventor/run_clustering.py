@@ -55,6 +55,9 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
         trees.append(grinch)
         pids_list.append(all_pids)
         for i in range(len(all_pids)):
+            print(i)
+            print(all_canopies[i])
+            print(canopy2tree[all_canopies[i]])
             # record mapping from canopy to the tree id
             canopy2tree[all_canopies[i]] = tree_id
             if all_canopies[i] not in canopy2predictions:
