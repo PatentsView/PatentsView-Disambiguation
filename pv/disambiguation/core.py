@@ -39,6 +39,8 @@ class InventorMention(object):
         self._first_name = None
         self._first_initial = None
         self._first_letter = None
+        self._first_two_initials = None
+        self._first_two_letters = None
         self._middle_name = None
         self._middle_initial = None
         self._suffixes = None
@@ -72,10 +74,20 @@ class InventorMention(object):
             self.compute_name_features()
         return self._first_initial
 
+    def first_two_initials(self):
+        if self._first_two_initials is None:
+            self.compute_name_features()
+        return self._first_two_initials
+
     def first_letter(self):
         if self._first_letter is None:
             self.compute_name_features()
         return self._first_letter
+
+    def first_two_letters(self):
+        if self._first_two_letters is None:
+            self.compute_name_features()
+        return self._first_two_letters
 
     def middle_initial(self):
         if self._middle_initial is None:
@@ -93,6 +105,12 @@ class InventorMention(object):
         res = 'fl:%s_ln:%s' % (fi, lastname)
         return [res]
 
+    def canopy2(self):
+        f_two_i = self.first_letter()[:2] if len(self.first_letter()) > 0 else self.uuid
+        lastname = self.last_name()[0] if len(self.last_name()) > 0 else self.uuid
+        res = 'fl:%s_ln:%s' % (f_two_i, lastname)
+        return [res]
+
     def last_name(self):
         if self._last_name is None:
             self.compute_name_features()
@@ -107,6 +125,7 @@ class InventorMention(object):
         self._first_name = names.first_name(self.raw_first)
         self._first_initial = names.first_initial(self.raw_first)
         self._first_letter = names.first_letter(self.raw_first)
+        self._first_two_letters = names.first_two_letters(self.raw_first)
         self._middle_name = names.middle_name(self.raw_first)
         self._middle_initial = names.middle_initial(self.raw_first)
         self._suffixes = names.suffixes(self.raw_last)

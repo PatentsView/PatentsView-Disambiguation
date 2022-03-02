@@ -19,6 +19,8 @@ def is_initial(name):
 def first_char_or_empty(name):
     return [name[0]] if len(name) > 0 else []
 
+def first_two_char_or_empty(name):
+    return [name[:2].strip()] if len(name) > 0 else []
 
 def full_name_or_empty(name):
     return [name] if len(name) > 0 else []
@@ -37,11 +39,27 @@ def first_initial(name):
     else:
         return first_char_or_empty(name)
 
+def first_two_initials(name):
+    name = normalize_name(name)
+    if '-' in name:
+        splt = name.split('-')
+        c1 = first_two_char_or_empty(splt[0])
+        c2 = first_two_char_or_empty(splt[1])
+        if c1 and c2:
+            return ['%s-%s' % (c1[0] if c1 else '', c2[0] if c2 else '')]
+        else:
+            return []
+    else:
+        return first_two_char_or_empty(name)
+
 
 def first_letter(name):
     name = normalize_name(name)
     return first_char_or_empty(name)
 
+def first_two_letters(name):
+    name = normalize_name(name)
+    return first_two_char_or_empty(name)
 
 def first_name(name):
     name = normalize_name(name)
@@ -104,3 +122,13 @@ def last_name(name):
         return full_name_or_empty(name)
     else:
         return []
+
+if __name__ == '__main__':
+    # ['99579abe-3b0f-11eb-a3cd-121df0c29c1e', 'Tina', 'Goldkind']
+    # ['99587305-3b0f-11eb-a3cd-121df0c29c1e', 'Jean-Francois', 'Levy']
+    # ['99580651-3b0f-11eb-a3cd-121df0c29c1e', 'Philippe', 'Levy']
+    # ['9958fa19-3b0f-11eb-a3cd-121df0c29c1e', 'Susan', 'Bushelman']
+    # ['99591140-3b0f-11eb-a3cd-121df0c29c1e', 'Danny', 'Yun']
+    first_initial("Danny Bushelman")
+    first_two_initials("Danny")
+

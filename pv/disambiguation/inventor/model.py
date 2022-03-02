@@ -74,7 +74,8 @@ class InventorModel(object):
         middle_initial = SingleItemHashingVectorizerFeatures('middle_initial', lambda x: x.middle_initial())
         middle_name = SingleItemHashingVectorizerFeatures('middle_name', lambda x: x.middle_name())
 
-        canopy_feat = SingleItemHashingVectorizerFeatures('canopy', lambda x: x.canopy())
+        # canopy_feat = SingleItemHashingVectorizerFeatures('canopy', lambda x: x.canopy())
+        canopy_feat = SingleItemHashingVectorizerFeatures('canopy', lambda x: x.canopy2())
 
         # Title Features
         title_model = FastTextFeatures(config['inventor']['title_model'], 'title', get_patent_title)

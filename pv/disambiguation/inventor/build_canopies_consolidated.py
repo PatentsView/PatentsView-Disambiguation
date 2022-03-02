@@ -3,6 +3,7 @@ import configparser
 import os
 import pickle
 
+
 from absl import logging, app
 from tqdm import tqdm
 
@@ -11,12 +12,16 @@ from pv.disambiguation.core import InventorMention
 from pv.disambiguation.util.config_util import generate_incremental_components
 
 
-def first_letter_last_name(im):
-    fi = im.first_letter()[0] if len(im.first_letter()) > 0 else im.uuid
+def first_letter_last_name(im, num_first_letters=1):
+    if num_first_letters == 1:
+        first = im.first_letter()[0] if len(im.first_letter()) > 0 else im.uuid
+    elif num_first_letters == 2:
+        first = im.first_two_letters()[:2] if len(im.first_two_letters()) > 0 else im.uuid
+
     lastname = im.last_name()[0] if len(im.last_name()) > 0 else im.uuid
     lastname = lastname.replace(' ', '')
     lastname = lastname.replace('-', '')
-    res = 'fl:%s_ln:%s' % (fi, lastname)
+    res = 'fl:%s_ln:%s' % (first, lastname)
     return res
 
 
@@ -37,7 +42,7 @@ def build_canopies_for_type(config, source='granted_patent_database'):
     for uuid, name_first, name_last in cursor:
         im = InventorMention(uuid, '0', '', name_first if name_first else '', name_last if name_last else '', '', '',
                              '')
-        canopy2uuids[first_letter_last_name(im)].append(uuid)
+        canopy2uuids[first_letter_last_name(im, num_first_letters=2)].append(uuid)
         idx += 1
         logging.log_every_n(logging.INFO, 'Processed %s %s records - %s canopies', 10000, source, idx,
                             len(canopy2uuids))
@@ -101,3 +106,4 @@ def main(argv):
 
 if __name__ == "__main__":
     app.run(main)
+    # first_letter_last_name("Danny, Bushelman")
