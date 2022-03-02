@@ -16,7 +16,7 @@ def first_letter_last_name(im, num_first_letters=1):
     if num_first_letters == 1:
         first = im.first_letter()[0] if len(im.first_letter()) > 0 else im.uuid
     elif num_first_letters == 2:
-        first = im.first_two_letters()[:2] if len(im.first_two_letters()) > 0 else im.uuid
+        first = im.first_two_letters()[0] if len(im.first_two_letters()) > 0 else im.uuid
 
     lastname = im.last_name()[0] if len(im.last_name()) > 0 else im.uuid
     lastname = lastname.replace(' ', '')
