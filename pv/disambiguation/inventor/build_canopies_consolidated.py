@@ -88,11 +88,11 @@ def generate_inventor_canopies(config):
         new_granted_canopies, new_pregranted_canopies = supplement_from_the_past(config,
                                                                                  new_granted_canopies,
                                                                                  new_pregranted_canopies)
-    with open(config['INVENTOR_BUILD_CANOPIES']['canopy_out'] + '.%s.pkl' % 'pregranted', 'wb') as fout:
-        pickle.dump(new_pregranted_canopies, fout)
+        with open(config['INVENTOR_BUILD_CANOPIES']['canopy_out'] + '.%s.pkl' % 'pregranted', 'wb') as fout:
+            pickle.dump(new_pregranted_canopies, fout)
 
-    with open(config['INVENTOR_BUILD_CANOPIES']['canopy_out'] + '.%s.pkl' % 'granted', 'wb') as fout:
-        pickle.dump(new_granted_canopies, fout)
+        with open(config['INVENTOR_BUILD_CANOPIES']['canopy_out'] + '.%s.pkl' % 'granted', 'wb') as fout:
+            pickle.dump(new_granted_canopies, fout)
 
 
 def main(argv):
