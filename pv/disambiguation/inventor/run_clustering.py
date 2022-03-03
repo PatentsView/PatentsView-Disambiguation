@@ -54,8 +54,11 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
         # store the tree that is build for this canopy
         trees.append(grinch)
         pids_list.append(all_pids)
-        for i in range(len(all_pids)):
-            print(i)
+        print(len(all_pids))
+        print(all_pids)
+        print(len(all_canopies))
+        print(all_canopies)
+        for i in range(len(all_canopies)):
             # record mapping from canopy to the tree id
             canopy2tree[all_canopies[i]] = tree_id
             if all_canopies[i] not in canopy2predictions:
@@ -68,7 +71,7 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
     else:
         raise Exception('Must have non-singleton canopies')
         fc = [0]
-        for i in range(len(all_pids)):
+        for i in range(len(all_canopies)):
             if all_canopies[i] not in canopy2predictions:
                 canopy2predictions[all_canopies[i]] = [[], []]
                 canopy2tree[all_canopies[i]] = None
@@ -109,10 +112,11 @@ def batch(canopy_list, loader, min_batch_size=800):
             all_lbls = -1 * np.ones(len(all_records))
             all_canopies = []
             for c in batch:
-                print(c)
-                print(sizes[c])
                 all_canopies.extend([c for _ in range(sizes[c])])
-            print(len(all_canopies))
+            print(all_pids)
+            print(all_lbls)
+            print(all_records)
+            print(all_canopies)
             yield all_pids, all_lbls, all_records, all_canopies
 
 
