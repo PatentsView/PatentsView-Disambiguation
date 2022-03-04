@@ -81,18 +81,18 @@ def generate_inventor_canopies(config):
     os.makedirs(os.path.dirname(config['INVENTOR_BUILD_CANOPIES']['canopy_out']), exist_ok=True)
 
     new_pregranted_canopies = build_canopies_for_type(config, source='pregrant_database')
-
     new_granted_canopies = build_canopies_for_type(config, source='granted_patent_database')
 
     if config['DISAMBIGUATION']['INCREMENTAL'] == "1":
         new_granted_canopies, new_pregranted_canopies = supplement_from_the_past(config,
                                                                                  new_granted_canopies,
                                                                                  new_pregranted_canopies)
-        with open(config['INVENTOR_BUILD_CANOPIES']['canopy_out'] + '.%s.pkl' % 'pregranted', 'wb') as fout:
-            pickle.dump(new_pregranted_canopies, fout)
+    # Export pickle files
+    with open('.%s.pkl' % 'pregranted', 'wb') as fout:
+        pickle.dump(new_pregranted_canopies, fout)
 
-        with open(config['INVENTOR_BUILD_CANOPIES']['canopy_out'] + '.%s.pkl' % 'granted', 'wb') as fout:
-            pickle.dump(new_granted_canopies, fout)
+    with open('.%s.pkl' % 'granted', 'wb') as fout:
+        pickle.dump(new_granted_canopies, fout)
 
 
 def main(argv):
