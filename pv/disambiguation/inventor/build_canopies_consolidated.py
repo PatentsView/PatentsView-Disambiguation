@@ -87,11 +87,19 @@ def generate_inventor_canopies(config):
         new_granted_canopies, new_pregranted_canopies = supplement_from_the_past(config,
                                                                                  new_granted_canopies,
                                                                                  new_pregranted_canopies)
+    elif config['DISAMBIGUATION']['INCREMENTAL'] == "0":
+    # Dropping pickle files for recreation
+        print(f"WARNING -- DELETING PRIOR PKL FILES AT {config['INVENTOR_BUILD_CANOPIES']['canopy_out']} FOR REGENERATION")
+        if os.path.isfile("canopies.pregranted.pkl"):
+            os.remove("canopies.pregranted.pkl")
+        if os.path.isfile("canopies.granted.pkl"):
+            os.remove("canopies.granted.pkl")
+
     # Export pickle files
-    with open('.%s.pkl' % 'pregranted', 'wb') as fout:
+    with open(config['INVENTOR_BUILD_CANOPIES']['canopy_out'] + '.%s.pkl' % 'pregranted', 'wb') as fout:
         pickle.dump(new_pregranted_canopies, fout)
 
-    with open('.%s.pkl' % 'granted', 'wb') as fout:
+    with open(config['INVENTOR_BUILD_CANOPIES']['canopy_out'] + '.%s.pkl' % 'granted', 'wb') as fout:
         pickle.dump(new_granted_canopies, fout)
 
 
