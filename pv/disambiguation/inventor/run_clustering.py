@@ -104,11 +104,13 @@ def batch(canopy_list, loader, min_batch_size=800):
     for batch, batch_size in zip(batches, batch_sizes):
         if batch_size > 0:
             all_records = loader.load_canopies(batch)
-            all_pids = [x.uuid for x in all_records]
+            all_pids = list(set([x.uuid for x in all_records]))
             all_lbls = -1 * np.ones(len(all_records))
             all_canopies = []
             for c in batch:
                 all_canopies.extend([c for _ in range(sizes[c])])
+            print(len(all_canopies))
+            print(len(all_pids))
             yield all_pids, all_lbls, all_records, all_canopies
 
 
