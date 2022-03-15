@@ -42,7 +42,7 @@ def build_canopies_for_type(config, source='granted_patent_database'):
     for uuid, name_first, name_last in cursor:
         im = InventorMention(uuid, '0', '', name_first if name_first else '', name_last if name_last else '', '', '',
                              '')
-        canopy2uuids[first_letter_last_name(im, num_first_letters=2)].append(uuid)
+        canopy2uuids[first_letter_last_name(im, num_first_letters=1)].append(uuid)
         idx += 1
         logging.log_every_n(logging.INFO, 'Processed %s %s records - %s canopies', 10000, source, idx,
                             len(canopy2uuids))
@@ -79,10 +79,14 @@ def generate_inventor_canopies(config):
     logging.info('writing results to folder: %s',
                  os.path.dirname(config['INVENTOR_BUILD_CANOPIES']['canopy_out']))
     os.makedirs(os.path.dirname(config['INVENTOR_BUILD_CANOPIES']['canopy_out']), exist_ok=True)
-    print(os.getcwd())
 
-    new_pregranted_canopies = build_canopies_for_type(config, source='pregrant_database')
-    new_granted_canopies = build_canopies_for_type(config, source='granted_patent_database')
+    new_pregranted_canopies_all = build_canopies_for_type(config, source='pregrant_database')
+    new_pregranted_canopies = dict(filter(lambda i: i[0] == 'fl:ji_ln:kim', new_pregranted_canopies_all.items()))
+    print(new_pregranted_canopies)
+
+    new_granted_canopies_all = build_canopies_for_type(config, source='granted_patent_database')
+    new_granted_canopies = dict(filter(lambda i: i[0] == 'fl:ji_ln:kim', new_granted_canopies_all.items()))
+    print(new_granted_canopies)
 
     if config['DISAMBIGUATION']['INCREMENTAL'] == "1":
         new_granted_canopies, new_pregranted_canopies = supplement_from_the_past(config,

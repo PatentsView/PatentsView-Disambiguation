@@ -257,36 +257,33 @@ def run_clustering(config):
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
-   # pool = mp.Pool(int(config['inventor']['parallelism']))
-    for x in range(0, num_chunks):
-        logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
-        run_batch(config, chunks[x], outdir, x, 'job-%s' % x ) 
+    pool = mp.Pool(int(config['inventor']['parallelism']))
+    # for x in range(0, num_chunks):
+    #    logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
+    #    run_batch(config, chunks[x], outdir, x, 'job-%s' % x ) 
   
-    #argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
-    #dev_null = [
-    #    n for n in pool.starmap(
-    #        run_batch, argument_list)
-    #]
+    argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
+    dev_null = [
+        n for n in pool.starmap(
+            run_batch, argument_list)
+    ]
     # chunk 0 will write out the meta data and singleton information
     logging.info('Saving chunk to canopy map')
-    with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-        pickle.dump([chunks, list(singletons)], fout)
+    # with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+    #    pickle.dump([chunks, list(singletons)], fout)
 
-    logging.info('Running singletons!!')
-    num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
-    # chunk all of the data by canopy
-    singleton_chunks = [[] for _ in range(num_chunks)]
-    for idx, c in enumerate(singletons):
-        singleton_chunks[idx % num_singleton_chunks].append(c)
-    #pool = mp.Pool(int(config['inventor']['parallelism']))
-    argument_list = [(config, singleton_chunks[x], outdir, x, 'singleton-job-%s' % x) for x in range(0, num_singleton_chunks)]
-    for x in range(0, num_singleton_chunks):
-        logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
-        run_singletons(config,loader, singleton_chunks[x], outdir,  'singleton-job-%s' % x )
-    #dev_null = [
-    #    n for n in pool.starmap(
-    #        run_singletons, argument_list)
-    #]
+    logging.info('Running singletons!!')    
+    # num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
+    # # chunk all of the data by canopy
+    # singleton_chunks = [[] for _ in range(num_chunks)]
+    # for idx, c in enumerate(singletons):
+    #     singleton_chunks[idx % num_singleton_chunks].append(c)
+    # pool = mp.Pool()
+    # argument_list = [(config, singleton_chunks[x], outdir, x, 'singleton-job-%s' % x) for x in range(0, num_singleton_chunks)]
+    # dev_null = [
+    #     n for n in pool.starmap(
+    #         run_singletons, argument_list)
+    # ]
 
 def main(argv):
     logging.info('Running clustering - argv =  %s ', str(argv))
