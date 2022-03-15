@@ -99,17 +99,17 @@ class InventorMention(object):
             self.compute_name_features()
         return self._middle_name
 
-    def canopy_old(self):
+    def canopy(self):
         fi = self.first_letter()[0] if len(self.first_letter()) > 0 else self.uuid
         lastname = self.last_name()[0] if len(self.last_name()) > 0 else self.uuid
         res = 'fl:%s_ln:%s' % (fi, lastname)
         return [res]
 
-    def canopy(self):
-        f_two = self.first_two_letters()[0] if len(self.first_two_letters()) > 0 else self.uuid
-        lastname = self.last_name()[0] if len(self.last_name()) > 0 else self.uuid
-        res = 'fl:%s_ln:%s' % (f_two, lastname)
-        return [res]
+    # def canopy(self):
+    #     f_two = self.first_two_letters()[0] if len(self.first_two_letters()) > 0 else self.uuid
+    #     lastname = self.last_name()[0] if len(self.last_name()) > 0 else self.uuid
+    #     res = 'fl:%s_ln:%s' % (f_two, lastname)
+    #     return [res]
 
     def last_name(self):
         if self._last_name is None:
