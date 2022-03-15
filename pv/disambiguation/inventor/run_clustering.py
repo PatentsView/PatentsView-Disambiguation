@@ -269,17 +269,17 @@ def run_clustering(config):
         pickle.dump([chunks, list(singletons)], fout)
 
     logging.info('Running singletons!!')
-    # num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
-    # # chunk all of the data by canopy
-    # singleton_chunks = [[] for _ in range(num_chunks)]
-    # for idx, c in enumerate(singletons):
-    #     singleton_chunks[idx % num_singleton_chunks].append(c)
-    # pool = mp.Pool()
-    # argument_list = [(config, singleton_chunks[x], outdir, x, 'singleton-job-%s' % x) for x in range(0, num_singleton_chunks)]
-    # dev_null = [
-    #     n for n in pool.starmap(
-    #         run_singletons, argument_list)
-    # ]
+    num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
+    # chunk all of the data by canopy
+    singleton_chunks = [[] for _ in range(num_chunks)]
+    for idx, c in enumerate(singletons):
+        singleton_chunks[idx % num_singleton_chunks].append(c)
+    pool = mp.Pool()
+    argument_list = [(config, singleton_chunks[x], outdir, x, 'singleton-job-%s' % x) for x in range(0, num_singleton_chunks)]
+    dev_null = [
+        n for n in pool.starmap(
+            run_singletons, argument_list)
+    ]
 
 def main(argv):
     logging.info('Running clustering - argv =  %s ', str(argv))

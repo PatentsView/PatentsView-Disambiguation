@@ -80,13 +80,13 @@ def generate_inventor_canopies(config):
                  os.path.dirname(config['INVENTOR_BUILD_CANOPIES']['canopy_out']))
     os.makedirs(os.path.dirname(config['INVENTOR_BUILD_CANOPIES']['canopy_out']), exist_ok=True)
 
-    new_pregranted_canopies_all = build_canopies_for_type(config, source='pregrant_database')
-    new_pregranted_canopies = dict(filter(lambda i: i[0] == 'fl:ji_ln:kim', new_pregranted_canopies_all.items()))
-    print(new_pregranted_canopies)
+    new_pregranted_canopies = build_canopies_for_type(config, source='pregrant_database')
+    # new_pregranted_canopies = dict(filter(lambda i: i[0] == 'fl:ji_ln:kim', new_pregranted_canopies_all.items()))
+    # print(new_pregranted_canopies)
 
-    new_granted_canopies_all = build_canopies_for_type(config, source='granted_patent_database')
-    new_granted_canopies = dict(filter(lambda i: i[0] == 'fl:ji_ln:kim', new_granted_canopies_all.items()))
-    print(new_granted_canopies)
+    new_granted_canopies = build_canopies_for_type(config, source='granted_patent_database')
+    # new_granted_canopies = dict(filter(lambda i: i[0] == 'fl:ji_ln:kim', new_granted_canopies_all.items()))
+    # print(new_granted_canopies)
 
     if config['DISAMBIGUATION']['INCREMENTAL'] == "1":
         new_granted_canopies, new_pregranted_canopies = supplement_from_the_past(config,
