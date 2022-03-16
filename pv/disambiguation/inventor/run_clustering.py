@@ -104,11 +104,13 @@ def batch(canopy_list, loader, min_batch_size=800):
     for batch, batch_size in zip(batches, batch_sizes):
         if batch_size > 0:
             all_records = loader.load_canopies(batch)
-            all_pids = [x.uuid for x in all_records]
+            all_pids = list(set([x.uuid for x in all_records]))
             all_lbls = -1 * np.ones(len(all_records))
             all_canopies = []
             for c in batch:
                 all_canopies.extend([c for _ in range(sizes[c])])
+            print(len(all_canopies))
+            print(len(all_pids))
             yield all_pids, all_lbls, all_records, all_canopies
 
 
@@ -255,16 +257,20 @@ def run_clustering(config):
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
-    pool = mp.Pool()
-    argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
-    dev_null = [
-        n for n in pool.starmap(
-            run_batch, argument_list)
-    ]
+    pool = mp.Pool(int(config['inventor']['parallelism']))
+    for x in range(0, num_chunks):
+       logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
+       run_batch(config, chunks[x], outdir, x, 'job-%s' % x )
+  
+    # argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
+    # dev_null = [
+    #     n for n in pool.starmap(
+    #         run_batch, argument_list)
+    # ]
     # chunk 0 will write out the meta data and singleton information
     logging.info('Saving chunk to canopy map')
     with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-        pickle.dump([chunks, list(singletons)], fout)
+       pickle.dump([chunks, list(singletons)], fout)
 
     logging.info('Running singletons!!')
     num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))

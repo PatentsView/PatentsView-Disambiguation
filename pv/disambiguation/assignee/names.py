@@ -17,8 +17,7 @@ def normalize_name(name):
 
 def load_assignee_stopwords():
     r = set()
-    project_home = os.environ['PACKAGE_HOME']
-    with open(f'/Users/bcard/OneDrive - American Institutes for Research in the Behavioral Sciences/projects/patentsview/PatentsView-DB/updater/disambiguation/hierarchical_clustering_disambiguation/clustering_resources/assignee-stopwords-lowercase.txt') as fin:
+    with open('clustering_resources/assignee-stopwords-lowercase.txt') as fin:
         for line in fin:
             r.add(line.strip())
     return r
