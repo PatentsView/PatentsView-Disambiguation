@@ -56,16 +56,22 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
         pids_list.append(all_pids)
         for i in range(len(all_pids)):
             # record mapping from canopy to the tree id
+            print(i)
+            print(all_canopies[i])
+            print(tree_id)
+            print(fc[i])
             canopy2tree[all_canopies[i]] = tree_id
             if all_canopies[i] not in canopy2predictions:
                 canopy2predictions[all_canopies[i]] = [[], []]
                 canopy2tree[all_canopies[i]] = tree_id
             # save predictions (used in the non incremental setting)
             canopy2predictions[all_canopies[i]][0].append(all_pids[i])
+            print(fc[i])
             canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
         return canopy2predictions
     else:
         raise Exception('Must have non-singleton canopies')
+        print("EXCEPTION CALLED")
         fc = [0]
         for i in range(len(all_pids)):
             if all_canopies[i] not in canopy2predictions:
@@ -109,6 +115,10 @@ def batch(canopy_list, loader, min_batch_size=800):
             all_canopies = []
             for c in batch:
                 all_canopies.extend([c for _ in range(sizes[c])])
+            print(all_pids)
+            print(all_lbls)
+            print(all_records)
+            print(all_canopies)
             yield all_pids, all_lbls, all_records, all_canopies
 
 
@@ -157,7 +167,8 @@ def run_batch(config, canopy_list, outdir, chunk_id, job_name='disambig'):
             #     logging.info('[%s] caching results for job', job_name)
             #     with open(outfile, 'wb') as fin:
             #         pickle.dump(results, fin)
-
+    print("Printing RESULTS")
+    print(results)
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
 
@@ -258,6 +269,9 @@ def run_clustering(config):
     pool = mp.Pool(int(config['inventor']['parallelism']))
     for x in range(0, num_chunks):
        logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
+       print("Printing Chunk of X")
+       print(chunks[x])
+       print(x)
        run_batch(config, chunks[x], outdir, x, 'job-%s' % x )
   
     # argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
