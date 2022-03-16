@@ -8,6 +8,7 @@ import torch
 from absl import app
 from absl import logging
 from grinch.agglom import Agglom
+from grinch.train_model import Trainer
 
 from pv.disambiguation.inventor.load_mysql import Loader
 from pv.disambiguation.inventor.model import InventorModel
@@ -48,7 +49,12 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
         # running clustering
         grinch = Agglom(model, features, num_points=len(all_pids))
         grinch.build_dendrogram_hac()
+        # fc = grinch.flat_clustering(10)
+        # threshold = Trainer.get_thresholds(trees)
         fc = grinch.flat_clustering(model.aux['threshold'])
+        # print(model.aux['threshold'])
+        # 4.999639331435592e-05 for 125k samples
+        # 4.999639331435592e-05 <=> .00004999 for 75k samples
         # storing the state of the clustering for the incremental setting
         tree_id = len(trees)
         # store the tree that is build for this canopy
@@ -79,6 +85,7 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
                 canopy2tree[all_canopies[i]] = None
             canopy2predictions[all_canopies[i]][0].append(all_pids[i])
             canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
+            print(canopy2predictions)
         return canopy2predictions
 
 
@@ -107,6 +114,9 @@ def form_canopy_groups(canopy_list, loader, min_batch_size=800):
 
 def batch(canopy_list, loader, min_batch_size=800):
     batches, batch_sizes, sizes = form_canopy_groups(canopy_list, loader, min_batch_size)
+    print(batches)
+    print(batch_sizes)
+    print(sizes)
     for batch, batch_size in zip(batches, batch_sizes):
         if batch_size > 0:
             all_records = loader.load_canopies(batch)
@@ -242,6 +252,7 @@ def run_clustering(config):
 
     # Find all of the canopies in the entire dataset.
     all_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
+
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
                                  reverse=True)
@@ -250,11 +261,11 @@ def run_clustering(config):
     logging.info('Number of canopies %s ', len(all_canopies_sorted))
     logging.info('Number of singletons %s ', len(singletons))
     logging.info('Largest canopies - ')
-    for c in all_canopies_sorted[:10]:
+    for c in all_canopies_sorted:
         logging.info('%s - %s records', c, loader.num_records(c))
-
     # setup the output dir
     outdir = config['inventor']['clustering_output_folder']
+    print(outdir)
 
     # the number of chunks based on the specified chunksize
     num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])))
@@ -280,30 +291,31 @@ def run_clustering(config):
     #         run_batch, argument_list)
     # ]
     # chunk 0 will write out the meta data and singleton information
-    logging.info('Saving chunk to canopy map')
-    with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-       pickle.dump([chunks, list(singletons)], fout)
+    # logging.info('Saving chunk to canopy map')
+    # with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+    #     pickle.dump([chunks, list(singletons)], fout)
+    #
+    # logging.info('Running singletons!!')
+    # num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
+    # # chunk all of the data by canopy
+    # singleton_chunks = [[] for _ in range(num_chunks)]
+    # for idx, c in enumerate(singletons):
+    #     singleton_chunks[idx % num_singleton_chunks].append(c)
+    # pool = mp.Pool()
+    # argument_list = [(config, singleton_chunks[x], outdir, x, 'singleton-job-%s' % x) for x in range(0, num_singleton_chunks)]
+    # dev_null = [
+    #     n for n in pool.starmap(
+    #         run_singletons, argument_list)
+    # ]
 
-    logging.info('Running singletons!!')
-    num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
-    # chunk all of the data by canopy
-    singleton_chunks = [[] for _ in range(num_chunks)]
-    for idx, c in enumerate(singletons):
-        singleton_chunks[idx % num_singleton_chunks].append(c)
-    pool = mp.Pool()
-    argument_list = [(config, singleton_chunks[x], outdir, x, 'singleton-job-%s' % x) for x in range(0, num_singleton_chunks)]
-    dev_null = [
-        n for n in pool.starmap(
-            run_singletons, argument_list)
-    ]
 
 def main(argv):
     logging.info('Running clustering - argv =  %s ', str(argv))
 
     # Load the config files
-    config = configparser.ConfigParser()
-    config.read(['config/database_config.ini', 'config/inventor/run_clustering.ini', 'config/database_tables.ini'])
-    logging.info('Config - %s', str(config))
+    # config = configparser.ConfigParser()
+    # config.read(['config/database_config.ini', 'config/inventor/run_clustering.ini', 'config/database_tables.ini'])
+    # logging.info('Config - %s', str(config))
     run_clustering(config)
 
 
