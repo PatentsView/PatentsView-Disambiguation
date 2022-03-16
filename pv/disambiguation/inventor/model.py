@@ -30,7 +30,7 @@ class InventorModel(object):
                 x.title = ''
                 logging.warning('Missing title for %s', x.record_id)
                 return ''
-
+        print(config['inventor']['coinventors'])
         with open(config['inventor']['coinventors'], 'rb') as fin:
             coinventor_map = pickle.load(fin)
         logging.info('Loaded Patent Coinventors Map...')

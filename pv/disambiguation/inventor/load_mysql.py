@@ -73,10 +73,10 @@ def load_canopy(canopy_name, pregrant_ids, granted_ids, cnx_pg, cnx_g, cnx_pg_in
                  len(granted_ids))
     rec = (get_pregrants(pregrant_ids, cnx_pg) if pregrant_ids else []) + (
         get_granted(granted_ids, cnx_g) if granted_ids else [])
-    if cnx_pg_inc is not None:
-        rec.extend(get_pregrants(pregrant_ids, cnx_pg_inc) if pregrant_ids else [])
-    if cnx_g_inc is not None:
-        rec.extend(get_granted(granted_ids, cnx_g_inc) if pregrant_ids else [])
+    # if cnx_pg_inc is not None:
+    #     rec.extend(get_pregrants(pregrant_ids, cnx_pg_inc) if pregrant_ids else [])
+    # if cnx_g_inc is not None:
+    #     rec.extend(get_granted(granted_ids, cnx_g_inc) if pregrant_ids else [])
     return rec
 
 
