@@ -23,6 +23,7 @@ def build_title_map_for_source(config, source='granted_patent_database'):
         title_field=incremental_components.get('title_field'),
         filter=incremental_components.get('filter'),
         title_table=incremental_components.get('title_table'))
+    logging.log(logging.INFO, query)
     cursor.execute(query)
     idx = 0
     for rec in cursor:
