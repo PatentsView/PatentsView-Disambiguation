@@ -62,22 +62,16 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
         pids_list.append(all_pids)
         for i in range(len(all_pids)):
             # record mapping from canopy to the tree id
-            print(i)
-            print(all_canopies[i])
-            print(tree_id)
-            print(fc[i])
             canopy2tree[all_canopies[i]] = tree_id
             if all_canopies[i] not in canopy2predictions:
                 canopy2predictions[all_canopies[i]] = [[], []]
                 canopy2tree[all_canopies[i]] = tree_id
             # save predictions (used in the non incremental setting)
             canopy2predictions[all_canopies[i]][0].append(all_pids[i])
-            print(fc[i])
             canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
         return canopy2predictions
     else:
         raise Exception('Must have non-singleton canopies')
-        print("EXCEPTION CALLED")
         fc = [0]
         for i in range(len(all_pids)):
             if all_canopies[i] not in canopy2predictions:
@@ -85,7 +79,7 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
                 canopy2tree[all_canopies[i]] = None
             canopy2predictions[all_canopies[i]][0].append(all_pids[i])
             canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
-            print(canopy2predictions)
+            print(f"{all_canopies[i]} has {len(set(canopy2predictions[all_canopies[i]][1]))} unique inventors for {len(canopy2predictions[all_canopies[i]][1])} rows")
         return canopy2predictions
 
 
@@ -114,9 +108,6 @@ def form_canopy_groups(canopy_list, loader, min_batch_size=800):
 
 def batch(canopy_list, loader, min_batch_size=800):
     batches, batch_sizes, sizes = form_canopy_groups(canopy_list, loader, min_batch_size)
-    print(batches)
-    print(batch_sizes)
-    print(sizes)
     for batch, batch_size in zip(batches, batch_sizes):
         if batch_size > 0:
             all_records = loader.load_canopies(batch)
@@ -125,10 +116,6 @@ def batch(canopy_list, loader, min_batch_size=800):
             all_canopies = []
             for c in batch:
                 all_canopies.extend([c for _ in range(sizes[c])])
-            print(all_pids)
-            print(all_lbls)
-            print(all_records)
-            print(all_canopies)
             yield all_pids, all_lbls, all_records, all_canopies
 
 
@@ -177,7 +164,6 @@ def run_batch(config, canopy_list, outdir, chunk_id, job_name='disambig'):
             #     logging.info('[%s] caching results for job', job_name)
             #     with open(outfile, 'wb') as fin:
             #         pickle.dump(results, fin)
-    print("Printing RESULTS")
     print(results)
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
@@ -280,33 +266,30 @@ def run_clustering(config):
     pool = mp.Pool(int(config['inventor']['parallelism']))
     for x in range(0, num_chunks):
        logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
-       print("Printing Chunk of X")
-       print(chunks[x])
-       print(x)
        run_batch(config, chunks[x], outdir, x, 'job-%s' % x )
   
-    # argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
-    # dev_null = [
-    #     n for n in pool.starmap(
-    #         run_batch, argument_list)
-    # ]
+    argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
+    dev_null = [
+        n for n in pool.starmap(
+            run_batch, argument_list)
+    ]
     # chunk 0 will write out the meta data and singleton information
-    # logging.info('Saving chunk to canopy map')
-    # with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-    #     pickle.dump([chunks, list(singletons)], fout)
-    #
-    # logging.info('Running singletons!!')
-    # num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
-    # # chunk all of the data by canopy
-    # singleton_chunks = [[] for _ in range(num_chunks)]
-    # for idx, c in enumerate(singletons):
-    #     singleton_chunks[idx % num_singleton_chunks].append(c)
-    # pool = mp.Pool()
-    # argument_list = [(config, singleton_chunks[x], outdir, x, 'singleton-job-%s' % x) for x in range(0, num_singleton_chunks)]
-    # dev_null = [
-    #     n for n in pool.starmap(
-    #         run_singletons, argument_list)
-    # ]
+    logging.info('Saving chunk to canopy map')
+    with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+        pickle.dump([chunks, list(singletons)], fout)
+
+    logging.info('Running singletons!!')
+    num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
+    # chunk all of the data by canopy
+    singleton_chunks = [[] for _ in range(num_chunks)]
+    for idx, c in enumerate(singletons):
+        singleton_chunks[idx % num_singleton_chunks].append(c)
+    pool = mp.Pool()
+    argument_list = [(config, singleton_chunks[x], outdir, x, 'singleton-job-%s' % x) for x in range(0, num_singleton_chunks)]
+    dev_null = [
+        n for n in pool.starmap(
+            run_singletons, argument_list)
+    ]
 
 
 def main(argv):
