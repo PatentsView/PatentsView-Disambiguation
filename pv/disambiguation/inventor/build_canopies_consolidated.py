@@ -42,9 +42,9 @@ def build_canopies_for_type(config, source='granted_patent_database'):
     for uuid, name_first, name_last in cursor:
         im = InventorMention(uuid, '0', '', name_first if name_first else '', name_last if name_last else '', '', '',
                              '')
-        canopy2uuids[first_letter_last_name(im, num_first_letters=2)].append(uuid)
+        canopy2uuids[first_letter_last_name(im, num_first_letters=1)].append(uuid)
         idx += 1
-        logging.log_every_n(logging.INFO, 'Processed %s %s records - %s canopies', 10000, source, idx,
+        logging.log_every_n(logging.INFO, 'Processed %s %s records - %s canopies', 1000, source, idx,
                             len(canopy2uuids))
     logging.log(logging.INFO, 'Processed %s %s records - %s canopies', idx, source, len(canopy2uuids))
     return canopy2uuids
@@ -82,7 +82,11 @@ def generate_inventor_canopies(config):
     print(os.getcwd())
 
     new_pregranted_canopies = build_canopies_for_type(config, source='pregrant_database')
+    # new_pregranted_canopies = dict(filter(lambda i: i[0] == 'fl:ji_ln:kim', new_pregranted_canopies_all.items()))
+    # print(new_pregranted_canopies)
+
     new_granted_canopies = build_canopies_for_type(config, source='granted_patent_database')
+    # new_granted_canopies = dict(filter(lambda i: i[0] == 'fl:ji_ln:kim', new_granted_canopies_all.items()))
 
     if config['DISAMBIGUATION']['INCREMENTAL'] == "1":
         new_granted_canopies, new_pregranted_canopies = supplement_from_the_past(config,
@@ -92,8 +96,10 @@ def generate_inventor_canopies(config):
     # Dropping pickle files for recreation
         print(f"WARNING -- DELETING PRIOR PKL FILES AT {config['INVENTOR_BUILD_CANOPIES']['canopy_out']} FOR REGENERATION")
         if os.path.isfile("canopies.pregranted.pkl"):
+            print("detected file")
             os.remove("canopies.pregranted.pkl")
         if os.path.isfile("canopies.granted.pkl"):
+            print("detected file")
             os.remove("canopies.granted.pkl")
 
     # Export pickle files
