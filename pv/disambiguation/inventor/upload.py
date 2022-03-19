@@ -8,6 +8,7 @@ import pv.disambiguation.util.db as pvdb
 from pv.disambiguation.inventor import load_mysql
 
 logging.set_verbosity(logging.INFO)
+from mysql.connector.errors import ProgrammingError
 
 
 def create_tables(config):
@@ -44,7 +45,7 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
         g_cursor.execute(
             'alter table {table_name} add primary key (uuid)'.format(
                 table_name=config['INVENTOR_UPLOAD']['target_table']))
-    except mysql.connector.errors.ProgrammingError as e:
+    except ProgrammingError as e:
         from mysql.connector import errorcode
         if not e.errno == errorcode.ER_MULTIPLE_PRI_KEY:
             raise
