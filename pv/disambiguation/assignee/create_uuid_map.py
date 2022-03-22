@@ -28,11 +28,11 @@ def create_uuid_map(config, source='granted_patent_database'):
 
 
 def generate_uuid_map(config):
-    if not os.path.exists(config['ASSIGNEE_UPLOAD']['uuidmap']):
-        granted_uuids = create_uuid_map(config, 'granted_patent_database')
-        pgranted_uuids = create_uuid_map(config, 'pregrant_database')
-        with open(config['ASSIGNEE_UPLOAD']['uuidmap'], 'wb') as fout:
-            pickle.dump([granted_uuids, pgranted_uuids], fout)
+    # if not os.path.exists(config['ASSIGNEE_UPLOAD']['uuidmap']):
+    granted_uuids = create_uuid_map(config, 'granted_patent_database')
+    pgranted_uuids = create_uuid_map(config, 'pregrant_database')
+    with open(config['ASSIGNEE_UPLOAD']['uuidmap'], 'wb') as fout:
+        pickle.dump([granted_uuids, pgranted_uuids], fout)
 
 
 def main(argv):
