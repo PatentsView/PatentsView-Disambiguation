@@ -16,9 +16,14 @@ def create_uuid_map(config, source='granted_patent_database'):
     cnx_g = pvdb.connect_to_disambiguation_database(config, dbtype=source)
     components = generate_incremental_components(config, source, 'ra')
     g_cursor = cnx_g.cursor()
-    g_cursor.execute("SELECT {id_field}, {document_id_field}, {sequence_field} FROM rawassignee ra;".format(
-        id_field=components.get('id_field'), document_id_field=components.get('document_id_field'),
-        sequence_field=components.get('sequence_field')))
+    query = "SELECT {id_field}, {document_id_field}, {sequence_field} FROM {db}.rawassignee ra {filter};".format(
+        id_field=components.get('id_field')
+        , document_id_field=components.get('document_id_field')
+        , sequence_field=components.get('sequence_field')
+        , db=config['DISAMBIGUATION'][source]
+        , filter=components.get('filter'))
+    print(query)
+    g_cursor.execute(query)
     uuids = dict()
     record_id_format = components.get('record_id_format')
     format = f"{record_id_format}-%s".format(record_id_format=record_id_format)
