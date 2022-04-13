@@ -16,11 +16,16 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
     query = """
     SELECT ra.{id_field}, ra.{document_id_field}, ra.{sequence_field} as sequence, name_first,
      name_last, organization, type, rawlocation_id, rl.city, rl.state, rl.country
-      FROM rawassignee ra left join rawlocation rl on rl.id = ra.rawlocation_id
+      FROM {db}.rawassignee ra 
+      left join rawlocation rl on rl.id = ra.rawlocation_id
+      {filter}
     """.format(
         id_field=incremental_components.get('id_field'),
         document_id_field=incremental_components.get("document_id_field"),
-        sequence_field=incremental_components.get('sequence_field'))
+        sequence_field=incremental_components.get('sequence_field'),
+        db=config['DISAMBIGUATION'][source],
+        filter=incremental_components.get('filter'))
+    print(query)
     cursor.execute(query)
     feature_map = collections.defaultdict(list)
     idx = 0
