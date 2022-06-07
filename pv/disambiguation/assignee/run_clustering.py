@@ -188,7 +188,7 @@ def run_clustering(config):
     for c in all_canopies_sorted[:10]:
         logging.info('%s - %s records', c, loader.num_records(c))
     outdir = config['assignee']['clustering_output_folder']
-    num_chunks = int(len(all_canopies_sorted) / int(config['assignee']['chunk_size']))
+    num_chunks = int(len(all_canopies_sorted) // int(config['assignee']['chunk_size'])) + 1
     logging.info('%s num_chunks', num_chunks)
     logging.info('%s chunk_size', int(config['assignee']['chunk_size']))
     chunks = [[] for _ in range(num_chunks)]
