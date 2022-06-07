@@ -28,8 +28,10 @@ def first_letter_last_name(im, num_first_letters=1):
 def build_canopies_for_type(config, source='granted_patent_database'):
     canopy2uuids = collections.defaultdict(list)
     cnx = pvdb.connect_to_disambiguation_database(config, dbtype=source)
+    ignore_filters = config['DISAMBIGUATION'].get('debug', 0)
+
     incremental_components = generate_incremental_components(config, source,
-                                                             db_table_prefix='ri')
+                                                             db_table_prefix='ri', ignore_filters=ignore_filters)
     # cnx is none if we haven't specified a pregranted table
     if cnx is None:
         return canopy2uuids

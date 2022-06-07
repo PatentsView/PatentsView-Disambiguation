@@ -15,8 +15,9 @@ def build_title_map_for_source(config, source='granted_patent_database'):
     cnx = pvdb.connect_to_disambiguation_database(config, dbtype=source)
     if cnx is None:
         return feature_map
-    #id_field | document_id_field | central_entity_field | sequence_field | title_table | title_field | record_id_format
-    incremental_components = generate_incremental_components(config, source, 'a')
+    # id_field | document_id_field | central_entity_field | sequence_field | title_table | title_field | record_id_format
+    ignore_filters = config['DISAMBIGUATION'].get('debug', 0)
+    incremental_components = generate_incremental_components(config, source, 'a', ignore_filters)
     cursor = cnx.cursor(dictionary=True)
     query = "select {central_entity_field},{title_field} from {title_table} a {filter};".format(
         central_entity_field=incremental_components.get('central_entity_field'),

@@ -4,18 +4,20 @@ import pickle
 
 from absl import logging, app
 
+from pv.disambiguation.util.config_util import generate_incremental_components
+
 
 def build_assignee_mentions_for_source(config, source='granted_patent_database'):
     import pv.disambiguation.util.db as pvdb
     from pv.disambiguation.core import AssigneeMention
-    from pv.disambiguation.util.config_util import generate_incremental_components
     cnx = pvdb.connect_to_disambiguation_database(config, dbtype=source)
-    cursor = cnx.cursor(dictionary=True)
+    ignore_filters = config['DISAMBIGUATION'].get('debug', 0)
+
     incremental_components = generate_incremental_components(config, source,
-                                                             db_table_prefix='ra')
+                                                             db_table_prefix='ra', ignore_filters=ignore_filters)
     query = """
-    SELECT ra.{id_field}, ra.{document_id_field}, ra.{sequence_field} as sequence, name_first,
-     name_last, organization, type, rawlocation_id, rl.city, rl.state, rl.country
+        SELECT ra.{id_field}, ra.{document_id_field}, ra.{sequence_field} as sequence, name_first,
+         name_last, organization, type, rawlocation_id, rl.city, rl.state, rl.country
       FROM {db}.rawassignee ra 
       left join rawlocation rl on rl.id = ra.rawlocation_id
       {filter}
@@ -24,8 +26,8 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
         document_id_field=incremental_components.get("document_id_field"),
         sequence_field=incremental_components.get('sequence_field'),
         db=config['DISAMBIGUATION'][source],
-        filter=incremental_components.get('filter'))
-    print(query)
+        filter=incremental_components.get('filter', 'where 1=1'))
+    cursor = cnx.cursor(dictionary=True)
     cursor.execute(query)
     feature_map = collections.defaultdict(list)
     idx = 0

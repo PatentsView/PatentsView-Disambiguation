@@ -18,8 +18,9 @@ def build_coinventor_mentions_for_type(config, source='granted_patent_database')
     # if there was no table specified
     if cnx is None:
         return feature_map
+    ignore_filters = config['DISAMBIGUATION'].get('debug', 0)
     incremental_components = generate_incremental_components(config, source,
-                                                             db_table_prefix='ri')
+                                                             db_table_prefix='ri', ignore_filters=ignore_filters)
     # | id | document_number | sequence | name_first | name_last | organization | type |
     # rawlocation_id | city | state | country | filename | created_date | updated_date |
     query = """

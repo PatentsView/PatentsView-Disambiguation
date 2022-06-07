@@ -2,11 +2,12 @@ import datetime
 import os
 
 
-def generate_incremental_components(config, source, db_table_prefix):
-    where_clause = ""
-    if config['DISAMBIGUATION']['INCREMENTAL'] == "0":
-        where_clause = "where {prefix}.version_indicator <= '{end_date}'".format(
-            prefix=db_table_prefix,
+def generate_incremental_components(config, source, db_table_prefix, ignore_filters):
+    where_clause = "where 1=1"
+    if not ignore_filters:
+        if config['DISAMBIGUATION']['INCREMENTAL'] == "0":
+            where_clause = "where {prefix}.version_indicator <= '{end_date}'".format(
+                prefix=db_table_prefix,
             start_date=config['DATES']['START_DATE'], end_date=config['DATES']['END_DATE'])
         # | id | document_number | sequence | name_first | name_last | organization | type |
         # rawlocation_id | city | state | country | filename | created_date | updated_date |

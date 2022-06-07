@@ -14,7 +14,9 @@ logging.set_verbosity(logging.INFO)
 
 def create_uuid_map(config, source='granted_patent_database'):
     cnx_g = pvdb.connect_to_disambiguation_database(config, dbtype=source)
-    components = generate_incremental_components(config, source, 'ra')
+    # query, record_id_format = pvdb.obtain_assignee_query(config=config, source=source)
+    ignore_filters = config['DISAMBIGUATION'].get('debug', 0)
+    components = generate_incremental_components(config, source, 'ra', ignore_filters)
     g_cursor = cnx_g.cursor()
     query = "SELECT {id_field}, {document_id_field}, {sequence_field} FROM {db}.rawassignee ra {filter};".format(
         id_field=components.get('id_field')
@@ -26,9 +28,10 @@ def create_uuid_map(config, source='granted_patent_database'):
     g_cursor.execute(query)
     uuids = dict()
     record_id_format = components.get('record_id_format')
-    format = f"{record_id_format}-%s".format(record_id_format=record_id_format)
-    for uuid, patent_id, seq in tqdm(g_cursor, 'granted uuids'):
-        uuids[format % (patent_id, seq)] = uuid
+    fmt = f"{record_id_format}-%s".format(record_id_format=record_id_format)
+    for uuid, patent_id, seq, name_first, name_last, organization, type, rawlocation_id, city, state, country in tqdm(
+            g_cursor, 'granted uuids'):
+        uuids[fmt % (patent_id, seq)] = uuid
     return uuids
 
 
