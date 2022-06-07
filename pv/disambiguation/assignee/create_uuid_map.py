@@ -29,7 +29,7 @@ def create_uuid_map(config, source='granted_patent_database'):
     uuids = dict()
     record_id_format = components.get('record_id_format')
     fmt = f"{record_id_format}-%s".format(record_id_format=record_id_format)
-    for uuid, patent_id, seq, name_first, name_last, organization, type, rawlocation_id, city, state, country in tqdm(
+    for uuid, patent_id, seq in tqdm(
             g_cursor, 'granted uuids'):
         uuids[fmt % (patent_id, seq)] = uuid
     return uuids

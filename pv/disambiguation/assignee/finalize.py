@@ -93,7 +93,10 @@ def finalize_results(config):
 
 
 def main(argv):
-    pass
+    import configparser
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini', 'config/assignee/run_clustering.ini'])
+    finalize_results(config)
 
 
 # import pdb
