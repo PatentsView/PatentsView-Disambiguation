@@ -17,7 +17,7 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
                                                              db_table_prefix='ra', ignore_filters=ignore_filters)
     query = """
         SELECT ra.{id_field}, ra.{document_id_field}, ra.{sequence_field} as sequence, name_first,
-         name_last, organization, type, rawlocation_id, rl.city, rl.state, rl.country
+         name_last, organization, type, rawlocation_id,rl.location_id, rl.latitude,rl.longitude, rl.city, rl.state, rl.country
       FROM {db}.rawassignee ra 
       left join rawlocation rl on rl.id = ra.rawlocation_id
       {filter}
@@ -64,7 +64,8 @@ def generate_assignee_mentions(config):
         for c in anm.canopies:
             canopies[c].add(anm.uuid)
         records[anm.uuid] = anm
-
+    records_file_name: str = config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out'] + '.%s.pkl' % 'records'
+    os.makedirs(os.path.dirname(records_file_name), exist_ok=True)
     with open(config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out'] + '.%s.pkl' % 'records', 'wb') as fout:
         pickle.dump(records, fout)
     with open(config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out'] + '.%s.pkl' % 'canopies', 'wb') as fout:
@@ -75,6 +76,7 @@ def main(argv):
     logging.info('Building assignee mentions')
 
     import configparser
+
     config = configparser.ConfigParser()
     config.read(['config/database_config.ini', 'config/database_tables.ini',
                  'config/assignee/build_name_mentions_sql.ini'])
