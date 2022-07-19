@@ -11,10 +11,10 @@ def generate_incremental_components(config, source, db_table_prefix, ignore_filt
             start_date=config['DATES']['START_DATE'], end_date=config['DATES']['END_DATE'])
         # | id | document_number | sequence | name_first | name_last | organization | type |
         # rawlocation_id | city | state | country | filename | created_date | updated_date |
-    else:
-        where_clause = "where {prefix}.version_indicator between '{start_date}' and '{end_date}'".format(
-            prefix=db_table_prefix,
-            start_date=config['DATES']['START_DATE'], end_date=config['DATES']['END_DATE'])
+        else:
+            where_clause = "where {prefix}.version_indicator between '{start_date}' and '{end_date}'".format(
+                prefix=db_table_prefix,
+                start_date=config['DATES']['START_DATE'], end_date=config['DATES']['END_DATE'])
     id_field = "id"
     document_id_field = "document_number"
     central_entity_field = "document_number"

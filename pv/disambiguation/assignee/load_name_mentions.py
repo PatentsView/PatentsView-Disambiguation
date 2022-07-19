@@ -6,7 +6,7 @@ class Loader(object):
         self.assignee_canopies = assignee_canopies
         self.assignee_mentions = assignee_mentions
 
-    def load(self, canopy):
+    def load(self, canopy: object) -> object:
         return [self.assignee_mentions[mid] for mid in self.assignee_canopies[canopy]]
 
     def num_records(self, canopy):

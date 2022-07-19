@@ -2,6 +2,7 @@ import configparser
 import multiprocessing as mp
 import os
 import pickle
+import typing
 
 import numpy as np
 import torch
@@ -59,33 +60,42 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
 
 
 def needs_predicting(canopy_list, results, loader):
+    return canopy_list
     return [c for c in canopy_list if c not in results]
 
 
 def batcher(canopy_list, loader, min_batch_size=800):
-    all_pids = []
-    all_lbls = []
+    from pv.disambiguation.core import AssigneeNameMention
+    all_pids = set()
+    all_lbls = set()
     all_records = []
     all_canopies = []
     for c in canopy_list:
         if len(all_pids) > min_batch_size:
             yield all_pids, all_lbls, all_records, all_canopies
-            all_pids = []
-            all_lbls = []
+            all_pids = set()
+            all_lbls = set()
             all_records = []
             all_canopies = []
-        records = loader.load(c)
-        pids = [x.uuid for x in records]
-        lbls = -1 * np.ones(len(records))
-        all_canopies.extend([c for _ in range(len(pids))])
-        all_pids.extend(pids)
-        all_lbls.extend(lbls)
-        all_records.extend(records)
+
+        records: typing.List[AssigneeNameMention] = loader.load(c)
+        for record in records:
+            pid = record.uuid
+            if pid not in all_pids:
+                all_pids.add(pid)
+                all_lbls.add(-1)
+                all_canopies.append(c)
+                all_records.append(record)
+        # lbls = -1 * np.ones(len(records))
+        # all_canopies.extend([c for _ in range(len(pids))])
+        # all_pids.extend(pids)
+        # all_lbls.extend(lbls)
+        # all_records.extend(records)
     if len(all_pids) > 0:
-        yield all_pids, all_lbls, all_records, all_canopies
+        yield list(all_pids), list(all_lbls), all_records, all_canopies
 
 
-def run_batch(config, canopy_list, outdir, loader,chunk_id, job_name='disambig'):
+def run_batch(config, canopy_list, outdir, loader, chunk_id, job_name='disambig'):
     logging.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
 
     os.makedirs(outdir, exist_ok=True)
@@ -112,7 +122,6 @@ def run_batch(config, canopy_list, outdir, loader,chunk_id, job_name='disambig')
     weight_model = LinearAndRuleModel.from_encoding_model(encoding_model)
     weight_model.aux['threshold'] = 1.0 / (1.0 + float(config['assignee']['sim_threshold']))
     logging.info('[%s] using threshold %s ', job_name, weight_model.aux['threshold'])
-
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
                 batcher(to_run_on, loader, int(config['assignee']['min_batch_size']))):
@@ -196,7 +205,7 @@ def run_clustering(config):
         chunks[idx % num_chunks].append(c)
 
     pool = mp.Pool()
-    argument_list = [(config, chunks[x], outdir, loader,x, 'job-%s' % x) for x in range(0, num_chunks)]
+    argument_list = [(config, chunks[x], outdir, loader, x, 'job-%s' % x) for x in range(0, num_chunks)]
     dev_null = [
         n for n in pool.starmap(
             run_batch, argument_list)

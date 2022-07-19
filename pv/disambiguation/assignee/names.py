@@ -7,11 +7,56 @@ from nltk import word_tokenize
 
 last_split_patterns = ['(?i)as .* by .* of', '(?i)on behalf of', '(?i)as .* by', '(?i)c/o', '(?i)board of regents of']
 first_split_patterns = ['(?i)also trading as', '(?i)acting by and through']
+import json
+import editdistance
+import re
 
 
-def normalize_name(name):
-    return re.sub(' [ ]*', ' ', unicodedata.normalize('NFD', name.replace('\"', '')).encode('ascii', 'ignore').decode(
-        "utf-8").lower()).strip()
+class AssigneePreprocessor:
+    def __init__(self, assignee_common_parts_file, threshold):
+        self.remapping_configuration = json.load(open(assignee_common_parts_file, 'r'))
+        # self.assignee_suffixes  = remapping_configuration.keys()
+        self.threshold = threshold
+
+    def remap_suffixes(self, doc):
+        processed_document_elements = []
+        for token in doc.split():
+            for primary_word, abbreviations in self.remapping_configuration.items():
+                how_different = editdistance.distance(primary_word.lower(),
+                                                      token.lower())
+                # Difference is less than threshold, but there is some difference
+                if self.threshold >= how_different > 0:
+                    token = primary_word
+                    # Order in which suffixes are specified matters
+                    break
+                # Check if any of the abbreviations are used
+                for abbreviation in abbreviations:
+                    abbreviation_pattern = abbreviation + '[^a-zA-Z0-9]{1}'
+                    if re.match(abbreviation_pattern, token, re.IGNORECASE):
+                        token = primary_word
+                        break
+            processed_document_elements.append(token.lower())
+        return " ".join(processed_document_elements)
+
+
+def normalize_name(name, *args, **kwargs):
+    processed_name = name
+    if kwargs.get('remap_common_terms', True):
+        assignee_preprocessor = AssigneePreprocessor(
+            assignee_common_parts_file='clustering_resources/assignee_remapping.json', threshold=2)
+        processed_name = assignee_preprocessor.remap_suffixes(name)
+    if kwargs.get("lower", True):
+        processed_name = processed_name.lower()
+    if kwargs.get("trim_whitespace", True):
+        processed_name.strip()
+    if kwargs.get("strip_extra_whitespace", True):
+        import re
+        processed_name = re.sub("(\s){2,}", "\\1", processed_name)
+    if kwargs.get("force_ascii", True):
+        processed_name = ''.join([i if ord(i) < 128 else ' ' for i in processed_name])
+    if kwargs.get('normalize', True):
+        processed_name = unicodedata.normalize('NFD', processed_name)
+    return processed_name
 
 
 def load_assignee_stopwords():
@@ -19,6 +64,7 @@ def load_assignee_stopwords():
     with open('clustering_resources/assignee-stopwords-lowercase.txt') as fin:
         for line in fin:
             r.add(line.strip())
+    r = set()
     return r
 
 
@@ -100,7 +146,8 @@ def assignee_name_features_and_canopies(name: str):
     if len(noStopwords) <= 2:
         noStopwords = lc
     noSpaces = noStopwords.replace(' ', '')
-    canopies = [z for y in noStopwords.split(' ') for z in [y[0:4], y[-4:]] if len(z) >= 3]
+    # canopies = [z for y in noStopwords.split(' ') for z in [y[0:4], y[-4:]] if len(z) >= 3]
+    canopies = [y[0:4] for y in noStopwords.split(' ') if len(y[0:4]) >= 3]
     if noSpaces:
         rsh = noSpaces
     elif noStopwords:

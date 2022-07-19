@@ -10,6 +10,19 @@ from grinch.features import HashingVectorizerFeatures, SKLearnVectorizerFeatures
 from pv.disambiguation.assignee.names import normalize_name, clean, split, remove_stopwords
 
 
+class LocationVectorizer(object):
+    """Features for hashing vectorizer."""
+
+    def __init__(self, name, get_field, norm=None):
+        self.name = name
+        self.get_field = get_field
+
+    def encode(self, things_to_encode):
+        import scipy
+
+        return scipy.sparse.csr_matrix([self.get_field(x) for x in things_to_encode])
+
+
 class EntityKBFeatures(object):
     def __init__(self, entity_info_file, name, get_field, norm=None):
         logging.info('building entity kb...')
@@ -76,7 +89,7 @@ class AssigneeModel(object):
 
         # Features:
         # name_features = HashingVectorizerFeatures('name_features', lambda x: x.name_features)
-        locations = HashingVectorizerFeatures('locations', lambda x: x.location_strings)
+        locations = HashingVectorizerFeatures('locations', lambda x: x.location_strings, norm='l2')
 
         canopy_feat = HashingVectorizerFeatures('canopy', lambda x: x.canopies)
         entity_kb_feat = EntityKBFeatures('clustering_resources/permid_entity_info.pkl', 'entitykb', lambda x: x)
@@ -85,10 +98,12 @@ class AssigneeModel(object):
         name_tfidf = SKLearnVectorizerFeatures(config['assignee']['assignee_name_model'],
                                                'name_tfidf',
                                                lambda x: clean(split(x.normalized_most_frequent)))
-
-        triples = [(locations, FeatCalc.DOT, CentroidType.NORMED, False, False),
-                   (entity_kb_feat, FeatCalc.NO_MATCH, CentroidType.BINARY, False, True),
-                   (name_tfidf, FeatCalc.DOT, CentroidType.NORMED, False, False)]
+        latlong_vectorizer = LocationVectorizer('location_lat_long',
+                                                lambda x: np.array([x.average_lat, x.average_lon]))
+        triples = [
+            (locations, FeatCalc.DOT, CentroidType.NORMED, False, False),
+            # (entity_kb_feat, FeatCalc.NO_MATCH, CentroidType.BINARY, False, True),
+            (name_tfidf, FeatCalc.DOT, CentroidType.NORMED, False, False)]
         encoders = [t[0] for t in triples]
         feature_types = [t[1] for t in triples]
         centroid_types = [t[2] for t in triples]
