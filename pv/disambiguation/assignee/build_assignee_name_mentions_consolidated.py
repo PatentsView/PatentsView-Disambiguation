@@ -12,16 +12,34 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
     import pv.disambiguation.util.db as pvdb
     from pv.disambiguation.core import AssigneeMention
     cnx = pvdb.connect_to_disambiguation_database(config, dbtype=source)
-    ignore_filters = config['DISAMBIGUATION'].get('debug', 0)
+    ignore_filters = int(config['DISAMBIGUATION'].get('debug', 0))
 
     incremental_components = generate_incremental_components(config, source,
                                                              db_table_prefix='ra', ignore_filters=ignore_filters)
     query = """
-        SELECT ra.{id_field}, ra.{document_id_field}, ra.{sequence_field} as sequence, name_first,
-         name_last, organization, type, rawlocation_id,rl.location_id, rl.latitude,rl.longitude, rl.city, rl.state, rl.country
-      FROM {db}.rawassignee ra 
-      left join rawlocation rl on rl.id = ra.rawlocation_id
-      {filter}
+        SELECT
+    ra.{id_field}
+  , ra.{document_id_field}
+  , ra.{sequence_field} as sequence
+  , name_first
+  , name_last
+  , organization
+  , type
+  , rawlocation_id
+  , ldm.location_id
+  , l.latitude
+  , l.longitude
+  , l.city
+  , l.state
+  , l.country
+FROM
+    {db}.rawassignee ra
+      left join  {db}.rawlocation rl
+on rl.id=ra.rawlocation_id
+    left join {db}.location_disambiguation_mapping_20220630 ldm
+    on ldm.uuid=rl.id
+    left join patentsview_processed_data.locations l on l.curated_location_id=ldm.location_id
+    {filter};
     """.format(
         id_field=incremental_components.get('id_field'),
         document_id_field=incremental_components.get("document_id_field"),
@@ -84,5 +102,19 @@ def main(argv):
     generate_assignee_mentions(config)
 
 
+def pipeline_main():
+    logging.info('Building assignee mentions')
+
+    import configparser
+
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini',
+                 'config/assignee/build_name_mentions_sql.ini'])
+
+    config['DATES'] = {'END_DATE': '2022-06-30'}
+    generate_assignee_mentions(config)
+
+
 if __name__ == "__main__":
-    app.run(main)
+    # app.run(main)
+    pipeline_main()
