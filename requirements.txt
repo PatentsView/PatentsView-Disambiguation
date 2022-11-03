@@ -220,3 +220,5 @@ tqdm
 # PatentsView-Disambiguation/pv/disambiguation/location/run_clustering.py: 6
 # PatentsView-Disambiguation/pv/disambiguation/process/build_inventor_dev_set.py: 15
 wandb
+
+mysql-connector-python
