@@ -10,52 +10,87 @@ first_split_patterns = ['(?i)also trading as', '(?i)acting by and through']
 import json
 import editdistance
 import re
-
+import uuid
 
 class AssigneePreprocessor:
-    def __init__(self, assignee_common_parts_file, threshold):
-        self.remapping_configuration = json.load(open(assignee_common_parts_file, 'r'))
+    def __init__(self, assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file, threshold=0.2):
+        self.correction_configuration = list()
+        with open(assignee_correction_file) as fin:
+            for line in fin:
+                self.correction_configuration.append(line.strip())
+        self.stopphrase_configuration = list()
+        with open(assignee_stopphrase_file) as fin:
+            for line in fin:
+                self.stopphrase_configuration.append(line.strip())
+        self.remapping_configuration = json.load(open(assignee_abbreviation_file, 'r'))
         # self.assignee_suffixes  = remapping_configuration.keys()
         self.threshold = threshold
 
-    def remap_suffixes(self, doc):
+    def preprocess(self, doc):
+        processed_doc = self.expand_abbreviation(doc)
+        processed_doc = self.correct_tokens(processed_doc)
+        processed_doc = self.remove_stopphrase(processed_doc)
+        return processed_doc
+
+    def remove_stopphrase(self, doc):
+        for stopphrase in self.stopphrase_configuration:
+            doc = re.sub(r"\b" + stopphrase + r"\b", " ", doc).strip()
+        return doc
+
+    def correct_tokens(self, doc):
         processed_document_elements = []
         for token in doc.split():
-            for primary_word, abbreviations in self.remapping_configuration.items():
-                how_different = editdistance.distance(primary_word.lower(),
-                                                      token.lower())
-                # Difference is less than threshold, but there is some difference
-                if self.threshold >= how_different > 0:
-                    token = primary_word
-                    # Order in which suffixes are specified matters
-                    break
-                # Check if any of the abbreviations are used
-                for abbreviation in abbreviations:
-                    abbreviation_pattern = abbreviation + '[^a-zA-Z0-9]{1}'
-                    if re.match(abbreviation_pattern, token, re.IGNORECASE):
-                        token = primary_word
+            if len(token) > 1.5 * self.threshold:
+                for primary_word in self.correction_configuration:
+                    how_different = editdistance.distance(primary_word.lower(),
+                                                          token.lower())
+                    if how_different == 0:
                         break
-            processed_document_elements.append(token.lower())
+                    # Difference is less than threshold, but there is some difference
+                    if self.threshold >= how_different > 0:
+                        token = primary_word
+                        # Order in which suffixes are specified matters
+                        break
+            processed_document_elements.append(token.lower().strip())
         return " ".join(processed_document_elements)
+
+    def expand_abbreviation(self, doc):
+        processed_document_elements = []
+        for token in doc.split():
+            for abbreviation, replacement in self.remapping_configuration.items():
+                # Check if any of the abbreviations are used
+                abbreviation_pattern = abbreviation + "[,.\s]*$"
+                if re.match(abbreviation_pattern, token, re.IGNORECASE):
+                    token = replacement.split()
+                    break
+            if isinstance(token, list):
+                processed_document_elements = processed_document_elements + token
+            else:
+                processed_document_elements.append(token)
+        return " ".join(processed_document_elements)
+
+
+assignee_preprocessor = AssigneePreprocessor(
+    assignee_abbreviation_file='clustering_resources/assignee_abbreviations.json',
+    assignee_correction_file='clustering_resources/assignee_corrections.txt',
+    assignee_stopphrase_file='clustering_resources/assignee_stopwords.txt', threshold=2)
 
 
 def normalize_name(name, *args, **kwargs):
     processed_name = name
-    if kwargs.get('remap_common_terms', True):
-        assignee_preprocessor = AssigneePreprocessor(
-            assignee_common_parts_file='clustering_resources/assignee_remapping.json', threshold=2)
-        processed_name = assignee_preprocessor.remap_suffixes(name)
-    if kwargs.get("lower", True):
-        processed_name = processed_name.lower()
-    if kwargs.get("trim_whitespace", True):
-        processed_name.strip()
-    if kwargs.get("strip_extra_whitespace", True):
-        import re
-        processed_name = re.sub("(\s){2,}", "\\1", processed_name)
-    if kwargs.get("force_ascii", True):
-        processed_name = ''.join([i if ord(i) < 128 else ' ' for i in processed_name])
-    if kwargs.get('normalize', True):
-        processed_name = unicodedata.normalize('NFD', processed_name)
+    # if kwargs.get('preprocess', True):
+    processed_name = processed_name.translate({ord(c): " " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"})
+    processed_name = assignee_preprocessor.preprocess(processed_name)
+    # if kwargs.get("lower", True):
+    processed_name = processed_name.lower()
+    # if kwargs.get("trim_whitespace", True):
+    processed_name.strip()
+    # if kwargs.get("strip_extra_whitespace", True):
+    processed_name = re.sub("(\s){2,}", "\\1", processed_name)
+    # if kwargs.get("force_ascii", True):
+    processed_name = ''.join([i if ord(i) < 128 else ' ' for i in processed_name])
+    # if kwargs.get('normalize', True):
+    processed_name = unicodedata.normalize('NFD', processed_name)
     return processed_name
 
 
@@ -138,35 +173,30 @@ def relaxed_string_hash(name: str):
 
 
 def assignee_name_features_and_canopies(name: str):
-    normalized = normalize_name(name)
+    normalized = normalize_name(name, preprocess=True)
     splt = split(normalized)
     cleaned = clean(splt)
-    lc = cleaned.lower()
-    noStopwords = remove_stopwords(lc)
-    if len(noStopwords) <= 2:
-        noStopwords = lc
-    noSpaces = noStopwords.replace(' ', '')
+    # lc = cleaned.lower()
+    # noStopwords = remove_stopwords(lc)
+    # if len(noStopwords) <= 2:
+    #     noStopwords = lc
+    noSpaces = cleaned.replace(' ', '')
     # canopies = [z for y in noStopwords.split(' ') for z in [y[0:4], y[-4:]] if len(z) >= 3]
-    canopies = [y[0:4] for y in noStopwords.split(' ') if len(y[0:4]) >= 3]
+    canopies = [y[0:4] for y in cleaned.split(' ') if len(y[0:4]) >= 3]
     if noSpaces:
         rsh = noSpaces
-    elif noStopwords:
-        rsh = noStopwords
-    elif lc:
-        rsh = lc
     elif cleaned:
         rsh = cleaned
     elif name:
         rsh = name
     else:
         logging.warning("Empty Assignee Name!")
-        import uuid
         rsh = str(uuid.uuid4())
     acronyms = find_acronyms(normalized)
     canopies.extend(acronyms)
     if len(canopies) == 0:
         canopies.append(rsh)
-    return [rsh, noStopwords] + acronyms, canopies
+    return [rsh, cleaned] + acronyms, canopies
 
 
 if __name__ == "__main__":

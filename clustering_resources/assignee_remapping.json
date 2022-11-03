@@ -1,31 +1,16 @@
 {
   "licensing": [],
-  "corporation": [
-    "corp"
-  ],
-  "limited": [
-    "ltd"
-  ],
-  "company": [
-    "co"
-  ],
   "property": [],
   "system": [],
   "development": [],
   "technology": [],
-  "incorporated": [
-    "inc"
-  ],
-  "private": [
-    "pvt"
-  ],
-  "Gesellschaft": [],
-  "aktiengesellschaft": [
-    "ag"
-  ],
   "international": [],
   "business": [],
   "machine": [],
   "electric": [],
-  "kabushiki kaisha": []
+  "kabushiki kaisha": [],
+  "computer": [],
+  "laboratory": [
+    "lab"
+  ]
 }

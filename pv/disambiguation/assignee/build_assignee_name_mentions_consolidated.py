@@ -2,59 +2,92 @@ import collections
 import multiprocessing as mp
 import os
 import pickle
-
+from tqdm import tqdm
 from absl import logging, app
+import csv, sys
 
 from pv.disambiguation.util.config_util import generate_incremental_components
 
 
-def build_assignee_mentions_for_source(config, source='granted_patent_database'):
+def csv_lines(filename, *args, **kwargs):
+    delimiter = kwargs.get('delimiter', ",")
+    quoting = kwargs.get('quoting', csv.QUOTE_NONNUMERIC)
+    quotechar = kwargs.get('quotechar', '"')
+    header = kwargs.get('header', False)
+    if header:
+        counter = -1
+    else:
+        counter = 0
+    csv.field_size_limit(sys.maxsize)
+    with open(filename) as fp:
+        reader = csv.reader(fp, delimiter=delimiter, quotechar=quotechar, quoting=quoting)
+        for line in reader:
+            counter += 1
+    return counter
+
+
+def generate_assignee_records_from_sql(config, ignore_filters, source='granted_patent_database'):
     import pv.disambiguation.util.db as pvdb
-    from pv.disambiguation.core import AssigneeMention
     cnx = pvdb.connect_to_disambiguation_database(config, dbtype=source)
-    ignore_filters = int(config['DISAMBIGUATION'].get('debug', 0))
 
     incremental_components = generate_incremental_components(config, source,
                                                              db_table_prefix='ra', ignore_filters=ignore_filters)
     query = """
-        SELECT
-    ra.{id_field}
-  , ra.{document_id_field}
-  , ra.{sequence_field} as sequence
-  , name_first
-  , name_last
-  , organization
-  , type
-  , rawlocation_id
-  , ldm.location_id
-  , l.latitude
-  , l.longitude
-  , l.city
-  , l.state
-  , l.country
-FROM
-    {db}.rawassignee ra
-      left join  {db}.rawlocation rl
-on rl.id=ra.rawlocation_id
-    left join {db}.location_disambiguation_mapping_20220630 ldm
-    on ldm.uuid=rl.id
-    left join patentsview_processed_data.locations l on l.curated_location_id=ldm.location_id
-    {filter};
-    """.format(
+            SELECT
+        ra.{id_field}
+      , ra.{document_id_field}
+      , ra.{sequence_field} as sequence
+      , name_first
+      , name_last
+      , organization
+      , type
+      , rawlocation_id
+      , l.id as location_id
+    FROM
+        {db}.rawassignee ra
+        lEft join  {db}.rawlocation rl
+    on rl.id=ra.rawlocation_id
+        left join patent.country_codes cc on cc.`alpha-2`=rl.country_transformed
+        left join {db}.location_disambiguation_mapping_20220630 ldm
+        on ldm.uuid=rl.id
+        left join patent.location l on l.id=ldm.location_id
+        {filter}
+        """.format(
         id_field=incremental_components.get('id_field'),
         document_id_field=incremental_components.get("document_id_field"),
         sequence_field=incremental_components.get('sequence_field'),
         db=config['DISAMBIGUATION'][source],
         filter=incremental_components.get('filter', 'where 1=1'))
     cursor = cnx.cursor(dictionary=True)
+    print(query)
     cursor.execute(query)
+    for record in cursor:
+        yield record
+
+
+def generate_assignee_records_from_csv(source='granted_patent_database'):
+    filename = "experiments/granted_source.csv"
+    if source == 'pregrant_database':
+        filename = "experiments/pregranted_source.csv"
+    total_lines = csv_lines(filename)
+    with open(filename, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+        for row in tqdm(reader, total=total_lines):
+            yield row
+
+
+def build_assignee_mentions_for_source(config, source='granted_patent_database'):
+    from pv.disambiguation.core import AssigneeMention
+    ignore_filters = int(config['DISAMBIGUATION'].get('debug', 0))
+    # cursor = generate_assignee_records_from_csv(config, ignore_filters=ignore_filters, source=source)
+    records_generator = generate_assignee_records_from_sql(config, ignore_filters, source)
     feature_map = collections.defaultdict(list)
     idx = 0
-    for rec in cursor:
+    for rec in tqdm(records_generator):
         am = AssigneeMention.from_sql_records(rec)
         feature_map[am.name_features()[0]].append(am)
         idx += 1
-        logging.log_every_n(logging.INFO, 'Processed %s pregrant records - %s features', 10000, idx, len(feature_map))
+        # logging.log_every_n(logging.INFO, 'Processed %s %s records - %s features', 10000, source, idx, len(feature_map))
     return feature_map
 
 
@@ -63,18 +96,23 @@ def generate_assignee_mentions(config):
     logging.info('Building assignee features')
     features = collections.defaultdict(list)
     # Generate mentions from granted and pregrant databases
-    pool = mp.Pool()
-    feats = [
-        n for n in pool.starmap(
-            build_assignee_mentions_for_source, [
-                (config, 'granted_patent_database'),
-                (config, 'pregrant_database')
-            ])
-    ]
+    # pool = mp.Pool()
+    # feats = [
+    #     n for n in pool.starmap(
+    #         build_assignee_mentions_for_source, [
+    #             (config, 'granted_patent_database'),
+    #             (config, 'pregrant_database')
+    #         ])
+    # ]
+    feats = []
+
+    feats.append(build_assignee_mentions_for_source(config, 'granted_patent_database'))
+
+    feats.append(build_assignee_mentions_for_source(config, 'pregrant_database'))
+
     logging.info('finished loading mentions %s', len(feats))
     name_mentions = set(feats[0].keys()).union(set(feats[1].keys()))
     logging.info('number of name mentions %s', len(name_mentions))
-    from tqdm import tqdm
     records = dict()
     from collections import defaultdict
     canopies = defaultdict(set)
@@ -83,6 +121,7 @@ def generate_assignee_mentions(config):
         for c in anm.canopies:
             canopies[c].add(anm.uuid)
         records[anm.uuid] = anm
+
     records_file_name: str = config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out'] + '.%s.pkl' % 'records'
     os.makedirs(os.path.dirname(records_file_name), exist_ok=True)
     with open(config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out'] + '.%s.pkl' % 'records', 'wb') as fout:

@@ -1,5 +1,6 @@
 import os
 import pickle
+import time
 
 import numpy as np
 from absl import logging
@@ -8,6 +9,7 @@ from grinch.features import FeatCalc, CentroidType
 from grinch.features import HashingVectorizerFeatures, SKLearnVectorizerFeatures
 
 from pv.disambiguation.assignee.names import normalize_name, clean, split, remove_stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 class LocationVectorizer(object):
@@ -81,6 +83,32 @@ class EntityKBFeatures(object):
         return np.expand_dims(res, axis=-1)
 
 
+class CustomSKLearnVectorizerFeatures(object):
+    """Features for SKLearn vectorizer."""
+
+    def __init__(self, filename, name, get_field):
+        self.filename = filename
+        self.name = name
+        self.get_field = get_field
+        logging.info('Loading model from %s...' % filename)
+        t = time.time()
+        import dill as dpickle
+
+        # from pv.disambiguation.assignee.assignee_analyzer import REMAPPING_CONFIGURATION, CORRECTION_CONFIGURATION, \
+        #     STOPPHRASE_CONFIGURATION, THRESHOLD, analyze_assignee_name
+        with open(self.filename, 'rb') as fin:
+            self.model = dpickle.load(fin)
+        logging.info('Finished loading %s.', time.time() - t)
+
+    def encode(self, things_to_encode):
+        import editdistance
+        from pv.disambiguation.assignee.assignee_analyzer import analyze_assignee_name
+
+        logging.log_first_n(logging.INFO, 'len(things_to_encode) = %s, %s', 10, len(things_to_encode),
+                            ', '.join([str(self.get_field(x)) for x in things_to_encode[:5]]))
+        return self.model.transform([analyze_assignee_name(self.get_field(x)) for x in things_to_encode])
+
+
 class AssigneeModel(object):
 
     @staticmethod
@@ -92,12 +120,12 @@ class AssigneeModel(object):
         locations = HashingVectorizerFeatures('locations', lambda x: x.location_strings, norm='l2')
 
         canopy_feat = HashingVectorizerFeatures('canopy', lambda x: x.canopies)
-        entity_kb_feat = EntityKBFeatures('clustering_resources/permid_entity_info.pkl', 'entitykb', lambda x: x)
-        # PatentID Features
+        # entity_kb_feat = EntityKBFeatures('clustering_resources/permid_entity_info.pkl', 'entitykb', lambda x: x)
+        # PatentID Feature
         # patent_id = HashingVectorizerFeatures('patentid', lambda x: x.record_id)
-        name_tfidf = SKLearnVectorizerFeatures(config['assignee']['assignee_name_model'],
-                                               'name_tfidf',
-                                               lambda x: clean(split(x.normalized_most_frequent)))
+        name_tfidf = CustomSKLearnVectorizerFeatures(config['assignee']['assignee_name_model'],
+                                                     'name_tfidf',
+                                                     lambda x: clean(split(x.normalized_most_frequent)))
         latlong_vectorizer = LocationVectorizer('location_lat_long',
                                                 lambda x: np.array([x.average_lat, x.average_lon]))
         triples = [

@@ -13,14 +13,14 @@ logging.set_verbosity(logging.INFO)
 def process_file(point2clusters, clusters, pkl_file):
     res = pickle.load(open(pkl_file, 'rb'))
     num_assign = 0
-    for c, res in res.items():
+    for c, res_item in res.items():
         logging.log_first_n(logging.INFO, 'canopy %s', 5, c)
-        for idx in range(len(res[0])):
-            if res[1][idx] not in clusters:
-                logging.log_every_n_seconds(logging.INFO, 'new cluster %s -> %s', 1, res[1][idx], len(clusters))
-                clusters[res[1][idx]] = len(clusters)
-            point2clusters[res[0][idx]].append(clusters[res[1][idx]])
-            logging.log_every_n_seconds(logging.INFO, 'points %s -> %s', 1, res[0][idx], clusters[res[1][idx]])
+        for idx in range(len(res_item[0])):
+            if res_item[1][idx] not in clusters:
+                logging.log_every_n_seconds(logging.INFO, 'new cluster %s -> %s', 1, res_item[1][idx], len(clusters))
+                clusters[res_item[1][idx]] = len(clusters)
+            point2clusters[res_item[0][idx]].append(clusters[res_item[1][idx]])
+            logging.log_every_n_seconds(logging.INFO, 'points %s -> %s', 1, res_item[0][idx], clusters[res_item[1][idx]])
             num_assign += 1
     return num_assign
 
