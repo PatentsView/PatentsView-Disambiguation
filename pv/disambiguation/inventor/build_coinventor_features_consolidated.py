@@ -1,8 +1,9 @@
 import collections
 import configparser
-import multiprocessing as mp
+import billiard as mp
 import os
 import pickle
+import datetime
 
 from absl import logging, app
 
@@ -10,6 +11,7 @@ import pv.disambiguation.util.db as pvdb
 from pv.disambiguation.core import InventorMention
 from pv.disambiguation.util.config_util import generate_incremental_components
 from pv.disambiguation.util.text_utils import last_name
+from lib.configuration import get_disambig_config
 
 
 def build_coinventor_mentions_for_type(config, source='granted_patent_database'):
@@ -73,9 +75,14 @@ def generate_coinventor_mentions(config):
 
 
 def main(argv):
-    config = configparser.ConfigParser()
-    config.read(['config/database_config.ini', 'config/database_tables.ini',
-                 'config/inventor/build_coinventor_features_sql.ini'])
+    # config.read(['config/database_config.ini', 'config/database_tables.ini',
+    #              'config/inventor/build_coinventor_features_sql.ini'])
+    # config.read(['config/database_config.ini', 'config/database_tables.ini', 'config/inventor/build_coinventor_features_sql.ini'])
+    config = get_disambig_config(schedule='quarterly',
+                                 supplemental_configs=[f'config/consolidated_config.ini'],
+                                 **{
+                                     "execution_date": datetime.date(2022, 7, 1)
+                                 })
     generate_coinventor_mentions(config)
 
 
