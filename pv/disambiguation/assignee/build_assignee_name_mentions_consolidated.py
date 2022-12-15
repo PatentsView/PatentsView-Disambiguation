@@ -1,5 +1,5 @@
 import collections
-import multiprocessing as mp
+import billiard as mp
 import os
 import pickle
 from tqdm import tqdm

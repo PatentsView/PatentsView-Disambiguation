@@ -5,7 +5,7 @@ import configparser
 from os.path import basename
 from typing import Optional, Any
 import os
-import multiprocessing as mp
+import billiard as mp
 
 from pathos.multiprocessing import ProcessingPool
 
