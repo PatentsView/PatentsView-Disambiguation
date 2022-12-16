@@ -247,7 +247,7 @@ def run_clustering(config):
     logging.info('Number of canopies %s ', len(all_canopies_sorted))
     logging.info('Number of singletons %s ', len(singletons))
     logging.info('Largest canopies - ')
-    for c in all_canopies_sorted:
+    for c in all_canopies_sorted[:10]:
         logging.info('%s - %s records', c, loader.num_records(c))
     # setup the output dir
     outdir = config['inventor']['clustering_output_folder']
