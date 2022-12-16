@@ -79,7 +79,7 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
                 canopy2tree[all_canopies[i]] = None
             canopy2predictions[all_canopies[i]][0].append(all_pids[i])
             canopy2predictions[all_canopies[i]][1].append('%s-%s' % (all_canopies[i], fc[i]))
-            print(f"{all_canopies[i]} has {len(set(canopy2predictions[all_canopies[i]][1]))} unique inventors for {len(canopy2predictions[all_canopies[i]][1])} rows")
+            # print(f"{all_canopies[i]} has {len(set(canopy2predictions[all_canopies[i]][1]))} unique inventors for {len(canopy2predictions[all_canopies[i]][1])} rows")
         return canopy2predictions
 
 
@@ -164,7 +164,7 @@ def run_batch(config, canopy_list, outdir, chunk_id, job_name='disambig'):
             #     logging.info('[%s] caching results for job', job_name)
             #     with open(outfile, 'wb') as fin:
             #         pickle.dump(results, fin)
-    print(results)
+    # print(results)
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
 
