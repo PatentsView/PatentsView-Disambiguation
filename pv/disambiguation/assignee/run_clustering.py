@@ -251,14 +251,15 @@ def run_clustering(config):
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
-    pool = mp.Pool()
-    argument_list = [(config, chunks[x], outdir, loader, x, 'job-%s' % x) for x in range(0, num_chunks)]
-    # for arguments in argument_list:
-    #     run_batch(*arguments)
-    dev_null = [
-        n for n in pool.starmap(
-            run_batch, argument_list)
-    ]
+    # pool = mp.Pool()
+    # argument_list = [(config, chunks[x], outdir, loader, x, 'job-%s' % x) for x in range(0, num_chunks)]
+    # dev_null = [
+    #     n for n in pool.starmap(
+    #         run_batch, argument_list)
+    # ]
+    for x in range(0, num_chunks):
+        run_batch(config, chunks[x], outdir, loader, x, 'job-%s' % x)
+
 
     logger.info('Running singletons!!')
     run_singletons(list(singletons), outdir, job_name='job-singletons', loader=loader)
