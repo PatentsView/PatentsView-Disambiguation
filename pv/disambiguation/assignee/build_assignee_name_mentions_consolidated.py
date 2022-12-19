@@ -94,22 +94,18 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
 def generate_assignee_mentions(config):
     from pv.disambiguation.core import AssigneeNameMention
     logging.info('Building assignee features')
-    features = collections.defaultdict(list)
+    end_date = config["DATES"]["END_DATE"]
+    path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
+    # features = collections.defaultdict(list)
     # Generate mentions from granted and pregrant databases
-    # pool = mp.Pool()
-    # feats = [
-    #     n for n in pool.starmap(
-    #         build_assignee_mentions_for_source, [
-    #             (config, 'granted_patent_database'),
-    #             (config, 'pregrant_database')
-    #         ])
-    # ]
-    feats = []
-
-    feats.append(build_assignee_mentions_for_source(config, 'granted_patent_database'))
-
-    feats.append(build_assignee_mentions_for_source(config, 'pregrant_database'))
-
+    pool = mp.Pool()
+    feats = [
+        n for n in pool.starmap(
+            build_assignee_mentions_for_source, [
+                (config, 'granted_patent_database'),
+                (config, 'pregrant_database')
+            ])
+    ]
     logging.info('finished loading mentions %s', len(feats))
     name_mentions = set(feats[0].keys()).union(set(feats[1].keys()))
     logging.info('number of name mentions %s', len(name_mentions))
@@ -122,11 +118,11 @@ def generate_assignee_mentions(config):
             canopies[c].add(anm.uuid)
         records[anm.uuid] = anm
 
-    records_file_name: str = config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out'] + '.%s.pkl' % 'records'
+    records_file_name: str = path + '.%s.pkl' % 'records'
     os.makedirs(os.path.dirname(records_file_name), exist_ok=True)
-    with open(config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out'] + '.%s.pkl' % 'records', 'wb') as fout:
+    with open(path + '.%s.pkl' % 'records', 'wb') as fout:
         pickle.dump(records, fout)
-    with open(config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out'] + '.%s.pkl' % 'canopies', 'wb') as fout:
+    with open(path + '.%s.pkl' % 'canopies', 'wb') as fout:
         pickle.dump(canopies, fout)
 
 
