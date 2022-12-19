@@ -59,12 +59,6 @@ def generate_assignee_mentions(config):
     logging.info('Building assignee features')
     features = collections.defaultdict(list)
     end_date = config["DATES"]["END_DATE"]
-    # If running incremental disambiguation
-    if config['DISAMBIGUATION']['INCREMENTAL'] == "1":
-        # Load latest full disambiguation results
-        with open(config['INVENTOR_BUILD_ASSIGNEE_FEAT']['base_assignee_features'], 'rb') as fin:
-            features = pickle.load(fin)
-    # Generate mentions from granted and pregrant databases
     pool = mp.Pool()
     feats = [
         n for n in pool.starmap(
@@ -75,11 +69,8 @@ def generate_assignee_mentions(config):
     ]
     for i in range(0, len(feats)):
         features.update(feats[i])
-    # create output folder if it doesn't exist
     path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out']
     logging.info('writing results to folder: %s', os.path.dirname(path))
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    # Serialize generated mentions
     with open(path + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 

@@ -96,7 +96,6 @@ def generate_assignee_mentions(config):
     logging.info('Building assignee features')
     end_date = config["DATES"]["END_DATE"]
     path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
-    # features = collections.defaultdict(list)
     # Generate mentions from granted and pregrant databases
     pool = mp.Pool()
     feats = [
@@ -119,7 +118,6 @@ def generate_assignee_mentions(config):
         records[anm.uuid] = anm
 
     records_file_name: str = path + '.%s.pkl' % 'records'
-    os.makedirs(os.path.dirname(records_file_name), exist_ok=True)
     with open(path + '.%s.pkl' % 'records', 'wb') as fout:
         pickle.dump(records, fout)
     with open(path + '.%s.pkl' % 'canopies', 'wb') as fout:

@@ -42,13 +42,7 @@ def generate_title_maps(config):
     end_date = config["DATES"]["END_DATE"]
     path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_TITLES']['feature_out']
     logging.info('writing results to folder: %s', os.path.dirname(path))
-    # os.makedirs(os.path.dirname(config['INVENTOR_BUILD_TITLES']['feature_out']), exist_ok=True)
     features = dict()
-    # If running incremental disambiguation
-    if config['DISAMBIGUATION']['INCREMENTAL'] == "1":
-        # Load latest full disambiguation results
-        with open(config['INVENTOR_BUILD_TITLES']['base_title_map'], 'rb') as fin:
-            features = pickle.load(fin)
     pool = mp.Pool()
     feats = [
         n for n in pool.starmap(
