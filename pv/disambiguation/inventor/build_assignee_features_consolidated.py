@@ -58,6 +58,7 @@ def build_assignee_mentions_for_type(config, source='granted_patent_database'):
 def generate_assignee_mentions(config):
     logging.info('Building assignee features')
     features = collections.defaultdict(list)
+    end_date = config["DATES"]["END_DATE"]
     # If running incremental disambiguation
     if config['DISAMBIGUATION']['INCREMENTAL'] == "1":
         # Load latest full disambiguation results
@@ -75,11 +76,11 @@ def generate_assignee_mentions(config):
     for i in range(0, len(feats)):
         features.update(feats[i])
     # create output folder if it doesn't exist
-    logging.info('writing results to folder: %s',
-                 os.path.dirname(config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out']))
-    os.makedirs(os.path.dirname(config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out']), exist_ok=True)
+    path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out']
+    logging.info('writing results to folder: %s', os.path.dirname(path))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     # Serialize generated mentions
-    with open(config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out'] + '.%s.pkl' % 'both', 'wb') as fout:
+    with open(path + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 
 
