@@ -39,11 +39,11 @@ def build_title_map_for_source(config, source='granted_patent_database'):
 
 def generate_title_maps(config):
     # create output folder if it doesn't exist
-    logging.info('writing results to folder: %s',
-                 os.path.dirname(config['INVENTOR_BUILD_TITLES']['feature_out']))
-    os.makedirs(os.path.dirname(config['INVENTOR_BUILD_TITLES']['feature_out']), exist_ok=True)
-    features = dict()
     end_date = config["DATES"]["END_DATE"]
+    path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_TITLES']['feature_out']
+    logging.info('writing results to folder: %s', os.path.dirname(path))
+    # os.makedirs(os.path.dirname(config['INVENTOR_BUILD_TITLES']['feature_out']), exist_ok=True)
+    features = dict()
     # If running incremental disambiguation
     if config['DISAMBIGUATION']['INCREMENTAL'] == "1":
         # Load latest full disambiguation results
@@ -60,7 +60,6 @@ def generate_title_maps(config):
     for i in range(0, len(feats)):
         features.update(feats[i])
 
-    path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_TITLES']['feature_out']
     with open(path + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 
