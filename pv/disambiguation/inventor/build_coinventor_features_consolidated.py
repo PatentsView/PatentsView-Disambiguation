@@ -67,11 +67,11 @@ def generate_coinventor_mentions(config):
     for i in range(0, len(feats)):
         features.update(feats[i])
     # create output folder if it doesn't exist
-    logging.info('writing results to folder: %s', os.path.dirname(config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out']))
     path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out']
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    logging.info('writing results to folder: %s', os.path.dirname(path))
+    # os.makedirs(os.path.dirname(path), exist_ok=True)
     # Serialize generated mentions
-    with open(config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out'] + '.%s.pkl' % 'both', 'wb') as fout:
+    with open(path + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 
 

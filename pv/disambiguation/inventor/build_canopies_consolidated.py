@@ -78,40 +78,33 @@ def supplement_from_the_past(config, new_granted_canopies, new_pregranted_canopi
 
 def generate_inventor_canopies(config):
     # create output folder if it doesn't exist
-    logging.info('writing results to folder: %s',
-                 os.path.dirname(config['INVENTOR_BUILD_CANOPIES']['canopy_out']))
-    os.makedirs(os.path.dirname(config['INVENTOR_BUILD_CANOPIES']['canopy_out']), exist_ok=True)
-    print(os.getcwd())
+    end_date = config["DATES"]["END_DATE"]
+    path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_CANOPIES']['canopy_out']
+    logging.info('writing results to files: %s', os.path.dirname(path))
 
     new_pregranted_canopies = build_canopies_for_type(config, source='pregrant_database')
-    # new_pregranted_canopies = dict(filter(lambda i: i[0] == 'fl:ji_ln:kim', new_pregranted_canopies_all.items()))
-    # print(new_pregranted_canopies)
-
     new_granted_canopies = build_canopies_for_type(config, source='granted_patent_database')
-    # new_granted_canopies = dict(filter(lambda i: i[0] == 'fl:ji_ln:kim', new_granted_canopies_all.items()))
 
-    if config['DISAMBIGUATION']['INCREMENTAL'] == "1":
-        new_granted_canopies, new_pregranted_canopies = supplement_from_the_past(config,
-                                                                                 new_granted_canopies,
-                                                                                 new_pregranted_canopies)
-    elif config['DISAMBIGUATION']['INCREMENTAL'] == "0":
+    # if config['DISAMBIGUATION']['INCREMENTAL'] == "1":
+    #     new_granted_canopies, new_pregranted_canopies = supplement_from_the_past(config,
+    #                                                                              new_granted_canopies,
+    #                                                                              new_pregranted_canopies)
+    # elif config['DISAMBIGUATION']['INCREMENTAL'] == "0":
     # Dropping pickle files for recreation
-        print(f"WARNING -- DELETING PRIOR PKL FILES AT {config['INVENTOR_BUILD_CANOPIES']['canopy_out']} FOR REGENERATION")
-        if os.path.isfile("canopies.pregranted.pkl"):
-            print("detected file")
-            os.remove("canopies.pregranted.pkl")
-        if os.path.isfile("canopies.granted.pkl"):
-            print("detected file")
-            os.remove("canopies.granted.pkl")
+    #     print(f"WARNING -- DELETING PRIOR PKL FILES AT {path} FOR REGENERATION")
+    #     if os.path.isfile("canopies.pregranted.pkl"):
+    #         print("Removing Current File in Directory")
+    #         os.remove("canopies.pregranted.pkl")
+    #     if os.path.isfile("canopies.granted.pkl"):
+    #         print("Removing Current File in Directory")
+    #         os.remove("canopies.granted.pkl")
 
     # Export pickle files
-    with open(config['INVENTOR_BUILD_CANOPIES']['canopy_out_pkl'] + '.%s.pkl' % 'pregranted', 'wb') as fout:
+    with open(path + '.%s.pkl' % 'pregranted', 'wb') as fout:
         pickle.dump(new_pregranted_canopies, fout)
 
-    with open(config['INVENTOR_BUILD_CANOPIES']['canopy_out_pkl'] + '.%s.pkl' % 'granted', 'wb') as fout:
+    with open(path + '.%s.pkl' % 'granted', 'wb') as fout:
         pickle.dump(new_granted_canopies, fout)
-
-
 
 
 def main(argv):
