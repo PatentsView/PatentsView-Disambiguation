@@ -50,17 +50,19 @@ class Loader(object):
 
     @staticmethod
     def from_config(config, config_type='inventor'):
+        end_date = config["DATES"]["END_DATE"]
+        path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out']
         logging.info('building loader from config %s', str(config))
         if config[config_type]['pregranted_canopies'].lower() != 'none':
             logging.info('loading pregranted canopies from %s', config[config_type]['pregranted_canopies'])
-            with open(config[config_type]['pregranted_canopies'], 'rb') as fin:
+            with open(path + '.pregranted.pkl', 'rb') as fin:
                 pregranted_canopies = pickle.load(fin)
         else:
             logging.info('using no pregranted canopies')
             pregranted_canopies = set()
         if config[config_type]['granted_canopies'].lower() != 'none':
             logging.info('loading granted canopies from %s', config[config_type]['granted_canopies'])
-            with open(config[config_type]['granted_canopies'], 'rb') as fin:
+            with open(path + '.granted.pkl', 'rb') as fin:
                 granted_canopies = pickle.load(fin)
         else:
             logging.info('using no granted canopies')
