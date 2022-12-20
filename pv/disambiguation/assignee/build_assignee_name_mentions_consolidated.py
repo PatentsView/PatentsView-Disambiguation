@@ -96,6 +96,7 @@ def generate_assignee_mentions(config):
     logging.info('Building assignee features')
     end_date = config["DATES"]["END_DATE"]
     path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
+    print(path)
     # Generate mentions from granted and pregrant databases
     pool = mp.Pool()
     feats = [
@@ -105,9 +106,9 @@ def generate_assignee_mentions(config):
                 (config, 'pregrant_database')
             ])
     ]
-    logging.info('finished loading mentions %s', len(feats))
+    # logging.info('finished loading mentions %s', len(feats))
     name_mentions = set(feats[0].keys()).union(set(feats[1].keys()))
-    logging.info('number of name mentions %s', len(name_mentions))
+    # logging.info('number of name mentions %s', len(name_mentions))
     records = dict()
     from collections import defaultdict
     canopies = defaultdict(set)
