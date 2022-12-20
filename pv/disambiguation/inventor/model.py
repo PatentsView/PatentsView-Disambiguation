@@ -35,7 +35,7 @@ class InventorModel(object):
                 return ''
 
         print(ipath + config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out'])
-        with open(config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out'] + '.%s.pkl' % 'both', 'rb') as fin:
+        with open(ipath + config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out'] + '.%s.pkl' % 'both', 'rb') as fin:
             coinventor_map = pickle.load(fin)
 
         logging.info('Loaded Patent Coinventors Map...')
@@ -54,8 +54,9 @@ class InventorModel(object):
                 logging.warning('Missing coinventors for %s', x.patent_id)
                 return []
 
-        apath = f"{config['BASE_PATH']['assignee']['feature_out']}".format(end_date=end_date)
-        with open(apath + config['INVENTOR_BUILD_ASSIGNEE_FEAT'] + '.%s.pkl' % 'both', 'rb') as fin:
+        apath = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date)
+        print(apath + config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out'])
+        with open(apath + config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out'] + '.%s.pkl' % 'both', 'rb') as fin:
             assignees_map = pickle.load(fin)
         logging.info('Loaded Patent Assignees Map...')
         for idx, (k, v) in enumerate(assignees_map.items()):
