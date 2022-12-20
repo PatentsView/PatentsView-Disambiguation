@@ -12,11 +12,14 @@ class InventorModel(object):
     @staticmethod
     def from_config(config):
         logging.info('Building Inventor Model...')
+        end_date = config["DATES"]["END_DATE"]
+        ipath = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date)
 
-        with open(config['inventor']['patent_titles'], 'rb') as fin:
+        print(ipath + config['INVENTOR_BUILD_TITLES']['feature_out'])
+        with open(ipath + config['INVENTOR_BUILD_TITLES']['feature_out'] + '.%s.pkl' % 'both', 'rb') as fin:
             patent_tile_map = pickle.load(fin)
         logging.info('Loaded Patent Title Map...')
-        for idx,(k,v) in enumerate(patent_tile_map.items()):
+        for idx, (k, v) in enumerate(patent_tile_map.items()):
             logging.info('%s: %s', k, v)
             if idx > 5:
                 break
@@ -30,11 +33,13 @@ class InventorModel(object):
                 x.title = ''
                 logging.warning('Missing title for %s', x.record_id)
                 return ''
-        print(config['inventor']['coinventors'])
-        with open(config['inventor']['coinventors'], 'rb') as fin:
+
+        print(ipath + config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out'])
+        with open(config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out'] + '.%s.pkl' % 'both', 'rb') as fin:
             coinventor_map = pickle.load(fin)
+
         logging.info('Loaded Patent Coinventors Map...')
-        for idx,(k,v) in enumerate(coinventor_map.items()):
+        for idx, (k,v) in enumerate(coinventor_map.items()):
             logging.info('%s: %s', k, str(v))
             if idx > 5:
                 break
@@ -49,10 +54,11 @@ class InventorModel(object):
                 logging.warning('Missing coinventors for %s', x.patent_id)
                 return []
 
-        with open(config['inventor']['assignees'], 'rb') as fin:
+        apath = f"{config['BASE_PATH']['assignee']['feature_out']}".format(end_date=end_date)
+        with open(apath + config['INVENTOR_BUILD_ASSIGNEE_FEAT'] + '.%s.pkl' % 'both', 'rb') as fin:
             assignees_map = pickle.load(fin)
         logging.info('Loaded Patent Assignees Map...')
-        for idx,(k,v) in enumerate(assignees_map.items()):
+        for idx, (k, v) in enumerate(assignees_map.items()):
             logging.info('%s: %s', k, str(v))
             if idx > 5:
                 break
