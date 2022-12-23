@@ -29,11 +29,9 @@ def csv_lines(filename, *args, **kwargs):
 def generate_assignee_records_from_sql(config, ignore_filters, source='granted_patent_database'):
     import pv.disambiguation.util.db as pvdb
     cnx = pvdb.connect_to_disambiguation_database(config, dbtype=source)
-
-    incremental_components = generate_incremental_components(config, source,
-                                                             db_table_prefix='ra', ignore_filters=ignore_filters)
+    incremental_components = generate_incremental_components(config, source, db_table_prefix='ra', ignore_filters=ignore_filters)
     query = """
-            SELECT
+    SELECT
         ra.{id_field}
       , ra.{document_id_field}
       , ra.{sequence_field} as sequence
@@ -48,8 +46,8 @@ def generate_assignee_records_from_sql(config, ignore_filters, source='granted_p
         lEft join  {db}.rawlocation rl
     on rl.id=ra.rawlocation_id
         left join patent.country_codes cc on cc.`alpha-2`=rl.country_transformed
-        left join {db}.location_disambiguation_mapping_20220630 ldm
-        on ldm.uuid=rl.id
+        left join {db}.location_disambiguation_mapping_{end_date} ldm
+        on ldm.id=rl.id
         left join patent.location l on l.id=ldm.location_id
         {filter}
         """.format(
@@ -57,7 +55,9 @@ def generate_assignee_records_from_sql(config, ignore_filters, source='granted_p
         document_id_field=incremental_components.get("document_id_field"),
         sequence_field=incremental_components.get('sequence_field'),
         db=config['DISAMBIGUATION'][source],
-        filter=incremental_components.get('filter', 'where 1=1'))
+        filter=incremental_components.get('filter', 'where 1=1'),
+        end_date=config["DATES"]["END_DATE"].strip("-")
+        )
     cursor = cnx.cursor(dictionary=True)
     print(query)
     cursor.execute(query)
