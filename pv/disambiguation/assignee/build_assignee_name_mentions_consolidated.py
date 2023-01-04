@@ -40,15 +40,12 @@ def generate_assignee_records_from_sql(config, ignore_filters, source='granted_p
       , organization
       , type
       , rawlocation_id
-      , l.id as location_id
+      , location_id
     FROM
         {db}.rawassignee ra
-        lEft join  {db}.rawlocation rl
-    on rl.id=ra.rawlocation_id
-        left join patent.country_codes cc on cc.`alpha-2`=rl.country_transformed
-        left join {db}.location_disambiguation_mapping_{end_date} ldm
-        on ldm.id=rl.id
-        left join patent.location l on l.id=ldm.location_id
+        left join  {db}.rawlocation rl on rl.id=ra.rawlocation_id
+        # assuming this join is here to only bring in records with accurate country code attributes; BUT REMOVES ~77k records (almost 10%)
+        # inner join geo_data.country_codes cc on cc.`alpha-2`=rl.country_transformed
         {filter}
         """.format(
         id_field=incremental_components.get('id_field'),
@@ -56,7 +53,7 @@ def generate_assignee_records_from_sql(config, ignore_filters, source='granted_p
         sequence_field=incremental_components.get('sequence_field'),
         db=config['DISAMBIGUATION'][source],
         filter=incremental_components.get('filter', 'where 1=1'),
-        end_date=config["DATES"]["END_DATE"].strip("-")
+        end_date=config["DATES"]["END_DATE"].replace("-","")
         )
     cursor = cnx.cursor(dictionary=True)
     print(query)
@@ -106,7 +103,6 @@ def generate_assignee_mentions(config):
                 (config, 'pregrant_database')
             ])
     ]
-    # logging.info('finished loading mentions %s', len(feats))
     name_mentions = set(feats[0].keys()).union(set(feats[1].keys()))
     # logging.info('number of name mentions %s', len(name_mentions))
     records = dict()
