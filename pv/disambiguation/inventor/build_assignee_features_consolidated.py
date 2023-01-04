@@ -66,11 +66,14 @@ def generate_assignee_mentions(config):
                 (config, 'granted_patent_database'),
                 (config, 'pregrant_database')
             ])
-    ]
+    ]  
     for i in range(0, len(feats)):
         features.update(feats[i])
-    path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out']
+    path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out']
     logging.info('writing results to folder: %s', os.path.dirname(path))
+    if os.path.isfile("assignee_features.both.pkl"):
+        print("Removing Current File in Directory")
+        os.remove("assignee_features.both.pkl")
     with open(path + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 

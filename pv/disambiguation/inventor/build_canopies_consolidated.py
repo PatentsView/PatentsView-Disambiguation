@@ -30,8 +30,7 @@ def build_canopies_for_type(config, source='granted_patent_database'):
     cnx = pvdb.connect_to_disambiguation_database(config, dbtype=source)
     ignore_filters = config['DISAMBIGUATION'].get('debug', 0)
 
-    incremental_components = generate_incremental_components(config, source,
-                                                             db_table_prefix='ri', ignore_filters=ignore_filters)
+    incremental_components = generate_incremental_components(config, source, db_table_prefix='ri', ignore_filters=ignore_filters)
     # cnx is none if we haven't specified a pregranted table
     if cnx is None:
         return canopy2uuids
@@ -39,6 +38,7 @@ def build_canopies_for_type(config, source='granted_patent_database'):
     query = "SELECT {id_field}, name_first, name_last FROM rawinventor ri {filter};" \
         .format(id_field=incremental_components.get('id_field'),
                 filter=incremental_components.get('filter'))
+    print(query)
     cursor.execute(query)
     idx = 0
     for uuid, name_first, name_last in cursor:
@@ -52,28 +52,28 @@ def build_canopies_for_type(config, source='granted_patent_database'):
     return canopy2uuids
 
 
-def supplement_from_the_past(config, new_granted_canopies, new_pregranted_canopies):
-    with open(config['INVENTOR_BUILD_CANOPIES']['base_pregranted_canopies'], 'rb') as fin:
-        pregranted_canopies = pickle.load(fin)
-    with open(config['INVENTOR_BUILD_CANOPIES']['base_granted_canopies'], 'rb') as fin:
-        granted_canopies = pickle.load(fin)
-
-    newkeys_pregranted = set([k for k in new_pregranted_canopies.keys()])
-    newkeys_granted = set([k for k in new_granted_canopies.keys()])
-    newkeys_granted_filtered = [x for x in newkeys_granted if x not in newkeys_pregranted]
-
-    for k in tqdm(newkeys_pregranted, 'setting up pregranted'):
-        if k in pregranted_canopies:
-            new_pregranted_canopies[k].extend(pregranted_canopies[k])
-        if k in granted_canopies:
-            new_granted_canopies[k].extend(granted_canopies[k])
-
-    for k in tqdm(newkeys_granted_filtered, 'setting up granted'):
-        if k in pregranted_canopies:
-            new_pregranted_canopies[k].extend(pregranted_canopies[k])
-        if k in granted_canopies:
-            new_granted_canopies[k].extend(granted_canopies[k])
-    return new_granted_canopies, new_pregranted_canopies
+# def supplement_from_the_past(config, new_granted_canopies, new_pregranted_canopies):
+#     with open(config['INVENTOR_BUILD_CANOPIES']['base_pregranted_canopies'], 'rb') as fin:
+#         pregranted_canopies = pickle.load(fin)
+#     with open(config['INVENTOR_BUILD_CANOPIES']['base_granted_canopies'], 'rb') as fin:
+#         granted_canopies = pickle.load(fin)
+#
+#     newkeys_pregranted = set([k for k in new_pregranted_canopies.keys()])
+#     newkeys_granted = set([k for k in new_granted_canopies.keys()])
+#     newkeys_granted_filtered = [x for x in newkeys_granted if x not in newkeys_pregranted]
+#
+#     for k in tqdm(newkeys_pregranted, 'setting up pregranted'):
+#         if k in pregranted_canopies:
+#             new_pregranted_canopies[k].extend(pregranted_canopies[k])
+#         if k in granted_canopies:
+#             new_granted_canopies[k].extend(granted_canopies[k])
+#
+#     for k in tqdm(newkeys_granted_filtered, 'setting up granted'):
+#         if k in pregranted_canopies:
+#             new_pregranted_canopies[k].extend(pregranted_canopies[k])
+#         if k in granted_canopies:
+#             new_granted_canopies[k].extend(granted_canopies[k])
+#     return new_granted_canopies, new_pregranted_canopies
 
 
 def generate_inventor_canopies(config):
@@ -92,12 +92,12 @@ def generate_inventor_canopies(config):
     # elif config['DISAMBIGUATION']['INCREMENTAL'] == "0":
     # Dropping pickle files for recreation
     #     print(f"WARNING -- DELETING PRIOR PKL FILES AT {path} FOR REGENERATION")
-    #     if os.path.isfile("canopies.pregranted.pkl"):
-    #         print("Removing Current File in Directory")
-    #         os.remove("canopies.pregranted.pkl")
-    #     if os.path.isfile("canopies.granted.pkl"):
-    #         print("Removing Current File in Directory")
-    #         os.remove("canopies.granted.pkl")
+    if os.path.isfile("canopies.pregranted.pkl"):
+        print("Removing Current File in Directory")
+        os.remove("canopies.pregranted.pkl")
+    if os.path.isfile("canopies.granted.pkl"):
+        print("Removing Current File in Directory")
+        os.remove("canopies.granted.pkl")
 
     # Export pickle files
     with open(path + '.%s.pkl' % 'pregranted', 'wb') as fout:

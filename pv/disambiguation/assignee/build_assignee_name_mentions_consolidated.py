@@ -113,8 +113,12 @@ def generate_assignee_mentions(config):
         for c in anm.canopies:
             canopies[c].add(anm.uuid)
         records[anm.uuid] = anm
-
-    records_file_name: str = path + '.%s.pkl' % 'records'
+    if os.path.isfile("assignee_mentions.records.pkl"):
+        print("Removing Current File in Directory")
+        os.remove("assignee_mentions.records.pkl")
+    if os.path.isfile("assignee_mentions.canopies.pkl"):
+        print("Removing Current File in Directory")
+        os.remove("assignee_mentions.canopies.pkl")
     with open(path + '.%s.pkl' % 'records', 'wb') as fout:
         pickle.dump(records, fout)
     with open(path + '.%s.pkl' % 'canopies', 'wb') as fout:

@@ -53,7 +53,9 @@ def generate_title_maps(config):
     ]
     for i in range(0, len(feats)):
         features.update(feats[i])
-
+    if os.path.isfile("title_features.both.pkl"):
+        print("Removing Current File in Directory")
+        os.remove("title_features.both.pkl")
     with open(path + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 

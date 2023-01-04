@@ -63,6 +63,9 @@ def generate_coinventor_mentions(config):
         features.update(feats[i])
     path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out']
     logging.info('writing results to folder: %s', os.path.dirname(path))
+    if os.path.isfile("coinventor_features.both.pkl"):
+        print("Removing Current File in Directory")
+        os.remove("coinventor_features.both.pkl")
     with open(path + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 
