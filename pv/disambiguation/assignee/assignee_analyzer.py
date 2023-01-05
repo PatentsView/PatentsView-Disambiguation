@@ -18,9 +18,9 @@ def load_assignee_analyzer_configuration(assignee_abbreviation_file, assignee_co
 
 
 # %%
-assignee_abbreviation_file = '/clustering_resources/assignee_abbreviations.json'
-assignee_correction_file = '/clustering_resources/assignee_corrections.txt'
-assignee_stopphrase_file = '/clustering_resources/assignee_stopwords.txt'
+assignee_abbreviation_file = '/project/clustering_resources/assignee_abbreviations.json'
+assignee_correction_file = '/project/clustering_resources/assignee_corrections.txt'
+assignee_stopphrase_file = '/project/clustering_resources/assignee_stopwords.txt'
 THRESHOLD = 2
 N_GRAM_RANGE = (2, 10)
 # %%
