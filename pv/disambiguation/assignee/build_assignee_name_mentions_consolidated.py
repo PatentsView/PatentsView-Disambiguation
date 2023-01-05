@@ -62,25 +62,13 @@ def generate_assignee_records_from_sql(config, ignore_filters, source='granted_p
         yield record
 
 
-def generate_assignee_records_from_csv(source='granted_patent_database'):
-    filename = "experiments/granted_source.csv"
-    if source == 'pregrant_database':
-        filename = "experiments/pregranted_source.csv"
-    total_lines = csv_lines(filename)
-    with open(filename, newline='') as csvfile:
-        reader = csv.reader(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
-        for row in tqdm(reader, total=total_lines):
-            yield row
-
-
 def build_assignee_mentions_for_source(config, source='granted_patent_database'):
     from pv.disambiguation.core import AssigneeMention
     ignore_filters = int(config['DISAMBIGUATION'].get('debug', 0))
-    # cursor = generate_assignee_records_from_csv(config, ignore_filters=ignore_filters, source=source)
     records_generator = generate_assignee_records_from_sql(config, ignore_filters, source)
     feature_map = collections.defaultdict(list)
     idx = 0
-    for rec in tqdm(records_generator):
+    for rec in tqdm(records_generator, desc='Assignee NameMentions For Source', position=0, leave=True, file=sys.stdout):
         am = AssigneeMention.from_sql_records(rec)
         feature_map[am.name_features()[0]].append(am)
         idx += 1
@@ -108,13 +96,11 @@ def generate_assignee_mentions(config):
     records = dict()
     from collections import defaultdict
     canopies = defaultdict(set)
-    name_mentions_progress = tqdm.tqdm(total=len(name_mentions.keys()), desc='Assignee NameMentions', position=0)
-    for nm in name_mentions:
+    for nm in tqdm(name_mentions, desc='Assignee NameMentions', position=0, leave=True, file=sys.stdout):
         anm = AssigneeNameMention.from_assignee_mentions(nm, feats[0][nm] + feats[1][nm])
         for c in anm.canopies:
             canopies[c].add(anm.uuid)
         records[anm.uuid] = anm
-        name_mentions_progress.update(1)
     if os.path.isfile("assignee_mentions.records.pkl"):
         print("Removing Current File in Directory")
         os.remove("assignee_mentions.records.pkl")
