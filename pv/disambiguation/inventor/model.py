@@ -54,7 +54,7 @@ class InventorModel(object):
                 logging.warning('Missing coinventors for %s', x.patent_id)
                 return []
 
-        apath = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date)
+        apath = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date)
         print(apath + config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out'])
         with open(apath + config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out'] + '.%s.pkl' % 'both', 'rb') as fin:
             assignees_map = pickle.load(fin)

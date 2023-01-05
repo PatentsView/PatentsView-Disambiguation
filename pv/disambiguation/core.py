@@ -194,9 +194,9 @@ def load_inventor_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
         for idx, line in enumerate(fin):
             if idx == 0 and skip_first_line:
                 continue
-            logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
+            # logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
             if idx > N:
-                logging.info('Loaded %s lines of %s', idx, filename)
+                # logging.info('Loaded %s lines of %s', idx, filename)
                 return
             elif idx >= st:
                 yield InventorMention.from_line(line)
@@ -406,14 +406,14 @@ class AssigneeNameMention(object):
                                    unique_exact_strings=unique_exact_strings)
 
     def load_assignee_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
-        logging.info('Loading assignee mentions from %s', filename)
+        # logging.info('Loading assignee mentions from %s', filename)
         with open(filename, 'r') as fin:
             for idx, line in enumerate(fin):
                 if idx == 0 and skip_first_line:
                     continue
-                logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
+                # logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
                 if idx > N:
-                    logging.info('Loaded %s lines of %s', idx, filename)
+                    # logging.info('Loaded %s lines of %s', idx, filename)
                     return
                 elif idx >= st:
                     yield AssigneeMention.from_line(line)
@@ -477,7 +477,7 @@ class LawyerMention(object):
 
     @staticmethod
     def from_line(line):
-        "uuid"  "lawyer_id"     "patent_id"     "name_first"    "name_last"     "organization"  "country"       "sequence"
+        # "uuid"  "lawyer_id"     "patent_id"     "name_first"    "name_last"     "organization"  "country"       "sequence"
         splt = line.strip().split("\t")
         if len(splt) != 8:
             logging.warning('Error processing line %s', line)
@@ -601,14 +601,14 @@ class LocationNameMention(object):
                                    locationMentions[0]._canonical_country, record_ids, mention_ids)
 
 def load_location_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
-    logging.info('Loading location mentions from %s', filename)
+    # logging.info('Loading location mentions from %s', filename)
     with open(filename, 'r') as fin:
         for idx, line in enumerate(fin):
             if idx == 0 and skip_first_line:
                 continue
-            logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
+            # logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
             if idx > N:
-                logging.info('Loaded %s lines of %s', idx, filename)
+                # logging.info('Loaded %s lines of %s', idx, filename)
                 return
             elif idx >= st:
                 yield LocationMention.from_line(line)

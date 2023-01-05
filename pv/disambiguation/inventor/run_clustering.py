@@ -2,6 +2,7 @@ import configparser
 import billiard as mp
 import os
 import pickle
+import datetime
 
 import numpy as np
 import torch
@@ -12,6 +13,9 @@ from grinch.train_model import Trainer
 
 from pv.disambiguation.inventor.load_mysql import Loader
 from pv.disambiguation.inventor.model import InventorModel
+from lib.configuration import get_disambig_config
+from pv.disambiguation.util.config_util import prepare_config
+
 
 logging.set_verbosity(logging.INFO)
 
@@ -43,6 +47,7 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
     :param pids_list: where results are stored
     :return:
     """
+    breakpoint()
     # extracting features
     features = encoding_model.encode(all_records)
     if len(all_pids) > 1:
@@ -303,4 +308,11 @@ def main(argv):
 
 
 if __name__ == "__main__":
+    config = get_disambig_config(schedule='quarterly',
+                                 supplemental_configs=['config/new_consolidated_config.ini'],
+                                 **{
+                                     "execution_date": datetime.date(2022, 7, 1)
+                                 }
+                                 )
+    config = prepare_config(config)
     app.run(main)

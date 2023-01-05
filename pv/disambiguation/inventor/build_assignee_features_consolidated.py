@@ -66,7 +66,7 @@ def generate_assignee_mentions(config):
                 (config, 'granted_patent_database'),
                 (config, 'pregrant_database')
             ])
-    ]  
+    ]
     for i in range(0, len(feats)):
         features.update(feats[i])
     path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out']

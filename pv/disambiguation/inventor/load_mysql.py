@@ -12,8 +12,8 @@ class Loader(object):
         self.granted_canopies = granted_canopies
         self.cnx_g = pvdb.granted_table(config)
         self.cnx_pg = pvdb.pregranted_table(config)
-        self.cnx_g_inc = pvdb.connect_to_disambiguation_database(config,dbtype='granted_patent_database')
-        self.cnx_pg_inc = pvdb.connect_to_disambiguation_database(config,dbtype='pregrant_database')
+        self.cnx_g_inc = pvdb.connect_to_disambiguation_database(config, dbtype='granted_patent_database')
+        self.cnx_pg_inc = pvdb.connect_to_disambiguation_database(config, dbtype='pregrant_database')
 
     def load(self, canopy):
         return load_canopy(canopy,
