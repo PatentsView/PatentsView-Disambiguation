@@ -108,11 +108,13 @@ def generate_assignee_mentions(config):
     records = dict()
     from collections import defaultdict
     canopies = defaultdict(set)
-    for nm in tqdm(name_mentions, 'name_mentions'):
+    name_mentions_progress = tqdm.tqdm(total=len(name_mentions.keys()), desc='Assignee NameMentions', position=0)
+    for nm in name_mentions:
         anm = AssigneeNameMention.from_assignee_mentions(nm, feats[0][nm] + feats[1][nm])
         for c in anm.canopies:
             canopies[c].add(anm.uuid)
         records[anm.uuid] = anm
+        name_mentions_progress.update(1)
     if os.path.isfile("assignee_mentions.records.pkl"):
         print("Removing Current File in Directory")
         os.remove("assignee_mentions.records.pkl")
