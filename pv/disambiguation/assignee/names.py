@@ -71,9 +71,9 @@ class AssigneePreprocessor:
 
 
 assignee_preprocessor = AssigneePreprocessor(
-    assignee_abbreviation_file='clustering_resources/assignee_abbreviations.json',
-    assignee_correction_file='clustering_resources/assignee_corrections.txt',
-    assignee_stopphrase_file='clustering_resources/assignee_stopwords.txt', threshold=2)
+    assignee_abbreviation_file='/clustering_resources/assignee_abbreviations.json',
+    assignee_correction_file='/clustering_resources/assignee_corrections.txt',
+    assignee_stopphrase_file='/clustering_resources/assignee_stopwords.txt', threshold=2)
 
 
 def normalize_name(name, *args, **kwargs):
@@ -96,7 +96,7 @@ def normalize_name(name, *args, **kwargs):
 
 def load_assignee_stopwords():
     r = set()
-    with open('/project/clustering_resources/assignee-stopwords-lowercase.txt') as fin:
+    with open('/clustering_resources/assignee-stopwords-lowercase.txt') as fin:
         for line in fin:
             r.add(line.strip())
     r = set()
