@@ -68,12 +68,12 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
     records_generator = generate_assignee_records_from_sql(config, ignore_filters, source)
     feature_map = collections.defaultdict(list)
     idx = 0
-    for rec in tqdm(records_generator, desc='Assignee NameMentions For Source', position=0, leave=True, file=sys.stdout, miniters=10000):
+    for rec in tqdm(records_generator, desc='Assignee NameMentions For Source', position=0, leave=True, file=sys.stdout, miniters=50000):
         am = AssigneeMention.from_sql_records(rec)
         feature_map[am.name_features()[0]].append(am)
         idx += 1
-        if idx % 10000 == 0:
-            print(f"Iteration {idx} of len({records_generator}) : {idx}/{records_generator} %")
+        # if idx % 10000 == 0:
+        #     print(f"Iteration {idx} of len({records_generator}) : {idx}/{records_generator} %")
         # logging.log_every_n(logging.INFO, 'Processed %s %s records - %s features', 10000, source, idx, len(feature_map))
     return feature_map
 
@@ -98,7 +98,7 @@ def generate_assignee_mentions(config):
     records = dict()
     from collections import defaultdict
     canopies = defaultdict(set)
-    for nm in tqdm(name_mentions, desc='Assignee NameMentions', position=0, leave=True, file=sys.stdout, miniters=15000):
+    for nm in tqdm(name_mentions, desc='Assignee NameMentions', position=0, leave=True, file=sys.stdout, miniters=50000):
         anm = AssigneeNameMention.from_assignee_mentions(nm, feats[0][nm] + feats[1][nm])
         for c in anm.canopies:
             canopies[c].add(anm.uuid)
