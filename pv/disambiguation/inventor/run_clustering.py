@@ -48,6 +48,7 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
     :return:
     """
     # extracting features
+    print(all_records)
     features = encoding_model.encode(all_records)
     if len(all_pids) > 1:
         # running clustering
@@ -308,7 +309,7 @@ def main(argv):
 
 if __name__ == "__main__":
     config = get_disambig_config(schedule='quarterly',
-                                 supplemental_configs=['config/new_consolidated_config.ini'],
+                                 supplemental_configs=['config/new_consolidated_config_ba.ini'],
                                  **{
                                      "execution_date": datetime.date(2022, 7, 1)
                                  }
