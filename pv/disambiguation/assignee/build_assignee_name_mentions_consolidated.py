@@ -1,7 +1,9 @@
 import collections
 import billiard as mp
 import os
+import joblib
 import pickle
+
 from tqdm import tqdm
 from absl import logging, app
 import csv, sys
@@ -43,9 +45,7 @@ def generate_assignee_records_from_sql(config, ignore_filters, source='granted_p
       , location_id
     FROM
         {db}.rawassignee ra
-        left join  {db}.rawlocation rl on rl.id=ra.rawlocation_id
-        # assuming this join is here to only bring in records with accurate country code attributes; BUT REMOVES ~77k records (almost 10%)
-        # inner join geo_data.country_codes cc on cc.`alpha-2`=rl.country_transformed
+        left join {db}.rawlocation rl on rl.id=ra.rawlocation_id
         {filter}
         """.format(
         id_field=incremental_components.get('id_field'),
@@ -109,10 +109,28 @@ def generate_assignee_mentions(config):
     if os.path.isfile("assignee_mentions.canopies.pkl"):
         print("Removing Current File in Directory")
         os.remove("assignee_mentions.canopies.pkl")
+
+    print(f"RECORDS HAS SHAPE: {len(records.keys())}")
+    print(f"CANOPIES HAS SHAPE: {len(canopies.keys())}")
+
+    from itertools import islice
+
+    # def chunks(data, SIZE=1000000):
+    #     it = iter(data)
+    #     for i in range(0, len(data), SIZE):
+    #         name = f"assignee_mentions_{i}.canopies.pkl"
+    #         temp_canopies = {k: data[k] for k in islice(it, SIZE)}
+    #         with open(path + name, 'wb') as fout:
+    #             pickle.dump(temp_canopies, fout, buffer_callback=10, protocol=5)
+
+    # joblib.dump(records, 'assignee_mentions.records.sav')
+    # joblib.dump(canopies, 'assignee_mentions.canopies.sav')
+
+
     with open(path + '.%s.pkl' % 'records', 'wb') as fout:
-        pickle.dump(records, fout)
+        pickle.dump(records, fout, buffer_callback=10, protocol=5)
     with open(path + '.%s.pkl' % 'canopies', 'wb') as fout:
-        pickle.dump(canopies, fout)
+        pickle.dump(canopies, fout, buffer_callback=10, protocol=5)
 
 
 def main(argv):
