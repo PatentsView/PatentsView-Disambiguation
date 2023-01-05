@@ -121,6 +121,7 @@ def batch(canopy_list, loader, min_batch_size=800):
             all_canopies = []
             for c in batch:
                 all_canopies.extend([c for _ in range(sizes[c])])
+            print(all_records)
             yield all_pids, all_lbls, all_records, all_canopies
 
 
