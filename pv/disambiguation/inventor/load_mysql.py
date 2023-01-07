@@ -31,8 +31,8 @@ class Loader(object):
         return load_canopy('batch of %s' % len(canopies),
                            [x for canopy in canopies for x in
                             (self.pregranted_canopies[canopy] if canopy in self.pregranted_canopies else [])],
-                           [x for canopy in canopies for x in
-                            (self.granted_canopies[canopy] if canopy in self.granted_canopies else [])],
+                           # [x for canopy in canopies for x in
+                           #  (self.granted_canopies[canopy] if canopy in self.granted_canopies else [])],
                            self.cnx_pg, self.cnx_g, self.cnx_pg_inc, self.cnx_g_inc)
 
     def num_records(self, canopy):
