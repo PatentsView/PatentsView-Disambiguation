@@ -94,6 +94,8 @@ def generate_assignee_mentions(config):
             ])
     ]
     name_mentions = set(feats[0].keys()).union(set(feats[1].keys()))
+    pool.close()
+    pool.join()
     # logging.info('number of name mentions %s', len(name_mentions))
     records = dict()
     from collections import defaultdict
@@ -115,22 +117,22 @@ def generate_assignee_mentions(config):
 
     from itertools import islice
 
-    # def chunks(data, SIZE=1000000):
-    #     it = iter(data)
-    #     for i in range(0, len(data), SIZE):
-    #         name = f"assignee_mentions_{i}.canopies.pkl"
-    #         temp_canopies = {k: data[k] for k in islice(it, SIZE)}
-    #         with open(path + name, 'wb') as fout:
-    #             pickle.dump(temp_canopies, fout, buffer_callback=10, protocol=5)
+    def chunks(data, name, SIZE=1000000):
+        it = iter(data)
+        for i in range(0, len(data), SIZE):
+            batched_name = f"{name}.{i}.pkl"
+            temp_canopies = {k: data[k] for k in islice(it, SIZE)}
+            with open(path + batched_name, 'wb') as fout:
+                pickle.dump(temp_canopies, fout, buffer_callback=10, protocol=5)
 
-    # joblib.dump(records, 'assignee_mentions.records.sav')
-    # joblib.dump(canopies, 'assignee_mentions.canopies.sav')
+    chunks(records, name=".records", SIZE=250000)
+    chunks(canopies, name=".canopies", SIZE=50000)
 
 
-    with open(path + '.%s.pkl' % 'records', 'wb') as fout:
-        pickle.dump(records, fout, buffer_callback=10, protocol=5)
-    with open(path + '.%s.pkl' % 'canopies', 'wb') as fout:
-        pickle.dump(canopies, fout, buffer_callback=10, protocol=5)
+    # with open(path + '.%s.pkl' % 'records', 'wb') as fout:
+    #     pickle.dump(records, fout, buffer_callback=10, protocol=5)
+    # with open(path + '.%s.pkl' % 'canopies', 'wb') as fout:
+    #     pickle.dump(canopies, fout, buffer_callback=10, protocol=5)
 
 
 def main(argv):
