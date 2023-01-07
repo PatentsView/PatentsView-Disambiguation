@@ -310,7 +310,7 @@ def main(argv):
 
 if __name__ == "__main__":
     config = get_disambig_config(schedule='quarterly',
-                                 supplemental_configs=['config/new_consolidated_config_ba.ini'],
+                                 supplemental_configs=['config/new_consolidated_config.ini'],
                                  **{
                                      "execution_date": datetime.date(2022, 7, 1)
                                  }
