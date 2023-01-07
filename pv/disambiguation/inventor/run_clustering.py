@@ -48,7 +48,7 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
     :return:
     """
     # extracting features
-    print(all_records)
+    breakpoint()
     features = encoding_model.encode(all_records)
     if len(all_pids) > 1:
         # running clustering
@@ -121,7 +121,6 @@ def batch(canopy_list, loader, min_batch_size=800):
             all_canopies = []
             for c in batch:
                 all_canopies.extend([c for _ in range(sizes[c])])
-            print(all_records)
             yield all_pids, all_lbls, all_records, all_canopies
 
 
@@ -270,7 +269,8 @@ def run_clustering(config):
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
     pool = mp.Pool(int(config['inventor']['parallelism']))
-    for x in range(0, num_chunks):
+    # for x in range(0, num_chunks):
+    for x in [0]:
        logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
        run_batch(config, chunks[x], outdir, x, 'job-%s' % x )
   
