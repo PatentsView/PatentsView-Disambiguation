@@ -31,8 +31,8 @@ class Loader(object):
         return load_canopy('batch of %s' % len(canopies),
                            [x for canopy in canopies for x in
                             (self.pregranted_canopies[canopy] if canopy in self.pregranted_canopies else [])],
-                           # [x for canopy in canopies for x in
-                           #  (self.granted_canopies[canopy] if canopy in self.granted_canopies else [])],
+                           [x for canopy in canopies for x in
+                            (self.granted_canopies[canopy] if canopy in self.granted_canopies else [])],
                            self.cnx_pg, self.cnx_g, self.cnx_pg_inc, self.cnx_g_inc)
 
     def num_records(self, canopy):
@@ -89,6 +89,7 @@ def get_granted(ids, cnx, max_query_size=300000):
     for idx in range(0, len(ids), max_query_size):
         id_str = ", ".join(['"%s"' % x for x in ids[idx:idx + max_query_size]])
         query = "SELECT uuid, patent_id, inventor_id, rawlocation_id, name_first, name_last, sequence, rule_47, deceased FROM rawinventor WHERE uuid in (%s);" % id_str
+        print(query)
         cursor.execute(query)
         for rec in cursor:
             am = InventorMention.from_granted_sql_record(rec)
@@ -105,6 +106,7 @@ def get_pregrants(ids, cnx, max_query_size=300000):
     for idx in range(0, len(ids), max_query_size):
         id_str = ", ".join(['"%s"' % x for x in ids[idx:idx + max_query_size]])
         query = "SELECT id, document_number, name_first, name_last, sequence-1 as sequence, designation, deceased, rawlocation_id, city, state, country, filename, created_date, updated_date FROM rawinventor WHERE id in (%s);" % id_str
+        print(query)
         cursor.execute(query)
         for rec in cursor:
             am = InventorMention.from_application_sql_record(rec)

@@ -48,7 +48,6 @@ def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_
     :return:
     """
     # extracting features
-    breakpoint()
     features = encoding_model.encode(all_records)
     if len(all_pids) > 1:
         # running clustering
