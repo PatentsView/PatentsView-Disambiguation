@@ -99,7 +99,7 @@ def generate_assignee_mentions(config):
     records = dict()
     from collections import defaultdict
     canopies = defaultdict(set)
-    for nm in tqdm(name_mentions, desc='Assignee NameMentions', position=0, leave=True, file=sys.stdout, miniters=50000, maxinterval=600):
+    for nm in tqdm(name_mentions, desc='Assignee NameMentions', position=0, leave=True, file=sys.stdout, miniters=100000, maxinterval=1200):
         anm = AssigneeNameMention.from_assignee_mentions(nm, feats[0][nm] + feats[1][nm])
         for c in anm.canopies:
             canopies[c].add(anm.uuid)

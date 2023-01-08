@@ -188,18 +188,18 @@ class InventorMention(object):
         return InventorMention(uuid, patent_id, rawlocation_id, rawfirst, rawlast, sequence, rule_47, deceased)
 
 
-# def load_inventor_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
-#     logging.info('Loading inventor mentions from %s', filename)
-#     with open(filename, 'r') as fin:
-#         for idx, line in enumerate(fin):
-#             if idx == 0 and skip_first_line:
-#                 continue
-#             # logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
-#             if idx > N:
-#                 # logging.info('Loaded %s lines of %s', idx, filename)
-#                 return
-#             elif idx >= st:
-#                 yield InventorMention.from_line(line)
+def load_inventor_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
+    logging.info('Loading inventor mentions from %s', filename)
+    with open(filename, 'r') as fin:
+        for idx, line in enumerate(fin):
+            if idx == 0 and skip_first_line:
+                continue
+            # logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
+            if idx > N:
+                # logging.info('Loaded %s lines of %s', idx, filename)
+                return
+            elif idx >= st:
+                yield InventorMention.from_line(line)
 
 
 class AssigneeMention(object):
