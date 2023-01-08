@@ -16,11 +16,11 @@ def clean_name(name_str):
 class InventorMention(object):
     def __init__(self, uuid, patent_id, rawlocation_id, name_first, name_last, sequence, rule_47, deceased,
                  document_number=None, city=None, state=None, country=None):
-        self.uuid = uuid
-        self.patent_id = patent_id.replace('\"', '') if patent_id else None
-        self.rawlocation_id = rawlocation_id.replace('\"', '') if rawlocation_id else ''
-        self.raw_last = name_last.replace('\"', '') if name_last else ''
-        self.raw_first = name_first.replace('\"', '') if name_first else ''
+        self.uuid = str(uuid)
+        self.patent_id = str(patent_id).replace('\"', '') if patent_id else None
+        self.rawlocation_id = str(rawlocation_id).replace('\"', '') if rawlocation_id else ''
+        self.raw_last = str(name_last).replace('\"', '') if name_last else ''
+        self.raw_first = str(name_first).replace('\"', '') if name_first else ''
         if type(sequence) is int:
             self.sequence = str(sequence)
         else:
@@ -28,7 +28,7 @@ class InventorMention(object):
         self.rule_47 = str(rule_47).replace('\"', '') if rule_47 else ''
         self.deceased = str(deceased).replace('\"', '') if deceased else ''
         self.name = '%s %s' % (self.raw_first, self.raw_last)
-        self.document_number = document_number
+        self.document_number = str(document_number)
 
         self.mention_id = '%s-%s' % (self.patent_id, self.sequence) if self.patent_id is not None else 'pg-%s-%s' % (
             self.document_number, self.sequence)
@@ -170,7 +170,7 @@ class InventorMention(object):
         filename = rec[11]
         created_date = rec[12]
         updated_date = rec[13]
-        return InventorMention(uuid, None, rawlocation_id, rawfirst, rawlast, sequence, "", deceased, doc_no, city,
+        return InventorMention(uuid, "" , rawlocation_id, rawfirst, rawlast, sequence, "", deceased, doc_no, city,
                                state, country)
 
     @staticmethod
@@ -212,9 +212,9 @@ class AssigneeMention(object):
         self.patent_id = patent_id.replace('\"', '') if patent_id is not None else None
         self.rawlocation_id = rawlocation_id.replace('\"', '') if rawlocation_id else None
         self.assignee_type = str(assignee_type).replace('\"', '') if assignee_type is not None else None
-        self.raw_first = raw_first.replace('\"', '') if raw_first else ''
-        self.raw_last = raw_last.replace('\"', '') if raw_last else ''
-        self.organization = organization.replace('\"', '') if organization else ''
+        self.raw_first = str(raw_first).replace('\"', '') if raw_first else ''
+        self.raw_last = str(raw_last).replace('\"', '') if raw_last else ''
+        self.organization = str(organization).replace('\"', '') if organization else ''
         self.sequence = str(sequence).replace('\"', '') if sequence is not None else None
         self.is_organization = len(self.organization) > 0
         self.document_number = document_number
