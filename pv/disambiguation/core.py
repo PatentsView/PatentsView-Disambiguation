@@ -170,7 +170,7 @@ class InventorMention(object):
         filename = rec[11]
         created_date = rec[12]
         updated_date = rec[13]
-        return InventorMention(uuid, None, rawlocation_id, rawfirst, rawlast, sequence, "", deceased, doc_no, city,
+        return InventorMention(uuid, None, rawlocation_id, str(rawfirst), str(rawlast), sequence, "", deceased, doc_no, city,
                                state, country)
 
     @staticmethod
@@ -185,7 +185,7 @@ class InventorMention(object):
         sequence = rec[6]
         rule_47 = rec[7]
         deceased = rec[8]
-        return InventorMention(uuid, patent_id, rawlocation_id, rawfirst, rawlast, sequence, rule_47, deceased)
+        return InventorMention(uuid, patent_id, rawlocation_id, str(rawfirst), str(rawlast), sequence, rule_47, deceased)
 
 
 def load_inventor_mentions(filename, st=0, N=np.Inf, skip_first_line=True):

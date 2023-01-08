@@ -89,9 +89,9 @@ def get_granted(ids, cnx, max_query_size=300000):
     for idx in range(0, len(ids), max_query_size):
         id_str = ", ".join(['"%s"' % x for x in ids[idx:idx + max_query_size]])
         query = "SELECT uuid, patent_id, inventor_id, rawlocation_id, name_first, name_last, sequence, rule_47, deceased FROM rawinventor WHERE uuid in (%s);" % id_str
-        print(query)
         cursor.execute(query)
-        for rec in cursor:
+        rows = cursor.fetchall()
+        for rec in rows:
             am = InventorMention.from_granted_sql_record(rec)
             feature_map[am.uuid] = am
     missed = [x for x in ids if x not in feature_map]
@@ -106,9 +106,9 @@ def get_pregrants(ids, cnx, max_query_size=300000):
     for idx in range(0, len(ids), max_query_size):
         id_str = ", ".join(['"%s"' % x for x in ids[idx:idx + max_query_size]])
         query = "SELECT id, document_number, name_first, name_last, sequence-1 as sequence, designation, deceased, rawlocation_id, city, state, country, filename, created_date, updated_date FROM rawinventor WHERE id in (%s);" % id_str
-        print(query)
         cursor.execute(query)
-        for rec in cursor:
+        rows = cursor.fetchall()
+        for rec in rows:
             am = InventorMention.from_application_sql_record(rec)
             feature_map[am.uuid] = am
             idx += 1
