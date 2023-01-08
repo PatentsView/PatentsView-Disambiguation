@@ -25,7 +25,7 @@ class InventorMention(object):
             self.sequence = str(sequence)
         else:
             self.sequence = sequence.replace('\"', '') if sequence else ''
-        self.rule_47 = rule_47.replace('\"', '') if rule_47 else ''
+        self.rule_47 = str(rule_47).replace('\"', '') if rule_47 else ''
         self.deceased = str(deceased).replace('\"', '') if deceased else ''
         self.name = '%s %s' % (self.raw_first, self.raw_last)
         self.document_number = document_number
@@ -46,9 +46,9 @@ class InventorMention(object):
         self._suffixes = None
         self._last_name = None
 
-        self.city = city
-        self.state = state
-        self.country = country
+        self.city = str(city)
+        self.state = str(state)
+        self.country = str(country)
 
         self.record_id = self.patent_id if self.patent_id else 'pg-%s' % self.document_number
 
@@ -170,7 +170,7 @@ class InventorMention(object):
         filename = rec[11]
         created_date = rec[12]
         updated_date = rec[13]
-        return InventorMention(uuid, None, rawlocation_id, str(rawfirst), str(rawlast), sequence, "", deceased, doc_no, city,
+        return InventorMention(uuid, None, rawlocation_id, rawfirst, rawlast, sequence, "", deceased, doc_no, city,
                                state, country)
 
     @staticmethod
@@ -185,7 +185,7 @@ class InventorMention(object):
         sequence = rec[6]
         rule_47 = rec[7]
         deceased = rec[8]
-        return InventorMention(uuid, patent_id, rawlocation_id, str(rawfirst), str(rawlast), sequence, rule_47, deceased)
+        return InventorMention(uuid, patent_id, rawlocation_id, rawfirst, rawlast, sequence, rule_47, deceased)
 
 
 def load_inventor_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
