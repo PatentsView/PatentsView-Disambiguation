@@ -77,7 +77,6 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
         # logging.log_every_n(logging.INFO, 'Processed %s %s records - %s features', 10000, source, idx, len(feature_map))
     return feature_map
 
-@profile
 def generate_assignee_mentions(config):
     from pv.disambiguation.core import AssigneeNameMention
     logging.info('Building assignee features')
