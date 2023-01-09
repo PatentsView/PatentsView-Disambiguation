@@ -7,6 +7,8 @@ import pickle
 from tqdm import tqdm
 from absl import logging, app
 import csv, sys
+from pendulum import DateTime
+from lib.configuration import get_disambig_config
 
 from pv.disambiguation.util.config_util import generate_incremental_components
 
@@ -84,17 +86,22 @@ def generate_assignee_mentions(config):
     path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
     print(path)
     # Generate mentions from granted and pregrant databases
-    pool = mp.Pool()
-    feats = [
-        n for n in pool.starmap(
-            build_assignee_mentions_for_source, [
-                (config, 'granted_patent_database'),
-                (config, 'pregrant_database')
-            ])
-    ]
+    # pool = mp.Pool()
+    # feats = [
+    #     n for n in pool.starmap(
+    #         build_assignee_mentions_for_source, [
+    #             (config, 'granted_patent_database'),
+    #             (config, 'pregrant_database')
+    #         ])
+    # ]
+    # name_mentions = set(feats[0].keys()).union(set(feats[1].keys()))
+    # pool.close()
+    # pool.join()
+    feats = []
+    feats[0] = build_assignee_mentions_for_source(config, 'granted_patent_database')
+    feats[1] = build_assignee_mentions_for_source(config, 'pregrant_database')
     name_mentions = set(feats[0].keys()).union(set(feats[1].keys()))
-    pool.close()
-    pool.join()
+
     # logging.info('number of name mentions %s', len(name_mentions))
     records = dict()
     from collections import defaultdict
@@ -128,10 +135,10 @@ def generate_assignee_mentions(config):
     chunks(canopies, name=".canopies", SIZE=50000)
 
 
-    # with open(path + '.%s.pkl' % 'records', 'wb') as fout:
-    #     pickle.dump(records, fout, buffer_callback=10, protocol=5)
-    # with open(path + '.%s.pkl' % 'canopies', 'wb') as fout:
-    #     pickle.dump(canopies, fout, buffer_callback=10, protocol=5)
+    with open(path + '.%s.pkl' % 'records', 'wb') as fout:
+        pickle.dump(records, fout, buffer_callback=10, protocol=5)
+    with open(path + '.%s.pkl' % 'canopies', 'wb') as fout:
+        pickle.dump(canopies, fout, buffer_callback=10, protocol=5)
 
 
 def main(argv):
@@ -159,5 +166,7 @@ def pipeline_main():
 
 
 if __name__ == "__main__":
+    config = get_disambig_config(schedule='quarterly',supplemental_configs=['config/new_consolidated_config.ini'],**{'execution_date': DateTime(year=2022, month=7, day=1)})
+    generate_assignee_mentions(config)
     # app.run(main)
     pipeline_main()
