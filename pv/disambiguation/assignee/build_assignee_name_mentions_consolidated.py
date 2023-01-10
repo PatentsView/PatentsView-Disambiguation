@@ -97,10 +97,10 @@ def generate_assignee_mentions(config):
     # name_mentions = set(feats[0].keys()).union(set(feats[1].keys()))
     # pool.close()
     # pool.join()
-    feats = []
-    feats[0] = build_assignee_mentions_for_source(config, 'granted_patent_database')
-    feats[1] = build_assignee_mentions_for_source(config, 'pregrant_database')
-    name_mentions = set(feats[0].keys()).union(set(feats[1].keys()))
+    patent = build_assignee_mentions_for_source(config, 'granted_patent_database')
+    pgpubs = build_assignee_mentions_for_source(config, 'pregrant_database')
+    name_mentions = set(patent.keys()).union(set(patent.keys()))
+    feats = [patent, pgpubs]
 
     # logging.info('number of name mentions %s', len(name_mentions))
     records = dict()
@@ -166,7 +166,9 @@ def pipeline_main():
 
 
 if __name__ == "__main__":
-    config = get_disambig_config(schedule='quarterly',supplemental_configs=['config/new_consolidated_config.ini'],**{'execution_date': DateTime(year=2022, month=7, day=1)})
+    config = get_disambig_config(schedule='quarterly'
+                                , supplemental_configs=['config/new_consolidated_config_ba.ini']
+                                , **{'execution_date': DateTime(year=2022, month=7, day=1)})
     generate_assignee_mentions(config)
     # app.run(main)
     pipeline_main()
