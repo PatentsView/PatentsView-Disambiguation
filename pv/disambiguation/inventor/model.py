@@ -112,8 +112,28 @@ class InventorModel(object):
         must_not_links = set([t[0].name for t in triples if t[4]])
         assert len(encoders) == len(feature_types)
         assert len(feature_types) == len(centroid_types)
-        return EncodingModel(encoders,
+        return CustomizedEncodingModel(encoders,
                              'InventorModelWithApps',
                              {},
                              feature_types, centroid_types, must_links, must_not_links)
 
+
+
+class CustomizedEncodingModel(EncodingModel):
+    def __init__(self, feature_list, name, aux, feature_types, centroid_types, must_link_rules, must_not_link_rules):
+        super().__init__(feature_list, name, aux, feature_types, centroid_types, must_link_rules, must_not_link_rules)
+
+    def encode(self, mentions):
+        features = []
+        for idx, f in enumerate(self.feature_list):
+            print('STARTING Encoding for feature %s', f.name)
+            logging.info('Encoding for feature %s', f.name)
+            f_enc = f.encode(mentions)
+            import scipy
+            is_dense = not scipy.sparse.issparse(f_enc)
+            features.append(
+                (f.name, is_dense, f_enc.shape[1], f_enc, self.feature_types[idx], self.centroid_types[idx]))
+            logging.info('Encode complete for feature %s', f.name)
+            print('FINISHED Encoding for feature %s', f.name)
+
+        return features
