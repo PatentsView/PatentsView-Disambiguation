@@ -143,15 +143,17 @@ class InventorMention(object):
 
     @staticmethod
     def from_sql_record_dict(rec):
-        return InventorMention(uuid=rec.get('uuid', None),
-                               patent_id=rec.get('patent_id', None),
-                               rawlocation_id=rec.get('rawlocation_id', None),
-                               name_first=rec.get('name_first', None),
-                               name_last=rec.get('name_last', None),
-                               sequence=rec.get('sequence', None), rule_47=rec.get('rule_47', None),
-                               deceased=rec.get('deceased', None), document_number=rec.get('document_number', None),
-                               city=rec.get('city', None), state=rec.get('state', None),
-                               country=rec.get('country', None))
+        return InventorMention(uuid=rec.get('uuid', ""),
+                               patent_id=rec.get('patent_id', ""),
+                               rawlocation_id=rec.get('rawlocation_id', ""),
+                               name_first=rec.get('name_first', ""),
+                               name_last=rec.get('name_last', ""),
+                               sequence=rec.get('sequence', ""),
+                               rule_47=rec.get('rule_47', ""),
+                               deceased=rec.get('deceased', ""),
+                               document_number=rec.get('document_number', ""),
+                               city=rec.get('city', ""), state=rec.get('state', ""),
+                               country=rec.get('country', ""))
 
     @staticmethod
     def from_application_sql_record(rec):
