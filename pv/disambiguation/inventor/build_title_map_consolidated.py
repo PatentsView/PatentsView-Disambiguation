@@ -25,6 +25,7 @@ def build_title_map_for_source(config, source='granted_patent_database'):
         filter=incremental_components.get('filter'),
         title_table=incremental_components.get('title_table'))
     logging.log(logging.INFO, query)
+    print(query)
     cursor.execute(query)
     idx = 0
     for rec in cursor:
@@ -53,9 +54,9 @@ def generate_title_maps(config):
     ]
     for i in range(0, len(feats)):
         features.update(feats[i])
-    if os.path.isfile("title_features.both.pkl"):
+    if os.path.isfile(path + '.%s.pkl' % 'both'):
         print("Removing Current File in Directory")
-        os.remove("title_features.both.pkl")
+        os.remove(path + '.%s.pkl' % 'both')
     with open(path + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 

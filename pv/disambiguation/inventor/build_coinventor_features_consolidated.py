@@ -33,6 +33,7 @@ def build_coinventor_mentions_for_type(config, source='granted_patent_database')
                id_field=incremental_components.get('id_field'),
                document_id_field=incremental_components.get('document_id_field'))
     cursor = cnx.cursor(dictionary=True)
+    print(query)
     cursor.execute(query)
     idx = 0
     rec: dict
@@ -63,9 +64,9 @@ def generate_coinventor_mentions(config):
         features.update(feats[i])
     path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out']
     logging.info('writing results to folder: %s', os.path.dirname(path))
-    if os.path.isfile("coinventor_features.both.pkl"):
+    if os.path.isfile(path + '.%s.pkl' % 'both'):
         print("Removing Current File in Directory")
-        os.remove("coinventor_features.both.pkl")
+        os.remove(path + '.%s.pkl' % 'both')
     with open(path + '.%s.pkl' % 'both', 'wb') as fout:
         pickle.dump(features, fout)
 

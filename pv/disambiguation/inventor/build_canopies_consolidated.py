@@ -92,12 +92,12 @@ def generate_inventor_canopies(config):
     # elif config['DISAMBIGUATION']['INCREMENTAL'] == "0":
     # Dropping pickle files for recreation
     #     print(f"WARNING -- DELETING PRIOR PKL FILES AT {path} FOR REGENERATION")
-    if os.path.isfile("canopies.pregranted.pkl"):
+    if os.path.isfile(path + '.%s.pkl' % 'pregranted'):
         print("Removing Current File in Directory")
-        os.remove("canopies.pregranted.pkl")
-    if os.path.isfile("canopies.granted.pkl"):
+        os.remove(path + '.%s.pkl' % 'pregranted')
+    if os.path.isfile(path + '.%s.pkl' % 'granted'):
         print("Removing Current File in Directory")
-        os.remove("canopies.granted.pkl")
+        os.remove(path + '.%s.pkl' % 'granted')
 
     # Export pickle files
     with open(path + '.%s.pkl' % 'pregranted', 'wb') as fout:

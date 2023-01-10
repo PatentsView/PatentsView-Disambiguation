@@ -169,10 +169,7 @@ class InventorMention(object):
         city = rec[8]
         state = rec[9]
         country = rec[10]
-        filename = rec[11]
-        created_date = rec[12]
-        updated_date = rec[13]
-        return InventorMention(uuid, "" , rawlocation_id, rawfirst, rawlast, sequence, "", deceased, doc_no, city,
+        return InventorMention(uuid, "", rawlocation_id, rawfirst, rawlast, sequence, "", deceased, doc_no, city,
                                state, country)
 
     @staticmethod
@@ -180,13 +177,12 @@ class InventorMention(object):
         # | uuid | patent_id | inventor_id | rawlocation_id | name_first | name_last | sequence | rule_47 | deceased |
         uuid = rec[0]
         patent_id = rec[1]
-        inventor_id = rec[2]
-        rawlocation_id = rec[3]
-        rawfirst = rec[4]
-        rawlast = rec[5]
-        sequence = rec[6]
-        rule_47 = rec[7]
-        deceased = rec[8]
+        rawlocation_id = rec[2]
+        rawfirst = rec[3]
+        rawlast = rec[4]
+        sequence = rec[5]
+        rule_47 = rec[6]
+        deceased = rec[7]
         return InventorMention(uuid, patent_id, rawlocation_id, rawfirst, rawlast, sequence, rule_47, deceased)
 
 
