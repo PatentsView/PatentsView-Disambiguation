@@ -248,45 +248,45 @@ def run_clustering(config):
                                  reverse=True)
 
     # Find some stats of the data before chunking it
-    logging.info('Number of canopies %s ', len(all_canopies_sorted))
-    logging.info('Number of singletons %s ', len(singletons))
-    logging.info('Largest canopies - ')
-    for c in all_canopies_sorted[:10]:
-        logging.info('%s - %s records', c, loader.num_records(c))
-    # setup the output dir
+    # logging.info('Number of canopies %s ', len(all_canopies_sorted))
+    # logging.info('Number of singletons %s ', len(singletons))
+    # logging.info('Largest canopies - ')
+    # for c in all_canopies_sorted[:10]:
+    #     logging.info('%s - %s records', c, loader.num_records(c))
+    # # setup the output dir
     outdir = config['inventor']['clustering_output_folder']
-    print(outdir)
 
     # the number of chunks based on the specified chunksize
-    num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])))
+    # num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])))
 
-    logging.info('%s num_chunks', num_chunks)
-    logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
+    # logging.info('%s num_chunks', num_chunks)
+    # logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
 
     # chunk all of the data by canopy
-    chunks = [[] for _ in range(num_chunks)]
-    for idx, c in enumerate(all_canopies_sorted):
-        chunks[idx % num_chunks].append(c)
-    pool = mp.Pool(int(config['inventor']['parallelism']))
+    # chunks = [[] for _ in range(num_chunks)]
+    # for idx, c in enumerate(all_canopies_sorted):
+    #     chunks[idx % num_chunks].append(c)
+    # pool = mp.Pool(int(config['inventor']['parallelism']))
     # for x in range(0, num_chunks):
-    for x in [0]:
-       logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
-       run_batch(config, chunks[x], outdir, x, 'job-%s' % x )
-  
-    argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
-    dev_null = [
-        n for n in pool.starmap(
-            run_batch, argument_list)
-    ]
+    # for x in [0]:
+    #    logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
+    #    run_batch(config, chunks[x], outdir, x, 'job-%s' % x )
+    #
+    # argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
+    # dev_null = [
+    #     n for n in pool.starmap(
+    #         run_batch, argument_list)
+    # ]
     # chunk 0 will write out the meta data and singleton information
-    logging.info('Saving chunk to canopy map')
-    with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-        pickle.dump([chunks, list(singletons)], fout)
+    # logging.info('Saving chunk to canopy map')
+    # with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+    #     pickle.dump([chunks, list(singletons)], fout)
 
     logging.info('Running singletons!!')
     num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
+    print(num_singleton_chunks)
     # chunk all of the data by canopy
-    singleton_chunks = [[] for _ in range(num_chunks)]
+    singleton_chunks = [[] for _ in range(num_singleton_chunks)]
     for idx, c in enumerate(singletons):
         singleton_chunks[idx % num_singleton_chunks].append(c)
     pool = mp.Pool()
@@ -309,7 +309,7 @@ def main(argv):
 
 if __name__ == "__main__":
     config = get_disambig_config(schedule='quarterly',
-                                 supplemental_configs=['config/new_consolidated_config.ini'],
+                                 supplemental_configs=['config/new_consolidated_config_ba.ini'],
                                  **{
                                      "execution_date": datetime.date(2022, 7, 1)
                                  }
