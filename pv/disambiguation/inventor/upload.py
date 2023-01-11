@@ -32,6 +32,7 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
     g_cursor = cnx_g.cursor()
     batch_size = 100000
     offsets = [x for x in range(0, len(pairs), batch_size)]
+    print("INSERT INTO {table_name} (uuid, inventor_id) VALUES .... ".format(table_name=config['INVENTOR_UPLOAD']['target_table']) )
     for idx in tqdm(range(len(offsets)), 'adding %s' % target, total=len(offsets)):
         sidx = offsets[idx]
         eidx = min(len(pairs), offsets[idx] + batch_size)
@@ -69,7 +70,7 @@ def upload(config):
             elif splt[0] in granted_ids:
                 pairs_granted.append((splt[0], splt[1]))
     create_tables(config)
-    load_target_from_source(config, pairs_granted, target='granted_patent_database')
+    # load_target_from_source(config, pairs_granted, target='granted_patent_database')
     load_target_from_source(config, pairs_pregranted, target='pregrant_database')
 
 
