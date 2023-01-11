@@ -172,13 +172,7 @@ def run_batch(config, canopy_list, outdir, chunk_id, job_name='disambig'):
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
 
-    # logging.info('Beginning to save all tree structures....')
-    # grinch_trees = []
-    # for idx,t in tqdm(enumerate(tree_list), total=len(tree_list)):
-    #     grinch = WeightedMultiFeatureGrinch.from_agglom(t, pids_list[idx])
-    #     grinch.prepare_for_save()
-    #     grinch_trees.append(grinch)
-    # torch.save([grinch_trees, canopy2tree_id], outstatefile)
+
 
 def run_singletons(config, singleton_list, outdir, job_name='disambig'):
     logging.info('need to run on %s canopies = %s ...', len(singleton_list), str(singleton_list[:5]))
@@ -248,14 +242,14 @@ def run_clustering(config):
     # for x in range(0, num_chunks):
     for x in [0]:
        logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
-       run_batch(config, chunks[x], outdir, x, 'job-%s' % x )
+       run_batch(config, chunks[x], outdir, x, 'job-%s' % x)
 
-    argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
-    dev_null = [
-        n for n in pool.starmap(
-            run_batch, argument_list)
-    ]
     breakpoint()
+    # argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
+    # dev_null = [
+    #     n for n in pool.starmap(
+    #         run_batch, argument_list)
+    # ]
     # chunk 0 will write out the meta data and singleton information
     logging.info('Saving chunk to canopy map')
     with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
