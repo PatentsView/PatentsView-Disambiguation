@@ -226,19 +226,19 @@ def run_clustering(config):
                                  reverse=True)
 
     # Find some stats of the data before chunking it
-    # logging.info('Number of canopies %s ', len(all_canopies_sorted))
-    # logging.info('Number of singletons %s ', len(singletons))
-    # logging.info('Largest canopies - ')
-    # for c in all_canopies_sorted[:10]:
-    #     logging.info('%s - %s records', c, loader.num_records(c))
-    # # setup the output dir
+    logging.info('Number of canopies %s ', len(all_canopies_sorted))
+    logging.info('Number of singletons %s ', len(singletons))
+    logging.info('Largest canopies - ')
+    for c in all_canopies_sorted[:10]:
+        logging.info('%s - %s records', c, loader.num_records(c))
+    # setup the output dir
     outdir = config['inventor']['clustering_output_folder']
 
     # the number of chunks based on the specified chunksize
-    # num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])))
+    num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])))
 
-    # logging.info('%s num_chunks', num_chunks)
-    # logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
+    logging.info('%s num_chunks', num_chunks)
+    logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
 
     # chunk all of the data by canopy
     # chunks = [[] for _ in range(num_chunks)]
