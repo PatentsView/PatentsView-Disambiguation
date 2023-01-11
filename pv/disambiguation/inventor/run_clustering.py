@@ -285,16 +285,21 @@ def run_clustering(config):
     logging.info('Running singletons!!')
     num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
     print(num_singleton_chunks)
+    
     # chunk all of the data by canopy
     singleton_chunks = [[] for _ in range(num_singleton_chunks)]
     for idx, c in enumerate(singletons):
         singleton_chunks[idx % num_singleton_chunks].append(c)
-    pool = mp.Pool()
-    argument_list = [(config, singleton_chunks[x], outdir, x, 'singleton-job-%s' % x) for x in range(0, num_singleton_chunks)]
-    dev_null = [
-        n for n in pool.starmap(
-            run_singletons, argument_list)
-    ]
+
+    for x in range(0, num_singleton_chunks):
+        run_singletons(config, singleton_chunks[x], outdir, x, 'singleton-job-%s' % x)
+
+    # pool = mp.Pool()
+    # argument_list = [(config, singleton_chunks[x], outdir, x, 'singleton-job-%s' % x) for x in range(0, num_singleton_chunks)]
+    # dev_null = [
+    #     n for n in pool.starmap(
+    #         run_singletons, argument_list)
+    # ]
 
 
 def main(argv):
