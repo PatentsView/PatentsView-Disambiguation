@@ -269,15 +269,15 @@ def run_clustering(config):
     for idx, c in enumerate(singletons):
         singleton_chunks[idx % num_singleton_chunks].append(c)
 
-    for x in range(0, num_singleton_chunks):
-        run_singletons(config, singleton_chunks[x], outdir, 'singleton-job-%s' % x)
+    # for x in range(0, num_singleton_chunks):
+    #     run_singletons(config, singleton_chunks[x], outdir, 'singleton-job-%s' % x)
 
-    # pool = mp.Pool()
-    # argument_list = [(config, singleton_chunks[x], outdir, x, 'singleton-job-%s' % x) for x in range(0, num_singleton_chunks)]
-    # dev_null = [
-    #     n for n in pool.starmap(
-    #         run_singletons, argument_list)
-    # ]
+    pool = mp.Pool()
+    argument_list = [(config, singleton_chunks[x], outdir, 'singleton-job-%s' % x) for x in range(0, num_singleton_chunks)]
+    dev_null = [
+        n for n in pool.starmap(
+            run_singletons, argument_list)
+    ]
 
 
 def main(argv):
@@ -292,7 +292,7 @@ def main(argv):
 
 if __name__ == "__main__":
     config = get_disambig_config(schedule='quarterly',
-                                 supplemental_configs=['config/new_consolidated_config_ba.ini'],
+                                 supplemental_configs=['config/new_consolidated_config.ini'],
                                  **{
                                      "execution_date": datetime.date(2022, 7, 1)
                                  }
