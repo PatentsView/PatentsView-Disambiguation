@@ -62,7 +62,10 @@ def finalize_results(config):
     logging.info('running cc...done')
 
     logging.info('loading mentions...')
-    with open(config['assignee']['assignee_mentions'], 'rb') as fin:
+    end_date = config["DATES"]["END_DATE"]
+    path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
+    print(path)
+    with open(path + '.%s.pkl' % 'records', 'rb') as fin:
         assignee_mentions = pickle.load(fin)
 
     import uuid

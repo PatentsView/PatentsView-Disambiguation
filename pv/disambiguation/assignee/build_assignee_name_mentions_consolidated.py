@@ -85,18 +85,6 @@ def generate_assignee_mentions(config):
     end_date = config["DATES"]["END_DATE"]
     path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
     print(path)
-    # Generate mentions from granted and pregrant databases
-    # pool = mp.Pool()
-    # feats = [
-    #     n for n in pool.starmap(
-    #         build_assignee_mentions_for_source, [
-    #             (config, 'granted_patent_database'),
-    #             (config, 'pregrant_database')
-    #         ])
-    # ]
-    # name_mentions = set(feats[0].keys()).union(set(feats[1].keys()))
-    # pool.close()
-    # pool.join()
     patent = build_assignee_mentions_for_source(config, 'granted_patent_database')
     pgpubs = build_assignee_mentions_for_source(config, 'pregrant_database')
     name_mentions = set(patent.keys()).union(set(patent.keys()))
@@ -118,8 +106,8 @@ def generate_assignee_mentions(config):
         print("Removing Current File in Directory")
         os.remove("assignee_mentions.canopies.pkl")
 
-    print(f"RECORDS HAS SHAPE: {len(records.keys())}")
-    print(f"CANOPIES HAS SHAPE: {len(canopies.keys())}")
+    print(f"RECORDS HAVE SHAPE: {len(records.keys())}")
+    print(f"CANOPIES HAVE SHAPE: {len(canopies.keys())}")
 
     from itertools import islice
 
