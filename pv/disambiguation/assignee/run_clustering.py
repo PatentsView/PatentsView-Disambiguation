@@ -234,7 +234,8 @@ def run_singletons(canopy_list, outdir, loader, job_name='disambig'):
 def run_clustering(config):
     loader = Loader.from_config(config)
     all_canopies = set(loader.assignee_canopies.keys())
-    all_canopies = set([x for x in all_canopies if loader.num_records(x) < int(config['assignee']['max_canopy_size'])])
+    # all_canopies = set([x for x in all_canopies if loader.num_records(x) < int(config['assignee']['max_canopy_size'])])
+    all_canopies = set([x for x in all_canopies])
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
                                  reverse=True)
@@ -251,15 +252,8 @@ def run_clustering(config):
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
 
-    # pool = mp.Pool()
-    # argument_list = [(config, chunks[x], outdir, loader, x, 'job-%s' % x) for x in range(0, num_chunks)]
-    # dev_null = [
-    #     n for n in pool.starmap(
-    #         run_batch, argument_list)
-    # ]
     for x in range(0, num_chunks):
         run_batch(config, chunks[x], outdir, loader, x, 'job-%s' % x)
-
 
     logger.info('Running singletons!!')
     run_singletons(list(singletons), outdir, job_name='job-singletons', loader=loader)
