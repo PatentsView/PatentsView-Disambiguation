@@ -84,10 +84,9 @@ def generate_assignee_mentions(config):
     logging.info('Building assignee features')
     end_date = config["DATES"]["END_DATE"]
     path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
-    print(path)
     patent = build_assignee_mentions_for_source(config, 'granted_patent_database')
     pgpubs = build_assignee_mentions_for_source(config, 'pregrant_database')
-    name_mentions = set(patent.keys()).union(set(patent.keys()))
+    name_mentions = set(patent.keys()).union(set(pgpubs.keys()))
     feats = [patent, pgpubs]
 
     # logging.info('number of name mentions %s', len(name_mentions))
@@ -111,17 +110,16 @@ def generate_assignee_mentions(config):
 
     from itertools import islice
 
-    def chunks(data, name, SIZE=1000000):
-        it = iter(data)
-        for i in range(0, len(data), SIZE):
-            batched_name = f"{name}.{i}.pkl"
-            temp_canopies = {k: data[k] for k in islice(it, SIZE)}
-            with open(path + batched_name, 'wb') as fout:
-                pickle.dump(temp_canopies, fout, buffer_callback=10, protocol=5)
-
-    chunks(records, name=".records", SIZE=250000)
-    chunks(canopies, name=".canopies", SIZE=50000)
-
+    # def chunks(data, name, SIZE=1000000):
+    #     it = iter(data)
+    #     for i in range(0, len(data), SIZE):
+    #         batched_name = f"{name}.{i}.pkl"
+    #         temp_canopies = {k: data[k] for k in islice(it, SIZE)}
+    #         with open(path + batched_name, 'wb') as fout:
+    #             pickle.dump(temp_canopies, fout, buffer_callback=10, protocol=5)
+    #
+    # chunks(records, name=".records", SIZE=250000)
+    # chunks(canopies, name=".canopies", SIZE=50000)
 
     with open(path + '.%s.pkl' % 'records', 'wb') as fout:
         pickle.dump(records, fout, buffer_callback=10, protocol=5)
