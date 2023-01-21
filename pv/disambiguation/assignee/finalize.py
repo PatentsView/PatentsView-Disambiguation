@@ -49,13 +49,10 @@ def finalize_results(config):
     for idx, (pid, clusters) in tqdm(enumerate(point2clusters.items()), 'building sparse graph'):
         row[overall_idx:overall_idx + len(clusters)] *= idx
         col[overall_idx:overall_idx + len(clusters)] = np.array(clusters, dtype=np.int64) + len(point2clusters)
-        # import pdb
-        # pdb.set_trace()
         overall_idx += len(clusters)
         pid2idx[pid] = idx
     from scipy.sparse import coo_matrix
-    mat = coo_matrix((data, (row, col)),
-                     shape=(len(cluster_dict) + len(point2clusters), len(cluster_dict) + len(point2clusters)))
+    mat = coo_matrix((data, (row, col)), shape=(len(cluster_dict) + len(point2clusters), len(cluster_dict) + len(point2clusters)))
     from scipy.sparse.csgraph import connected_components
     logging.info('running cc...')
     n_cc, lbl_cc = connected_components(mat, directed=True, connection='weak')
@@ -86,6 +83,12 @@ def finalize_results(config):
                 missing_mid2eid[rid] = m.uuid
     logging.info('writing output ...')
     output_file = "{path}/disambiguation.tsv".format(path=config['assignee']['clustering_output_folder'])
+    if os.path.isfile(output_file):
+        print("Removing Current File in Directory")
+        os.remove(output_file)
+    if os.path.isfile(output_file):
+        print("Removing Current File in Directory")
+        os.remove(output_file)
     with open(output_file, 'w') as fout:
         for m, e in mid2eid.items():
             fout.write('%s\t%s\n' % (m, e))
