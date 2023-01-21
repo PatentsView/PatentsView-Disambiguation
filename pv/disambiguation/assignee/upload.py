@@ -34,7 +34,7 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
     batch_size = 100000
     offsets = [x for x in range(0, len(pairs), batch_size)]
     print(config['ASSIGNEE_UPLOAD']['target_table'])
-    g_cursor.execute(f"drop table if exists {config['ASSIGNEE_UPLOAD']['target_table']}")
+    # g_cursor.execute(f"drop table if exists {config['ASSIGNEE_UPLOAD']['target_table']}")
     sql_template = "INSERT INTO {table_name} (uuid, assignee_id) VALUES "
     logging.log(logging.INFO, 'Inserting records with format {template}'.format(template=sql_template))
     for idx in tqdm(range(len(offsets)), 'adding %s' % target, total=len(offsets)):
