@@ -168,6 +168,9 @@ def run_batch(config, canopy_list, outdir, loader, chunk_id, job_name='disambig'
     encoding_model = AssigneeModel.from_config(config)
     weight_model = LinearAndRuleModel.from_encoding_model(encoding_model)
     weight_model.aux['threshold'] = 1.0 / (1.0 + float(config['assignee']['sim_threshold']))
+    print(" -------------  -------------  -------------  ------------- ")
+    print(f"USING float({config['assignee']['sim_threshold']}) THRESHOLD")
+    print(" -------------  -------------  -------------  ------------- ")
     logger.info('[%s] using threshold %s ', job_name, weight_model.aux['threshold'])
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
