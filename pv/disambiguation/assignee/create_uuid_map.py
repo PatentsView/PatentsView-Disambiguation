@@ -36,10 +36,10 @@ def create_uuid_map(config, source='granted_patent_database'):
 
 
 def generate_uuid_map(config):
-    # if not os.path.exists(config['ASSIGNEE_UPLOAD']['uuidmap']):
+    end_date = config["DATES"]["END_DATE"]
+    output_file = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['ASSIGNEE_UPLOAD']['uuidmap']
     granted_uuids = create_uuid_map(config, 'granted_patent_database')
     pgranted_uuids = create_uuid_map(config, 'pregrant_database')
-    output_file = config['ASSIGNEE_UPLOAD']['uuidmap']
     if os.path.isfile(output_file):
         print("Removing Current File in Directory")
         os.remove(output_file)
