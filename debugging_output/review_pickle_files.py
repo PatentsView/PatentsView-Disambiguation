@@ -59,6 +59,16 @@ def check_duplicate_uuids(filepath):
                         print("--------------------------")
 
 
+def find_top_n_canopies(file, n=10):
+    print(f"Checking file {file}")
+    temp = pd.read_pickle(f"{file}")
+    temp_dict = {}
+    for key in temp.keys():
+        temp_dict[key] = len(temp[key])
+    temp_df = pd.DataFrame(temp_dict.items(), columns=['Key', 'Num'])
+    print(temp_df.sort_values(by=['Num'], ascending=False).head(n))
+
+
 if __name__ == "__main__":
     mypath = '/home/centos/testing_disambig_env/PatentsView-Disambiguation/exp_out/inventor/2022-09-29'
     #check_output_blank(mypath)
