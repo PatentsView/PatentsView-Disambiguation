@@ -238,7 +238,7 @@ def run_clustering(config):
     loader = Loader.from_config(config)
     all_canopies = set(loader.assignee_canopies.keys())
     # all_canopies = set([x for x in all_canopies])
-    all_canopies = set([x for x in all_canopies if loader.num_records(x) < int(config['assignee']['max_canopy_size'])])
+    # all_canopies = set([x for x in all_canopies if loader.num_records(x) < int(config['assignee']['max_canopy_size'])])
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
                                  reverse=True)
