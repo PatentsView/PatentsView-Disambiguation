@@ -44,7 +44,7 @@ def generate_assignee_records_from_sql(config, ignore_filters, source='granted_p
       , organization
       , type
       , rawlocation_id
-      --, location_id
+      -- , location_id
       , concat(ifnull(l.city, ""),ifnull(l.state, ""),ifnull(l.country,"")) as location_id
     FROM
         {db}.rawassignee ra
