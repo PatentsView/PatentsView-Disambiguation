@@ -44,7 +44,8 @@ def generate_assignee_records_from_sql(config, ignore_filters, source='granted_p
       , organization
       , type
       , rawlocation_id
-      , location_id
+      --, location_id
+      , concat(ifnull(l.city, ""),ifnull(l.state, ""),ifnull(l.country,"")) as location_id
     FROM
         {db}.rawassignee ra
         left join {db}.rawlocation rl on rl.id=ra.rawlocation_id
@@ -55,7 +56,7 @@ def generate_assignee_records_from_sql(config, ignore_filters, source='granted_p
         sequence_field=incremental_components.get('sequence_field'),
         db=config['DISAMBIGUATION'][source],
         filter=incremental_components.get('filter', 'where 1=1'),
-        end_date=config["DATES"]["END_DATE"].replace("-","")
+        end_date=config["DATES"]["END_DATE"].replace("-", "")
         )
     cursor = cnx.cursor(dictionary=True)
     print(query)
