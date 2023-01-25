@@ -108,36 +108,32 @@ class CustomSKLearnVectorizerFeatures(object):
                             ', '.join([str(self.get_field(x)) for x in things_to_encode[:5]]))
         return self.model.transform([analyze_assignee_name(self.get_field(x)) for x in things_to_encode])
 
-class LocationVectorizerFeatures(object):
-    """Features for hashing vectorizer."""
-    def __init__(self, name, get_field, norm=None):
-        self.name = name
-        self.get_field = get_field
-        from sklearn.feature_extraction.text import CountVectorizer
-        # self.model = CountVectorizer(tokenizer=lambda x: [' '.join(x)] if x else [])
-        self.model = CountVectorizer(tokenizer=lambda x: x, lowercase=False)
-
-    def encode(self, things_to_encode):
-        a = [self.get_field(x) for x in things_to_encode]
-        newlist = [list(x) for x in a]
-        self.model.fit_transform(newlist)
-        return self.model.fit_transform(newlist)
-
 # class LocationVectorizerFeatures(object):
 #     """Features for hashing vectorizer."""
 #     def __init__(self, name, get_field, norm=None):
 #         self.name = name
 #         self.get_field = get_field
-#         from sklearn.feature_extraction.text import HashingVectorizer
-#         self.model = HashingVectorizer(analyzer=lambda x: [' '.join(x)] if x else [], alternate_sign=False, dtype=np.int32, norm=norm, binary=True)
+#         from sklearn.feature_extraction.text import CountVectorizer
+#         # self.model = CountVectorizer(tokenizer=lambda x: [' '.join(x)] if x else [])
+#         self.model = CountVectorizer(tokenizer=lambda x: x, lowercase=False)
 #
 #     def encode(self, things_to_encode):
-#         res = self.model.transform([self.get_field(x) for x in things_to_encode])
-#         idx, val = res.nonzero()
-#         enc = -1 * np.ones(len(things_to_encode), dtype=np.int32)
-#         enc[idx] = val
-#         return np.expand_dims(enc, axis=1)
+#         a = [self.get_field(x) for x in things_to_encode]
+#         newlist = [list(x) for x in a]
+#         return self.model.fit_transform(newlist)
 
+
+class LocationVectorizerFeatures(object):
+    """Features for hashing vectorizer."""
+
+    def __init__(self, name, get_field, norm=None):
+        self.name = name
+        self.get_field = get_field
+        from sklearn.feature_extraction.text import HashingVectorizer
+        self.model = HashingVectorizer(analyzer=lambda x: [xx for xx in x], alternate_sign=False, dtype=np.float32, norm=norm, binary=True)
+
+    def encode(self, things_to_encode):
+        return self.model.transform([self.get_field(x) for x in things_to_encode])
 
 class AssigneeModel(object):
 
@@ -147,7 +143,7 @@ class AssigneeModel(object):
 
         # Features:
         # name_features = HashingVectorizerFeatures('name_features', lambda x: x.name_features)
-        locations = LocationVectorizerFeatures('locations', lambda x: x.location_strings, norm=None)
+        locations = LocationVectorizerFeatures('locations', lambda x: x.location_strings, norm='l2')
 
         canopy_feat = HashingVectorizerFeatures('canopy', lambda x: x.canopies)
         # entity_kb_feat = EntityKBFeatures('clustering_resources/permid_entity_info.pkl', 'entitykb', lambda x: x)
@@ -159,7 +155,7 @@ class AssigneeModel(object):
         latlong_vectorizer = LocationVectorizer('location_lat_long',
                                                 lambda x: np.array([x.average_lat, x.average_lon]))
         triples = [
-            (locations, FeatCalc.DOT, CentroidType.NORMED, False, False),
+            (locations, FeatCalc.DOT, CentroidType.BINARY, False, False),
             # (entity_kb_feat, FeatCalc.NO_MATCH, CentroidType.BINARY, False, True),
             (name_tfidf, FeatCalc.DOT, CentroidType.NORMED, False, False)]
         encoders = [t[0] for t in triples]
