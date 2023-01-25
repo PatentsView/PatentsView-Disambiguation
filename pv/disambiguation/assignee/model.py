@@ -119,7 +119,8 @@ class LocationVectorizerFeatures(object):
     def encode(self, things_to_encode):
         a = [self.get_field(x) for x in things_to_encode]
         newlist = [list(x) for x in a]
-        return self.model.fit_transform(newlist).toarray()
+        a = self.model.fit_transform(newlist).toarray()
+        return self.model.fit_transform(newlist)
 
 
 # class LocationVectorizerFeatures(object):
@@ -154,7 +155,7 @@ class AssigneeModel(object):
         latlong_vectorizer = LocationVectorizer('location_lat_long',
                                                 lambda x: np.array([x.average_lat, x.average_lon]))
         triples = [
-            (locations, FeatCalc.DOT, CentroidType.BINARY, False, False),
+            (locations, FeatCalc.L2, CentroidType.NO_NORM, False, False),
             # (entity_kb_feat, FeatCalc.NO_MATCH, CentroidType.BINARY, False, True),
             (name_tfidf, FeatCalc.DOT, CentroidType.NORMED, False, False)]
         encoders = [t[0] for t in triples]
@@ -164,6 +165,4 @@ class AssigneeModel(object):
         must_not_links = set([t[0].name for t in triples if t[4]])
         assert len(encoders) == len(feature_types)
         assert len(feature_types) == len(centroid_types)
-        return EncodingModel(encoders,
-                             'AssigneeModelWithApps',
-                             {}, feature_types, centroid_types, must_links, must_not_links)
+        return EncodingModel(encoders, 'AssigneeModelWithApps', {}, feature_types, centroid_types, must_links, must_not_links)
