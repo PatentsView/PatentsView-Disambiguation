@@ -108,6 +108,21 @@ class CustomSKLearnVectorizerFeatures(object):
                             ', '.join([str(self.get_field(x)) for x in things_to_encode[:5]]))
         return self.model.transform([analyze_assignee_name(self.get_field(x)) for x in things_to_encode])
 
+class LocationVectorizerFeatures(object):
+    """Features for hashing vectorizer."""
+    def __init__(self, name, get_field, norm=None):
+        self.name = name
+        self.get_field = get_field
+        from sklearn.feature_extraction.text import HashingVectorizer
+        self.model = HashingVectorizer(analyzer=lambda x: [' '.join(x)] if x else [], alternate_sign=False, dtype=np.int32, norm=norm, binary=True)
+
+    def encode(self, things_to_encode):
+        res = self.model.transform([self.get_field(x) for x in things_to_encode])
+        idx, val = res.nonzero()
+        enc = -1 * np.ones(len(things_to_encode), dtype=np.int32)
+        enc[idx] = val
+        return np.expand_dims(enc, axis=1)
+
 
 class AssigneeModel(object):
 
@@ -117,7 +132,7 @@ class AssigneeModel(object):
 
         # Features:
         # name_features = HashingVectorizerFeatures('name_features', lambda x: x.name_features)
-        locations = HashingVectorizerFeatures('locations', lambda x: x.location_strings, norm='l2')
+        locations = LocationVectorizerFeatures('locations', lambda x: x.location_strings, norm='l1')
 
         canopy_feat = HashingVectorizerFeatures('canopy', lambda x: x.canopies)
         # entity_kb_feat = EntityKBFeatures('clustering_resources/permid_entity_info.pkl', 'entitykb', lambda x: x)
