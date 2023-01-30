@@ -5,12 +5,15 @@ import unicodedata
 from absl import logging
 from nltk import word_tokenize
 
-last_split_patterns = ['(?i)as .* by .* of', '(?i)on behalf of', '(?i)as .* by', '(?i)c/o', '(?i)board of regents of']
-first_split_patterns = ['(?i)also trading as', '(?i)acting by and through']
 import json
 import editdistance
 import re
 import uuid
+import configparser
+
+last_split_patterns = ['(?i)as .* by .* of', '(?i)on behalf of', '(?i)as .* by', '(?i)c/o', '(?i)board of regents of']
+first_split_patterns = ['(?i)also trading as', '(?i)acting by and through']
+
 
 class AssigneePreprocessor:
     def __init__(self, assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file, threshold=0.2):

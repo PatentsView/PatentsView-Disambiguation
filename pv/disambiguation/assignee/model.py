@@ -114,7 +114,7 @@ class LocationVectorizerFeatures(object):
         self.get_field = get_field
         from sklearn.feature_extraction.text import CountVectorizer
         # self.model = CountVectorizer(tokenizer=lambda x: [' '.join(x)] if x else [])
-        self.model = CountVectorizer(tokenizer=lambda x: x, lowercase=False)
+        self.model = CountVectorizer(tokenizer=lambda x: x, lowercase=False, binary=True)
 
     def encode(self, things_to_encode):
         a = [self.get_field(x) for x in things_to_encode]

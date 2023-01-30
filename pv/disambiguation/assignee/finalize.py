@@ -79,7 +79,7 @@ def finalize_results(config):
                 mid2eid[rid] = final_uuids[lbl_cc[pid2idx[m.uuid]]]
         else:
             logging.log_first_n(logging.INFO,
-                                'we didnt do any more diambiguation for %s', 10, m.uuid)
+                                'we didnt do any more disambiguation for %s', 10, m.uuid)
             for rid in m.mention_ids:
                 missing_mid2eid[rid] = m.uuid
     output_file = "{path}/disambiguation.tsv".format(path=config['assignee']['clustering_output_folder'])
