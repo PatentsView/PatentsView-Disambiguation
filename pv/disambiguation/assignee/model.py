@@ -155,7 +155,7 @@ class AssigneeModel(object):
         latlong_vectorizer = LocationVectorizer('location_lat_long',
                                                 lambda x: np.array([x.average_lat, x.average_lon]))
         triples = [
-            (locations, FeatCalc.L2, CentroidType.NO_NORM, False, False),
+            (locations, FeatCalc.DOT, CentroidType.NORMED, False, False),
             # (entity_kb_feat, FeatCalc.NO_MATCH, CentroidType.BINARY, False, True),
             (name_tfidf, FeatCalc.DOT, CentroidType.NORMED, False, False)]
         encoders = [t[0] for t in triples]

@@ -11,6 +11,7 @@ import logging
 from grinch.agglom import Agglom
 from grinch.model import LinearAndRuleModel
 from grinch.multifeature_grinch import WeightedMultiFeatureGrinch
+from scipy import sparse
 from tqdm import tqdm
 
 from pv.disambiguation.assignee.assignee_analyzer import load_assignee_analyzer_configuration, \
@@ -70,22 +71,31 @@ def lookup_names(Z, nms):
     )
 
 
+def write_feature_debug(debug_location, columns, feature):
+    sparse.save_npz(f"{debug_location}/Feature_{feature[0]}.npz", feature[3])
+    with open(f"{debug_location}/Label_{feature[0]}_names.csv", "w") as fp:
+        for col in columns:
+            fp.write(f"{col}\n")
 def run_on_batch(all_pids, all_lbls, all_records, all_canopies, model, encoding_model, canopy2predictions, canopy2tree,
                  trees, pids_list, canopy_list, job_name):
+    debug_folder_name = f"debug/{job_name}/{batch}/"
+    import os
+    os.makedirs(debug_folder_name, exist_ok=True)
     nms = [m.normalized_most_frequent for m in all_records]
+    with open(f"{debug_folder_name}/Label_Record_names.csv", "w") as fp:
+        for name in nms:
+            fp.write(f"{name}\n")
     features = encoding_model.encode(all_records)
+    for feature, ml in zip(features, encoding_model.feature_list):
+        write_feature_debug(debug_location=debug_folder_name, columns=ml.model.get_feature_names_out(),
+                            feature=feature)
     grinch = Agglom(model, features, num_points=len(all_pids), min_allowable_sim=0)
     grinch.build_dendrogram_hac()
     # pickle.dump(grinch.Z, open('Z_{jn}.pkl'.format(jn=job_name), 'wb'))
     Z_frame = lookup_names(grinch.Z, nms)
     Z_frame = Z_frame[Z_frame.elements < 50]
-    z_name = "Z_Frame_{jn}.csv".format(jn=job_name)
-    import os
-    # if file does not exist write header
-    if not os.path.isfile(z_name):
+    z_name = f"{debug_folder_name}/Z_Frame.csv"
         Z_frame.to_csv(z_name)
-    else:  # else it exists so append without writing the header
-        Z_frame.to_csv(z_name, mode='a', header=False)
 
     fc = grinch.flat_clustering(model.aux['threshold'])
     logger.info('run_on_batch - threshold %s, linkages: min %s, max %s, avg %s, std %s',
@@ -179,8 +189,10 @@ def run_batch(config, canopy_list, outdir, loader, chunk_id, job_name='disambig'
                         num_mentions_processed)
             num_mentions_processed += len(all_pids)
             num_canopies_processed += np.unique(all_canopies).shape[0]
-            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results,
-                         canopy2tree_id, tree_list, pids_list, pids_canopy_list, job_name)
+            run_on_batch(all_pids=all_pids, all_lbls=all_lbls, all_records=all_records, all_canopies=all_canopies,
+                         model=weight_model, encoding_model=encoding_model, canopy2predictions=results,
+                         canopy2tree=canopy2tree_id, trees=tree_list, pids_list=pids_list, canopy_list=pids_canopy_list,
+                         job_name=job_name, batch=idx)
             if idx % 10 == 0:
                 logger.info(
                     {'computed': idx + int(chunk_id) * int(config['assignee']['chunk_size']),
