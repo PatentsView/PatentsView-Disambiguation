@@ -60,8 +60,8 @@ def finalize_results(config):
 
     logging.info('loading mentions...')
     end_date = config["DATES"]["END_DATE"]
-    path = f"{config['BASE_PATH']['assignee']}".format(data_root=config['FOLDERS']['data_root'], end_date=end_date) + \
-           config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
+    path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS'][
+        'feature_out']
     print(path)
     with open(path + '.%s.pkl' % 'records', 'rb') as fin:
         assignee_mentions = pickle.load(fin)
