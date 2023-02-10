@@ -38,9 +38,7 @@ def create_uuid_map(config, source='granted_patent_database'):
 
 def generate_uuid_map(config):
     end_date = config["DATES"]["END_DATE"]
-    output_file = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date,
-                                                              data_root=config['FOLDERS']['data_root']) + \
-                  config['ASSIGNEE_UPLOAD']['uuidmap']
+    output_file = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['ASSIGNEE_UPLOAD']['uuidmap']
     print(output_file)
     granted_uuids = create_uuid_map(config, 'granted_patent_database')
     pgranted_uuids = create_uuid_map(config, 'pregrant_database')
