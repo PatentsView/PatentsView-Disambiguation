@@ -75,13 +75,10 @@ class AssigneePreprocessor:
         return " ".join(processed_document_elements)
 
 
-c = configparser.ConfigParser()
-c.read("config.ini")
-project_root = c['FOLDERS']['data_root']
 assignee_preprocessor = AssigneePreprocessor(
-    assignee_abbreviation_file=f'{project_root}/clustering_resources/assignee_abbreviations.json',
-    assignee_correction_file=f'{project_root}/clustering_resources/assignee_corrections.txt',
-    assignee_stopphrase_file=f'{project_root}/clustering_resources/assignee_stopwords.txt', threshold=2)
+    assignee_abbreviation_file='/project/clustering_resources/assignee_abbreviations.json',
+    assignee_correction_file='/project/clustering_resources/assignee_corrections.txt',
+    assignee_stopphrase_file='/project/clustering_resources/assignee_stopwords.txt', threshold=2)
 
 
 def normalize_name(name, *args, **kwargs):
@@ -104,7 +101,7 @@ def normalize_name(name, *args, **kwargs):
 
 def load_assignee_stopwords():
     r = set()
-    with open(f'{project_root}/clustering_resources/assignee-stopwords-lowercase.txt') as fin:
+    with open('/project/clustering_resources/assignee-stopwords-lowercase.txt') as fin:
         for line in fin:
             r.add(line.strip())
     r = set()
