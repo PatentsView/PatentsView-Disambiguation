@@ -50,7 +50,7 @@ def generate_assignee_records_from_sql(config, ignore_filters, source='granted_p
         {db}.rawassignee ra
         left join {db}.rawlocation rl on rl.id=ra.rawlocation_id
         left join patent.location l on rl.location_id=l.id
-        {filter} and ra.organization like '%tech%'
+        {filter}
         """.format(
         id_field=incremental_components.get('id_field'),
         document_id_field=incremental_components.get("document_id_field"),
