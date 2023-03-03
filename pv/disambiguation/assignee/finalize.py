@@ -1,19 +1,11 @@
 import collections
+import numpy as np
 import os
 import pickle
-
-import numpy as np
 from absl import app
 from absl import flags
 from absl import logging
 from tqdm import tqdm
-
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string('input', 'exp_out/assignee/run_26', '')
-flags.DEFINE_string('assignee_name_mentions', 'data/assignee/assignee_mentions.records.pkl', '')
-
-flags.DEFINE_string('output', 'exp_out/assignee/run_26/disambiguation_debug.tsv', '')
 
 logging.set_verbosity(logging.INFO)
 
@@ -21,14 +13,14 @@ logging.set_verbosity(logging.INFO)
 def process_file(point2clusters, clusters, pkl_file):
     res = pickle.load(open(pkl_file, 'rb'))
     num_assign = 0
-    for c, res in res.items():
+    for c, res_item in res.items():
         logging.log_first_n(logging.INFO, 'canopy %s', 5, c)
-        for idx in range(len(res[0])):
-            if res[1][idx] not in clusters:
-                logging.log_every_n_seconds(logging.INFO, 'new cluster %s -> %s', 1, res[1][idx], len(clusters))
-                clusters[res[1][idx]] = len(clusters)
-            point2clusters[res[0][idx]].append(clusters[res[1][idx]])
-            logging.log_every_n_seconds(logging.INFO, 'points %s -> %s', 1, res[0][idx], clusters[res[1][idx]])
+        for idx in range(len(res_item[0])):
+            if res_item[1][idx] not in clusters:
+                logging.log_every_n_seconds(logging.INFO, 'new cluster %s -> %s', 1, res_item[1][idx], len(clusters))
+                clusters[res_item[1][idx]] = len(clusters)
+            point2clusters[res_item[0][idx]].append(clusters[res_item[1][idx]])
+            logging.log_every_n_seconds(logging.INFO, 'points %s -> %s', 1, res_item[0][idx], clusters[res_item[1][idx]])
             num_assign += 1
     return num_assign
 
@@ -40,11 +32,11 @@ def process(point2clusters, clusters, rundir):
     return num_assign
 
 
-def main(argv):
+def finalize_results(config):
     point2clusters = collections.defaultdict(list)
     cluster_dict = dict()
     logging.info('loading canopy results..')
-    total_num_assignments = process(point2clusters, cluster_dict, FLAGS.input)
+    total_num_assignments = process(point2clusters, cluster_dict, config['assignee']['clustering_output_folder'])
     logging.info('total_num_clusters %s', len(cluster_dict))
     logging.info('total_num_assignments %s', total_num_assignments)
     logging.info('loading canopy results...done')
@@ -57,26 +49,21 @@ def main(argv):
     for idx, (pid, clusters) in tqdm(enumerate(point2clusters.items()), 'building sparse graph'):
         row[overall_idx:overall_idx + len(clusters)] *= idx
         col[overall_idx:overall_idx + len(clusters)] = np.array(clusters, dtype=np.int64) + len(point2clusters)
-        # import pdb
-        # pdb.set_trace()
         overall_idx += len(clusters)
         pid2idx[pid] = idx
-
-    # import pdb
-    # pdb.set_trace()
     from scipy.sparse import coo_matrix
-    mat = coo_matrix((data, (row, col)),
-                     shape=(len(cluster_dict) + len(point2clusters), len(cluster_dict) + len(point2clusters)))
+    mat = coo_matrix((data, (row, col)), shape=(len(cluster_dict) + len(point2clusters), len(cluster_dict) + len(point2clusters)))
     from scipy.sparse.csgraph import connected_components
     logging.info('running cc...')
     n_cc, lbl_cc = connected_components(mat, directed=True, connection='weak')
     logging.info('running cc...done')
 
-    # import pdb
-    # pdb.set_trace()
-
     logging.info('loading mentions...')
-    with open(FLAGS.assignee_name_mentions, 'rb') as fin:
+    end_date = config["DATES"]["END_DATE"]
+    path = f"{config['BASE_PATH']['assignee']}".format(data_root=config['FOLDERS']['data_root'], end_date=end_date) + \
+           config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
+    print(path)
+    with open(path + '.%s.pkl' % 'records', 'rb') as fin:
         assignee_mentions = pickle.load(fin)
 
     import uuid
@@ -92,17 +79,39 @@ def main(argv):
                 mid2eid[rid] = final_uuids[lbl_cc[pid2idx[m.uuid]]]
         else:
             logging.log_first_n(logging.INFO,
-                                'we didnt do any more diambiguation for %s', 100, m.uuid)
+                                'we didnt do any more diambiguation for %s', 10, m.uuid)
             for rid in m.mention_ids:
                 missing_mid2eid[rid] = m.uuid
-    logging.info('writing output ...')
-    with open(FLAGS.output, 'w') as fout:
+    output_file = "{path}/disambiguation.tsv".format(path=config['assignee']['clustering_output_folder'])
+    logging.info(f'writing output to {output_file}...')
+    if os.path.isfile(output_file):
+        print("Removing Current File in Directory")
+        os.remove(output_file)
+    if os.path.isfile(output_file):
+        print("Removing Current File in Directory")
+        os.remove(output_file)
+    with open(output_file, 'w') as fout:
         for m, e in mid2eid.items():
             fout.write('%s\t%s\n' % (m, e))
         for m, e in missing_mid2eid.items():
             if m not in mid2eid:
                 fout.write('%s\t%s\n' % (m, e))
     logging.info('writing output ... done.')
+
+
+def main(argv):
+    import configparser
+    config = configparser.ConfigParser()
+    config.read(['config/database_config.ini', 'config/database_tables.ini', 'config/assignee/run_clustering.ini'])
+    finalize_results(config)
+
+
+# import pdb
+# pdb.set_trace()
+
+
+# import pdb
+# pdb.set_trace()
 
 
 if __name__ == "__main__":

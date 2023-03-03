@@ -1,0 +1,18 @@
+{
+  "corp": "corporation",
+  "ltd": "limited",
+  "co": "company",
+  "pvt": "private",
+  "ag": "aktiengesellschaft",
+  "llc": "limited liability company",
+  "inc": "incorporated",
+  "lab": "laboratory",
+  "mfg": "manufacturing",
+  "lp": "limited partnership",
+  "tech": "technology",
+  "gmbh": "gesellschaft mit beschrankter haftung",
+  "intl": "international",
+  "llp": "limited liability partnership",
+  "nv": "naamloze venootschap",
+  "bv": "besloten vennootschap"
+}

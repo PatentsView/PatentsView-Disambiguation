@@ -278,7 +278,7 @@ class LocationDatabase:
             self.load_cities()
             self.loaded = True
 
-    def load_countries(self, filename="resources/location/iso3166.csv"):
+    def load_countries(self, filename="clustering_resources/location/iso3166.csv"):
         """
 
         
@@ -292,7 +292,7 @@ class LocationDatabase:
                 self.country2abbr[splt[0]] = splt[1]
                 self.abbr2country[splt[1]] = splt[0]
 
-    def load_states(self, filename="resources/location/state_abbreviations.csv"):
+    def load_states(self, filename="clustering_resources/location/state_abbreviations.csv"):
         """
         :param filename:
         :return:
@@ -303,7 +303,7 @@ class LocationDatabase:
                 self.state2abbr[splt[0]] = splt[1]
                 self.abbr2state[splt[1]] = splt[0]
 
-    def load_cities(self, filename="resources/location/all_cities.csv"):
+    def load_cities(self, filename="clustering_resources/location/all_cities.csv"):
         with open(filename, 'r') as fin:
             for line in fin:
                 splt = [normalize_name(x) for x in re.split(""",(?=[^"]*([^"]*"[^"]*")*[^"]*$)""", line.strip()) if x]

@@ -25,7 +25,7 @@ def main(argv):
 
     vectorizer.fit(raw_names)
 
-    with open(os.path.join('resources', 'city_name_model.pkl'), 'wb') as f:
+    with open(os.path.join('clustering_resources', 'city_name_model.pkl'), 'wb') as f:
         pickle.dump(vectorizer, f)
 
 

@@ -6,7 +6,7 @@ class Loader(object):
         self.assignee_canopies = assignee_canopies
         self.assignee_mentions = assignee_mentions
 
-    def load(self, canopy):
+    def load(self, canopy: object) -> object:
         return [self.assignee_mentions[mid] for mid in self.assignee_canopies[canopy]]
 
     def num_records(self, canopy):
@@ -14,9 +14,14 @@ class Loader(object):
 
     @staticmethod
     def from_config(config):
-        with open(config['assignee']['assignee_canopies'], 'rb') as fin:
+        end_date = config["DATES"]["END_DATE"]
+        path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date,
+                                                           data_root=config['FOLDERS']['data_root']) + \
+               config['BUILD_ASSIGNEE_NAME_MENTIONS'][
+                   'feature_out']
+        with open(path + '.%s.pkl' % 'canopies', 'rb') as fin:
             canopies = pickle.load(fin)
-        with open(config['assignee']['assignee_mentions'], 'rb') as fin:
+        with open(path + '.%s.pkl' % 'records', 'rb') as fin:
             assignee_mentions = pickle.load(fin)
         l = Loader(canopies, assignee_mentions)
         return l

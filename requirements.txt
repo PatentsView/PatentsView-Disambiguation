@@ -118,7 +118,7 @@ nltk
 # PatentsView-Disambiguation/pv/disambiguation/process/build_inventor_dev_set.py: 5,13
 # PatentsView-Disambiguation/pv/disambiguation/process/map_assignee_labeled_data.py: 12
 # PatentsView-Disambiguation/pv/disambiguation/util/qc_utils.py: 4
-numpy
+numpy==1.20
 
 # PatentsView-Disambiguation/pv/disambiguation/assignee/canonicalize.py: 5
 # PatentsView-Disambiguation/pv/disambiguation/assignee/qc/cluster_sizes.py: 3
@@ -220,3 +220,5 @@ tqdm
 # PatentsView-Disambiguation/pv/disambiguation/location/run_clustering.py: 6
 # PatentsView-Disambiguation/pv/disambiguation/process/build_inventor_dev_set.py: 15
 wandb
+
+mysql-connector-python

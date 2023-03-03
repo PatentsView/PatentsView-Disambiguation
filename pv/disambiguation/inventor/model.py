@@ -12,11 +12,14 @@ class InventorModel(object):
     @staticmethod
     def from_config(config):
         logging.info('Building Inventor Model...')
+        end_date = config["DATES"]["END_DATE"]
+        ipath = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date)
 
-        with open(config['inventor']['patent_titles'], 'rb') as fin:
+        print(ipath + config['INVENTOR_BUILD_TITLES']['feature_out'])
+        with open(ipath + config['INVENTOR_BUILD_TITLES']['feature_out'] + '.%s.pkl' % 'both', 'rb') as fin:
             patent_tile_map = pickle.load(fin)
         logging.info('Loaded Patent Title Map...')
-        for idx,(k,v) in enumerate(patent_tile_map.items()):
+        for idx, (k, v) in enumerate(patent_tile_map.items()):
             logging.info('%s: %s', k, v)
             if idx > 5:
                 break
@@ -31,10 +34,12 @@ class InventorModel(object):
                 logging.warning('Missing title for %s', x.record_id)
                 return ''
 
-        with open(config['inventor']['coinventors'], 'rb') as fin:
+        print(ipath + config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out'])
+        with open(ipath + config['INVENTOR_BUILD_COINVENTOR_FEAT']['feature_out'] + '.%s.pkl' % 'both', 'rb') as fin:
             coinventor_map = pickle.load(fin)
+
         logging.info('Loaded Patent Coinventors Map...')
-        for idx,(k,v) in enumerate(coinventor_map.items()):
+        for idx, (k,v) in enumerate(coinventor_map.items()):
             logging.info('%s: %s', k, str(v))
             if idx > 5:
                 break
@@ -49,10 +54,12 @@ class InventorModel(object):
                 logging.warning('Missing coinventors for %s', x.patent_id)
                 return []
 
-        with open(config['inventor']['assignees'], 'rb') as fin:
+        apath = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date)
+        print(apath + config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out'])
+        with open(apath + config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out'] + '.%s.pkl' % 'both', 'rb') as fin:
             assignees_map = pickle.load(fin)
         logging.info('Loaded Patent Assignees Map...')
-        for idx,(k,v) in enumerate(assignees_map.items()):
+        for idx, (k, v) in enumerate(assignees_map.items()):
             logging.info('%s: %s', k, str(v))
             if idx > 5:
                 break
@@ -74,6 +81,7 @@ class InventorModel(object):
         middle_initial = SingleItemHashingVectorizerFeatures('middle_initial', lambda x: x.middle_initial())
         middle_name = SingleItemHashingVectorizerFeatures('middle_name', lambda x: x.middle_name())
 
+        # canopy_feat = SingleItemHashingVectorizerFeatures('canopy', lambda x: x.canopy())
         canopy_feat = SingleItemHashingVectorizerFeatures('canopy', lambda x: x.canopy())
 
         # Title Features
@@ -104,8 +112,28 @@ class InventorModel(object):
         must_not_links = set([t[0].name for t in triples if t[4]])
         assert len(encoders) == len(feature_types)
         assert len(feature_types) == len(centroid_types)
-        return EncodingModel(encoders,
+        return CustomizedEncodingModel(encoders,
                              'InventorModelWithApps',
                              {},
                              feature_types, centroid_types, must_links, must_not_links)
 
+
+
+class CustomizedEncodingModel(EncodingModel):
+    def __init__(self, feature_list, name, aux, feature_types, centroid_types, must_link_rules, must_not_link_rules):
+        super().__init__(feature_list, name, aux, feature_types, centroid_types, must_link_rules, must_not_link_rules)
+
+    def encode(self, mentions):
+        features = []
+        for idx, f in enumerate(self.feature_list):
+            print('STARTING Encoding for feature %s', f.name)
+            logging.info('Encoding for feature %s', f.name)
+            f_enc = f.encode(mentions)
+            import scipy
+            is_dense = not scipy.sparse.issparse(f_enc)
+            features.append(
+                (f.name, is_dense, f_enc.shape[1], f_enc, self.feature_types[idx], self.centroid_types[idx]))
+            logging.info('Encode complete for feature %s', f.name)
+            print('FINISHED Encoding for feature %s', f.name)
+
+        return features

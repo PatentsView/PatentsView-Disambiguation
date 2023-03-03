@@ -134,3 +134,4 @@ dmypy.json
 pv/disambiguation/inventor/qc/data
 data/
 .idea/
+output/

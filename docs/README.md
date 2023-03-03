@@ -1,5 +1,5 @@
 # Disambiguation Documentation
 
-## [Inventor](inventor.md)
-## [Assignee](assignee.md)
-## [Location](location.md)
+## [Inventor](Code/PatentsView-Disambiguation/docs/inventor_general.md)
+## [Assignee](Code/PatentsView-Disambiguation/docs/assignee_general.md)
+## [Location](Code/PatentsView-Disambiguation/docs/location_general.md)

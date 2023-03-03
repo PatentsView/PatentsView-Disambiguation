@@ -16,22 +16,22 @@ def clean_name(name_str):
 class InventorMention(object):
     def __init__(self, uuid, patent_id, rawlocation_id, name_first, name_last, sequence, rule_47, deceased,
                  document_number=None, city=None, state=None, country=None):
-        self.uuid = uuid
-        self.patent_id = patent_id.replace('\"', '') if patent_id else None
-        self.rawlocation_id = rawlocation_id.replace('\"', '') if rawlocation_id else ''
-        self.raw_last = name_last.replace('\"', '') if name_last else ''
-        self.raw_first = name_first.replace('\"', '') if name_first else ''
+        self.uuid = str(uuid)
+        self.patent_id = str(patent_id).replace('\"', '') if patent_id else None
+        self.rawlocation_id = str(rawlocation_id).replace('\"', '') if rawlocation_id else ''
+        self.raw_last = str(name_last).replace('\"', '') if name_last else ''
+        self.raw_first = str(name_first).replace('\"', '') if name_first else ''
         if type(sequence) is int:
             self.sequence = str(sequence)
         else:
             self.sequence = sequence.replace('\"', '') if sequence else ''
-        self.rule_47 = rule_47.replace('\"', '') if rule_47 else ''
+        self.rule_47 = str(rule_47).replace('\"', '') if rule_47 else ''
         self.deceased = str(deceased).replace('\"', '') if deceased else ''
         self.name = '%s %s' % (self.raw_first, self.raw_last)
-        self.document_number = document_number
+        self.document_number = str(document_number)
 
         self.mention_id = '%s-%s' % (self.patent_id, self.sequence) if self.patent_id is not None else 'pg-%s-%s' % (
-        self.document_number, self.sequence)
+            self.document_number, self.sequence)
         self.assignees = []
         self.title = None
         self.coinventors = []
@@ -39,14 +39,16 @@ class InventorMention(object):
         self._first_name = None
         self._first_initial = None
         self._first_letter = None
+        self._first_two_initials = None
+        self._first_two_letters = None
         self._middle_name = None
         self._middle_initial = None
         self._suffixes = None
         self._last_name = None
 
-        self.city = city
-        self.state = state
-        self.country = country
+        self.city = str(city)
+        self.state = str(state)
+        self.country = str(country)
 
         self.record_id = self.patent_id if self.patent_id else 'pg-%s' % self.document_number
 
@@ -72,10 +74,20 @@ class InventorMention(object):
             self.compute_name_features()
         return self._first_initial
 
+    def first_two_initials(self):
+        if self._first_two_initials is None:
+            self.compute_name_features()
+        return self._first_two_initials
+
     def first_letter(self):
         if self._first_letter is None:
             self.compute_name_features()
         return self._first_letter
+
+    def first_two_letters(self):
+        if self._first_two_letters is None:
+            self.compute_name_features()
+        return self._first_two_letters
 
     def middle_initial(self):
         if self._middle_initial is None:
@@ -93,6 +105,12 @@ class InventorMention(object):
         res = 'fl:%s_ln:%s' % (fi, lastname)
         return [res]
 
+    # def canopy(self):
+    #     f_two = self.first_two_letters()[0] if len(self.first_two_letters()) > 0 else self.uuid
+    #     lastname = self.last_name()[0] if len(self.last_name()) > 0 else self.uuid
+    #     res = 'fl:%s_ln:%s' % (f_two, lastname)
+    #     return [res]
+
     def last_name(self):
         if self._last_name is None:
             self.compute_name_features()
@@ -107,6 +125,7 @@ class InventorMention(object):
         self._first_name = names.first_name(self.raw_first)
         self._first_initial = names.first_initial(self.raw_first)
         self._first_letter = names.first_letter(self.raw_first)
+        self._first_two_letters = names.first_two_letters(self.raw_first)
         self._middle_name = names.middle_name(self.raw_first)
         self._middle_initial = names.middle_initial(self.raw_first)
         self._suffixes = names.suffixes(self.raw_last)
@@ -123,6 +142,20 @@ class InventorMention(object):
             return InventorMention(splt[0], splt[1], splt[3], splt[4], splt[5], splt[6], splt[7], splt[8])
 
     @staticmethod
+    def from_sql_record_dict(rec):
+        return InventorMention(uuid=rec.get('uuid', ""),
+                               patent_id=rec.get('patent_id', ""),
+                               rawlocation_id=rec.get('rawlocation_id', ""),
+                               name_first=rec.get('name_first', ""),
+                               name_last=rec.get('name_last', ""),
+                               sequence=rec.get('sequence', ""),
+                               rule_47=rec.get('rule_47', ""),
+                               deceased=rec.get('deceased', ""),
+                               document_number=rec.get('document_number', ""),
+                               city=rec.get('city', ""), state=rec.get('state', ""),
+                               country=rec.get('country', ""))
+
+    @staticmethod
     def from_application_sql_record(rec):
         # | id | document_number | name_first | name_last | sequence | designation | deceased | rawlocation_id | city | state | country | filename | created_date | updated_date |
         uuid = rec[0]
@@ -136,10 +169,7 @@ class InventorMention(object):
         city = rec[8]
         state = rec[9]
         country = rec[10]
-        filename = rec[11]
-        created_date = rec[12]
-        updated_date = rec[13]
-        return InventorMention(uuid, None, rawlocation_id, rawfirst, rawlast, sequence, "", deceased, doc_no, city,
+        return InventorMention(uuid, "", rawlocation_id, rawfirst, rawlast, sequence, "", deceased, doc_no, city,
                                state, country)
 
     @staticmethod
@@ -147,13 +177,12 @@ class InventorMention(object):
         # | uuid | patent_id | inventor_id | rawlocation_id | name_first | name_last | sequence | rule_47 | deceased |
         uuid = rec[0]
         patent_id = rec[1]
-        inventor_id = rec[2]
-        rawlocation_id = rec[3]
-        rawfirst = rec[4]
-        rawlast = rec[5]
-        sequence = rec[6]
-        rule_47 = rec[7]
-        deceased = rec[8]
+        rawlocation_id = rec[2]
+        rawfirst = rec[3]
+        rawlast = rec[4]
+        sequence = rec[5]
+        rule_47 = rec[6]
+        deceased = rec[7]
         return InventorMention(uuid, patent_id, rawlocation_id, rawfirst, rawlast, sequence, rule_47, deceased)
 
 
@@ -163,9 +192,9 @@ def load_inventor_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
         for idx, line in enumerate(fin):
             if idx == 0 and skip_first_line:
                 continue
-            logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
+            # logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
             if idx > N:
-                logging.info('Loaded %s lines of %s', idx, filename)
+                # logging.info('Loaded %s lines of %s', idx, filename)
                 return
             elif idx >= st:
                 yield InventorMention.from_line(line)
@@ -173,27 +202,23 @@ def load_inventor_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
 
 class AssigneeMention(object):
     def __init__(self, uuid, patent_id, rawlocation_id, assignee_type,
-                 raw_first, raw_last, organization, sequence, city=None, state=None, country=None,
+                 raw_first, raw_last, organization, sequence, location_id=None,
+                 # lat=None, lon=None, city=None,
+                 # state=None, country=None,
                  document_number=None):
         self.uuid = uuid.replace('\"', '')
         self.patent_id = patent_id.replace('\"', '') if patent_id is not None else None
         self.rawlocation_id = rawlocation_id.replace('\"', '') if rawlocation_id else None
-        if type(assignee_type) is int:
-            self.assignee_type = str(assignee_type)
-        else:
-            self.assignee_type = assignee_type.replace('\"', '') if assignee_type else None
-        self.raw_first = raw_first.replace('\"', '') if raw_first else ''
-        self.raw_last = raw_last.replace('\"', '') if raw_last else ''
-        self.organization = organization.replace('\"', '') if organization else ''
-        if type(sequence) is int:
-            self.sequence = str(sequence)
-        else:
-            self.sequence = sequence.replace('\"', '') if sequence else None
+        self.assignee_type = str(assignee_type).replace('\"', '') if assignee_type is not None else None
+        self.raw_first = str(raw_first).replace('\"', '') if raw_first else ''
+        self.raw_last = str(raw_last).replace('\"', '') if raw_last else ''
+        self.organization = str(organization).replace('\"', '') if organization else ''
+        self.sequence = str(sequence).replace('\"', '') if sequence is not None else None
         self.is_organization = len(self.organization) > 0
         self.document_number = document_number
 
         self.mention_id = '%s-%s' % (self.patent_id, self.sequence) if self.patent_id is not None else 'pg-%s-%s' % (
-        self.document_number, self.sequence)
+            self.document_number, self.sequence)
 
         self._first_name = None
         self._first_initial = None
@@ -201,13 +226,20 @@ class AssigneeMention(object):
         self._middle_initial = None
         self._suffixes = None
         self._last_name = None
-
-        self.city = city
-        self.state = state
-        self.country = country
+        # self.location_id = location_id
+        # self.latitude = lat
+        # self.longitude = lon
+        # self.city = city
+        # self.state = state
+        # self.country = country
         self.record_id = self.patent_id if self.patent_id else 'pg-%s' % self.document_number
         self._name_features = None
         self._canopies = None
+        self.location_name = location_id
+        # self.set_location_name()
+
+    # def set_location_name(self):
+    #     self.location_name = self.location_id
 
     def canopies(self):
         if self._canopies is None:
@@ -266,14 +298,35 @@ class AssigneeMention(object):
         self._last_name = names.last_name(self.raw_last)
 
     @staticmethod
-    def from_line(line):
-        # "uuid"	"patent_id"	"assignee_id"	"rawlocation_id"	"type"	"name_first"	"name_last"	"organization"	"sequence"
-        splt = line.strip().split("\t")
-        if len(splt) != 9:
-            logging.warning('Error processing line %s', line)
-            return None
+    def from_line(splt):
+        # yield {id_field: row[0], document_id_field: row[1], sequence_field: row[2], 'name_first': row[3],
+        #                    'name_las': row[4], 'organization': row[5], 'type': row[6], 'rawlocation_id': row[7],
+        #                    'location_id': row[8]}
+        #
+        #
+        # uuid, patent_id, rawlocation_id, assignee_type, raw_first, raw_last, organization, sequence, location_id=None, document_number
+
+        doc_value = None
+        p_value = None
+        if len(splt[1]) > 9:
+            doc_value = splt[1]
         else:
-            return AssigneeMention(splt[0], splt[1], splt[3], splt[4], splt[5], splt[6], splt[7], splt[8])
+            p_value = splt[1]
+
+        return AssigneeMention(splt[0], p_value, splt[7], splt[6], splt[3], splt[4], splt[5], splt[7], splt[8],
+                               doc_value)
+
+    @staticmethod
+    def from_sql_records(rec: dict):
+        return AssigneeMention(uuid=rec.get('uuid', rec.get('id', None)),
+                               patent_id=rec.get('patent_id', None),
+                               rawlocation_id=rec.get('rawlocation_id'),
+                               assignee_type=rec.get('type'),
+                               raw_first=rec.get('name_first'), raw_last=rec.get('name_last'),
+                               organization=rec.get('organization'), sequence=rec.get('sequence'),
+                               location_id=rec.get('location_id'),
+                               document_number=rec.get('document_number', None)
+                               )
 
     @staticmethod
     def from_application_sql_record(rec):
@@ -321,7 +374,8 @@ class AssigneeNameMention(object):
         self.location_strings = location_strings
         self.canopies = canopies
         self.unique_exact_strings = unique_exact_strings
-        self.normalized_most_frequent = normalize_name(max(self.unique_exact_strings.items(), key=lambda x: x[1])[0])
+        self.normalized_most_frequent = normalize_name(max(self.unique_exact_strings.items(), key=lambda x: x[1])[0],
+                                                       preprocess=True)
 
     @staticmethod
     def from_assignee_mentions(name_hash, assignee_mentions):
@@ -331,6 +385,9 @@ class AssigneeNameMention(object):
         mention_ids = set()
         record_ids = set()
         unique_exact_strings = dict()
+        location_strings = set()
+        # average_latitude = np.nanmean([x.latitude for x in assignee_mentions if x.latitude is not None])
+        # average_longitude = np.nanmean([x.longitude for x in assignee_mentions if x.longitude is not None])
         for m in assignee_mentions:
             name_features.update(m.name_features())
             canopies.update(m.canopies())
@@ -339,23 +396,25 @@ class AssigneeNameMention(object):
             if m.assignee_name() not in unique_exact_strings:
                 unique_exact_strings[m.assignee_name()] = 0
             unique_exact_strings[m.assignee_name()] += 1
-        return AssigneeNameMention(anm_id, name_hash, canopies, name_features, mention_ids, record_ids, [],
-                                   unique_exact_strings)
+            if m.location_name is not None:
+                location_strings.add(m.location_name)
+            # location_strings.add(" ".join([x for x in [m.city, m.state, m.country] if x is not None]))
+        return AssigneeNameMention(anm_id, name_hash, canopies, name_features, mention_ids, record_ids,
+                                   location_strings,
+                                   unique_exact_strings=unique_exact_strings)
 
-
-def load_assignee_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
-    logging.info('Loading assignee mentions from %s', filename)
-    with open(filename, 'r') as fin:
-        for idx, line in enumerate(fin):
-            if idx == 0 and skip_first_line:
-                continue
-            logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
-            if idx > N:
-                logging.info('Loaded %s lines of %s', idx, filename)
-                return
-            elif idx >= st:
-                yield AssigneeMention.from_line(line)
-
+    def load_assignee_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
+        # logging.info('Loading assignee mentions from %s', filename)
+        with open(filename, 'r') as fin:
+            for idx, line in enumerate(fin):
+                if idx == 0 and skip_first_line:
+                    continue
+                # logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
+                if idx > N:
+                    # logging.info('Loaded %s lines of %s', idx, filename)
+                    return
+                elif idx >= st:
+                    yield AssigneeMention.from_line(line)
 
 class LawyerMention(object):
     def __init__(self, uuid, patent_id, raw_first, raw_last, organization, country, sequence):
@@ -416,14 +475,13 @@ class LawyerMention(object):
 
     @staticmethod
     def from_line(line):
-        "uuid"  "lawyer_id"     "patent_id"     "name_first"    "name_last"     "organization"  "country"       "sequence"
+        # "uuid"  "lawyer_id"     "patent_id"     "name_first"    "name_last"     "organization"  "country"       "sequence"
         splt = line.strip().split("\t")
         if len(splt) != 8:
             logging.warning('Error processing line %s', line)
             return None
         else:
             return LawyerMention(splt[0], splt[1], splt[3], splt[4], splt[5], splt[6], splt[7])
-
 
 def load_lawyer_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
     logging.info('Loading lawyer mentions from %s', filename)
@@ -437,7 +495,6 @@ def load_lawyer_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
                 return
             elif idx >= st:
                 yield LawyerMention.from_line(line)
-
 
 class LocationMention(object):
     def __init__(self, uuid, city, state, country, latlong):
@@ -496,7 +553,6 @@ class LocationMention(object):
         country_transformed = rec[5]
         return LocationMention(uuid, city, state, country, '')
 
-
 class LocationNameMention(object):
     def __init__(self, uuid, city, state, country, record_ids, mention_ids):
         self.uuid = uuid.replace('\"', '')
@@ -542,16 +598,15 @@ class LocationNameMention(object):
                                    locationMentions[0]._canonical_state,
                                    locationMentions[0]._canonical_country, record_ids, mention_ids)
 
-
 def load_location_mentions(filename, st=0, N=np.Inf, skip_first_line=True):
-    logging.info('Loading location mentions from %s', filename)
+    # logging.info('Loading location mentions from %s', filename)
     with open(filename, 'r') as fin:
         for idx, line in enumerate(fin):
             if idx == 0 and skip_first_line:
                 continue
-            logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
+            # logging.log_every_n(logging.INFO, 'Loaded %s lines of %s', 1000, idx, filename)
             if idx > N:
-                logging.info('Loaded %s lines of %s', idx, filename)
+                # logging.info('Loaded %s lines of %s', idx, filename)
                 return
             elif idx >= st:
                 yield LocationMention.from_line(line)

@@ -22,8 +22,17 @@ def process_file(fout, pkl_file):
 
 
 def process(fout, rundir):
-    for f in tqdm([f for f in os.listdir(rundir) if f.endswith('.pkl') and 'internals' not in f and 'job' in f and 'update' not in f]):
+    for f in tqdm([f for f in os.listdir(rundir) if
+                   f.endswith('.pkl') and 'internals' not in f and 'job' in f and 'update' not in f]):
         process_file(fout, os.path.join(rundir, f))
+
+
+def finalize(config):
+    output_file = "{}/disambiguation.tsv".format(config['inventor']['clustering_output_folder'])
+    clustering_output_directory = os.path.join(config['inventor']['outprefix'], 'inventor',
+                                               config['inventor']['run_id'])
+    with open(output_file, "w") as fout:
+        process(fout, clustering_output_directory)
 
 
 def main(argv):
