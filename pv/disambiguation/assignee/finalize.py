@@ -60,7 +60,8 @@ def finalize_results(config):
 
     logging.info('loading mentions...')
     end_date = config["DATES"]["END_DATE"]
-    path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
+    path = f"{config['BASE_PATH']['assignee']}".format(data_root=config['FOLDERS']['data_root'], end_date=end_date) + \
+           config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
     print(path)
     with open(path + '.%s.pkl' % 'records', 'rb') as fin:
         assignee_mentions = pickle.load(fin)
@@ -78,11 +79,11 @@ def finalize_results(config):
                 mid2eid[rid] = final_uuids[lbl_cc[pid2idx[m.uuid]]]
         else:
             logging.log_first_n(logging.INFO,
-                                'we didnt do any more diambiguation for %s', 100, m.uuid)
+                                'we didnt do any more diambiguation for %s', 10, m.uuid)
             for rid in m.mention_ids:
                 missing_mid2eid[rid] = m.uuid
-    logging.info('writing output ...')
     output_file = "{path}/disambiguation.tsv".format(path=config['assignee']['clustering_output_folder'])
+    logging.info(f'writing output to {output_file}...')
     if os.path.isfile(output_file):
         print("Removing Current File in Directory")
         os.remove(output_file)
