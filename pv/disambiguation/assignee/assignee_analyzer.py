@@ -20,12 +20,12 @@ def load_assignee_analyzer_configuration(assignee_abbreviation_file, assignee_co
 # %%
 import configparser
 
-c = configparser.ConfigParser()
-c.read("config.ini")
-project_root = c['FOLDERS']['project_root']
-assignee_abbreviation_file = f'{project_root}/clustering_resources/assignee_abbreviations.json'
-assignee_correction_file = f'{project_root}/clustering_resources/assignee_corrections.txt'
-assignee_stopphrase_file = f'{project_root}/clustering_resources/assignee_stopwords.txt'
+# c = configparser.ConfigParser()
+# c.read("/project/config.ini")
+# project_root = c['FOLDERS']['project_root']
+assignee_abbreviation_file = f'/project/clustering_resources/assignee_abbreviations.json'
+assignee_correction_file = f'/project/clustering_resources/assignee_corrections.txt'
+assignee_stopphrase_file = f'/project/clustering_resources/assignee_stopwords.txt'
 
 THRESHOLD = 2
 N_GRAM_RANGE = (2, 10)
