@@ -13,8 +13,8 @@ from grinch.model import LinearAndRuleModel
 from grinch.multifeature_grinch import WeightedMultiFeatureGrinch
 from tqdm import tqdm
 
-from pv.disambiguation.assignee.assignee_analyzer import load_assignee_analyzer_configuration, \
-    assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file
+# from pv.disambiguation.assignee.assignee_analyzer import load_assignee_analyzer_configuration, \
+#     assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file
 from pv.disambiguation.assignee.load_name_mentions import Loader
 from pv.disambiguation.assignee.model import AssigneeModel
 
