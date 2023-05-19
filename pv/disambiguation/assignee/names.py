@@ -70,20 +70,18 @@ class AssigneePreprocessor:
                 processed_document_elements.append(token)
         return " ".join(processed_document_elements)
 
-
-c = configparser.ConfigParser()
-c.read("config.ini")
-project_root = c['FOLDERS']['project_root']
-assignee_preprocessor = AssigneePreprocessor(
-    assignee_abbreviation_file=f'{project_root}/clustering_resources/assignee_abbreviations.json',
-    assignee_correction_file=f'{project_root}/clustering_resources/assignee_corrections.txt',
-    assignee_stopphrase_file=f'{project_root}/clustering_resources/assignee_stopwords.txt', threshold=2)
-
+def get_assignee_preprocessor():
+    assignee_preprocessor = AssigneePreprocessor(
+    assignee_abbreviation_file='/project/clustering_resources/assignee_abbreviations.json',
+    assignee_correction_file='/project/clustering_resources/assignee_corrections.txt',
+    assignee_stopphrase_file='/project/clustering_resources/assignee_stopwords.txt', threshold=2)
+    return assignee_preprocessor
 
 def normalize_name(name, *args, **kwargs):
     processed_name = name
     # if kwargs.get('preprocess', True):
     processed_name = processed_name.translate({ord(c): " " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"})
+    assignee_preprocessor = get_assignee_preprocessor()
     processed_name = assignee_preprocessor.preprocess(processed_name)
     # if kwargs.get("lower", True):
     processed_name = processed_name.lower()
@@ -100,7 +98,7 @@ def normalize_name(name, *args, **kwargs):
 
 def load_assignee_stopwords():
     r = set()
-    with open(f'{project_root}/clustering_resources/assignee-stopwords-lowercase.txt') as fin:
+    with open('/project/clustering_resources/assignee-stopwords-lowercase.txt') as fin:
         for line in fin:
             r.add(line.strip())
     r = set()
