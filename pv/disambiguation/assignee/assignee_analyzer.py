@@ -23,7 +23,7 @@ import configparser
 # c = configparser.ConfigParser()
 # c.read("/project/config.ini")
 # project_root = c['FOLDERS']['project_root']
-path = "/project/updater/disambiguation/hierarchical_clustering_disambiguation/clustering_resources/"
+path = "/project/clustering_resources/"
 assignee_abbreviation_file = path + "assignee_abbreviations.json"
 assignee_correction_file = path + "assignee_corrections.txt"
 assignee_stopphrase_file = path + "assignee_stopwords.txt"
