@@ -1,6 +1,7 @@
 import re
 import json
-
+import unicodedata
+import editdistance
 
 # %%
 def load_assignee_analyzer_configuration(assignee_abbreviation_file, assignee_correction_file,
@@ -15,24 +16,6 @@ def load_assignee_analyzer_configuration(assignee_abbreviation_file, assignee_co
             stopphrase_configuration.append(line.strip())
     remapping_configuration = json.load(open(assignee_abbreviation_file, 'r'))
     return correction_configuration, stopphrase_configuration, remapping_configuration
-
-
-# %%
-import configparser
-
-# c = configparser.ConfigParser()
-# c.read("/project/config.ini")
-# project_root = c['FOLDERS']['project_root']
-path = "/project/clustering_resources/"
-assignee_abbreviation_file = path + "assignee_abbreviations.json"
-assignee_correction_file = path + "assignee_corrections.txt"
-assignee_stopphrase_file = path + "assignee_stopwords.txt"
-
-THRESHOLD = 2
-N_GRAM_RANGE = (2, 10)
-# %%
-CORRECTION_CONFIGURATION, STOPPHRASE_CONFIGURATION, REMAPPING_CONFIGURATION = load_assignee_analyzer_configuration(
-    assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file)
 
 
 # %%
@@ -70,18 +53,22 @@ def char_wb_ngram_with_lower_priority_exclusion(text_document, ngram_range, whit
     return ngrams
 
 
-# %%
-import unicodedata
-import editdistance
-
-
 def analyze_assignee_name(assignee_name, *args, **kwargs):
+    N_GRAM_RANGE = (2, 10)
+    path = "/project/clustering_resources/"
+    assignee_abbreviation_file = path + "assignee_abbreviations.json"
+    assignee_correction_file = path + "assignee_corrections.txt"
+    assignee_stopphrase_file = path + "assignee_stopwords.txt"
+
+    CORRECTION_CONFIGURATION, STOPPHRASE_CONFIGURATION, REMAPPING_CONFIGURATION = load_assignee_analyzer_configuration(
+        assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file)
     def remove_stopphrase(doc):
         for stopphrase in STOPPHRASE_CONFIGURATION:
             doc = re.sub(r"\b" + stopphrase + r"\b", " ", doc).strip()
         return doc
 
     def correct_tokens(token):
+        THRESHOLD = 2
         if len(token) > 1.5 * THRESHOLD:
             for primary_word in CORRECTION_CONFIGURATION:
                 how_different = editdistance.distance(primary_word.lower(),
