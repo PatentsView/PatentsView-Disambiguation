@@ -23,9 +23,10 @@ import configparser
 # c = configparser.ConfigParser()
 # c.read("/project/config.ini")
 # project_root = c['FOLDERS']['project_root']
-assignee_abbreviation_file = f'/project/clustering_resources/assignee_abbreviations.json'
-assignee_correction_file = f'/project/clustering_resources/assignee_corrections.txt'
-assignee_stopphrase_file = f'/project/clustering_resources/assignee_stopwords.txt'
+path = "/project/updater/disambiguation/hierarchical_clustering_disambiguation/clustering_resources/"
+assignee_abbreviation_file = path + "assignee_abbreviations.json"
+assignee_correction_file = path + "assignee_corrections.txt"
+assignee_stopphrase_file = path + "assignee_stopwords.txt"
 
 THRESHOLD = 2
 N_GRAM_RANGE = (2, 10)
