@@ -12,7 +12,7 @@ from pv.disambiguation.core import InventorMention
 from pv.disambiguation.util.config_util import generate_incremental_components
 
 
-def first_letter_last_name(im, num_first_letters=1):
+def first_letter_last_name(im, num_first_letters=2):
     if num_first_letters == 1:
         first = im.first_letter()[0] if len(im.first_letter()) > 0 else im.uuid
     elif num_first_letters == 2:
@@ -44,7 +44,7 @@ def build_canopies_for_type(config, source='granted_patent_database'):
     for uuid, name_first, name_last in cursor:
         im = InventorMention(uuid, '0', '', name_first if name_first else '', name_last if name_last else '', '', '',
                              '')
-        canopy2uuids[first_letter_last_name(im, num_first_letters=1)].append(uuid)
+        canopy2uuids[first_letter_last_name(im, num_first_letters=2)].append(uuid)
         idx += 1
         logging.log_every_n(logging.INFO, 'Processed %s %s records - %s canopies', 1000, source, idx,
                             len(canopy2uuids))
