@@ -244,7 +244,6 @@ def run_clustering(config):
        logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
        run_batch(config, chunks[x], outdir, x, 'job-%s' % x)
 
-    breakpoint()
     # argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
     # dev_null = [
     #     n for n in pool.starmap(
