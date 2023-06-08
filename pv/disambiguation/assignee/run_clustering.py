@@ -268,8 +268,7 @@ def main(argv):
     logger.info('Running clustering - %s ', str(argv))
 
     config = configparser.ConfigParser()
-    config.read(['config/database_config.ini', 'config/assignee/run_clustering.ini',
-                 'config/database_tables.ini'])
+    config.read(['config/consolidated_config_adhoc.ini'])
 
     # if argv[] is a chunk id, then use this chunkid instead
     if len(argv) > 1:
