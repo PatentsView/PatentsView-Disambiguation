@@ -33,6 +33,7 @@ def plot_Z_v_text_distance(Z):
     boxdf = Z.groupby(cut).apply(lambda df: df.text_distance.reset_index(drop=True)).unstack(0)
     g = sns.boxplot(data=boxdf, orient='v', )
     g.figure.set_size_inches(50, 20)
+    g.savefig("assignee_z_performance.png")
 
 
 if __name__ == '__main__':
