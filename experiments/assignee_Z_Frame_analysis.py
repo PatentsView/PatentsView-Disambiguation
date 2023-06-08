@@ -36,7 +36,10 @@ def plot_Z_v_text_distance(Z):
 
 
 if __name__ == '__main__':
-    frame_files = ['Z_Frame_job-0.csv', 'Z_Frame_job-1.csv', 'Z_Frame_job-2.csv', 'Z_Frame_job-3.csv']
+    frame_files = []
+    for num in range(0,4):
+        temp = f'Z_Frame_job-{num}.csv'
+        frame_files.append(temp)
     Z_frames = []
     for frame_file in frame_files:
         try:
