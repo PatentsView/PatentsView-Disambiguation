@@ -71,6 +71,15 @@ def find_top_n_canopies(file, n=10):
     temp_df = pd.DataFrame(temp_dict.items(), columns=['Key', 'Num'])
     print(temp_df.sort_values(by=['Num'], ascending=False).head(n))
 
+def check_assignee_disambiguation_tsv():
+    d = pd.read_csv("disambiguation.tsv", sep="\t", names=['id', 'ass_id'])
+    unique_ids = len(list(d['id']))
+    unique_assignee_ids = len(set(list(d['ass_id'])))
+    print(f"There are {unique_ids} unique IDs and {unique_assignee_ids} unique_assignee_ids")
+    if unique_assignee_ids < 11000000 or unique_assignee_ids < 500000 or unique_assignee_ids > 700000:
+        raise Exception(f"ASSIGNEE DISAMBIGUATION RESULTS LOOK WRONG")
+
+
 def convert_pickle_to_table(file):
     data = pd.read_pickle(file)
     temp_list = []
