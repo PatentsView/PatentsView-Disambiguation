@@ -24,8 +24,13 @@ def find_max_distance(record):
                 max_distance = distance
     return max_distance
 
+# def alternative(df):
+#     for index, row in tqdm(df.iterrows(), total=df.shape[0]):
+#         find_max_distance(row)
+
 
 def plot_Z_v_text_distance(Z):
+    tqdm.pandas()
     Z = Z.assign(text_distance=Z.progress_apply(find_max_distance, axis=1))
     Z = Z.assign(text_cut=pd.cut(Z.text_distance, range(0, 100, 5)))
     Z = Z.assign(cd_cut=pd.cut(Z.distance, [x / 100 for x in range(0, 100, 5)]))
@@ -35,11 +40,10 @@ def plot_Z_v_text_distance(Z):
     g.figure.set_size_inches(50, 20)
     g.figure.savefig("assignee_z_performance.png")
 
-
-if __name__ == '__main__':
+def run_analysis(path):
     frame_files = []
     for num in range(0,4):
-        temp = f'Z_Frame_job-{num}.csv'
+        temp = path + f'Z_Frame_job-{num}.csv'
         frame_files.append(temp)
     Z_frames = []
     for frame_file in frame_files:
@@ -49,6 +53,8 @@ if __name__ == '__main__':
             continue
     Z_frame = pd.concat(Z_frames)
     Z_frame = Z_frame.assign(cd_cut=pd.cut(Z_frame.distance, [x / 100 for x in range(0, 100, 5)]))
-    tqdm.pandas()
     plot_Z_v_text_distance(Z_frame)
-    breakpoint()
+
+if __name__ == '__main__':
+    path = "/Users/bcard/projects/patentsview/"
+    run_analysis(path)

@@ -8,6 +8,7 @@ from absl import logging
 from tqdm import tqdm
 import pandas as pd
 logging.set_verbosity(logging.INFO)
+# from experiments.assignee_Z_Frame_analysis import plot_Z_v_text_distance
 
 
 def process_file(point2clusters, clusters, pkl_file):
@@ -43,7 +44,10 @@ def check_assignee_disambiguation_tsv(output_file):
     f = f.reset_index()
     if f['id'][0] > 100000:
         print(f)
-        raise Exception(f"ASSIGNEE DISAMBIGUATION OVERCLUSTERED")
+        raise Exception(f"ASSIGNEE DISAMBIGUATION OVER-CLUSTERED")
+    if f['id'][0] < 50000:
+        print(f)
+        raise Exception(f"ASSIGNEE DISAMBIGUATION UNDER-CLUSTERED")
 
 
 def finalize_results(config):
