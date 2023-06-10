@@ -33,6 +33,7 @@ def process(point2clusters, clusters, rundir):
     return num_assign
 
 def check_assignee_disambiguation_tsv(output_file):
+    # d = pd.read_csv("disambiguation.tsv", sep="\t", names=['id', 'ass_id'])
     d = pd.read_csv(output_file, sep="\t", names=['id', 'ass_id'])
     unique_ids = len(list(d['id']))
     unique_assignee_ids = len(set(list(d['ass_id'])))
@@ -40,7 +41,7 @@ def check_assignee_disambiguation_tsv(output_file):
     if unique_ids < 11000000 or unique_assignee_ids < 450000 or unique_assignee_ids > 700000:
         raise Exception(f"ASSIGNEE DISAMBIGUATION RESULTS LOOK WRONG")
     s = d.groupby('ass_id', sort=True).count()
-    f = s.sort_values(by='id', ascending=False).head(10)
+    f = s.sort_values(by='id', ascending=False).head(20)
     f = f.reset_index()
     if f['id'][0] > 100000:
         print(f)
