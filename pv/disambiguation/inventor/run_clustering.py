@@ -240,23 +240,23 @@ def run_clustering(config):
         chunks[idx % num_chunks].append(c)
     pool = mp.Pool(int(config['inventor']['parallelism']))
     # for x in range(0, num_chunks):
-    for x in [0]:
-       logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
-       run_batch(config, chunks[x], outdir, x, 'job-%s' % x)
+    # for x in [0]:
+    #    logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
+    #    run_batch(config, chunks[x], outdir, x, 'job-%s' % x)
 
-    # argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
-    # dev_null = [
-    #     n for n in pool.starmap(
-    #         run_batch, argument_list)
-    # ]
+    argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
+    dev_null = [
+        n for n in pool.starmap(
+            run_batch, argument_list)
+    ]
     # chunk 0 will write out the meta data and singleton information
-    # logging.info('Saving chunk to canopy map')
-    # with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-    #     pickle.dump([chunks, list(singletons)], fout)
-    #
-    # logging.info('Running singletons!!')
-    # num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
-    # print(num_singleton_chunks)
+    logging.info('Saving chunk to canopy map')
+    with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+        pickle.dump([chunks, list(singletons)], fout)
+
+    logging.info('Running singletons!!')
+    num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
+    print(num_singleton_chunks)
 
     # chunk all of the data by canopy
     # singleton_chunks = [[] for _ in range(num_singleton_chunks)]
