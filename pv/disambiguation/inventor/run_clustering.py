@@ -250,21 +250,21 @@ def run_clustering(config):
     #         run_batch, argument_list)
     # ]
     # chunk 0 will write out the meta data and singleton information
-    logging.info('Saving chunk to canopy map')
-    with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-        pickle.dump([chunks, list(singletons)], fout)
-
-    logging.info('Running singletons!!')
-    num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
-    print(num_singleton_chunks)
+    # logging.info('Saving chunk to canopy map')
+    # with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+    #     pickle.dump([chunks, list(singletons)], fout)
+    #
+    # logging.info('Running singletons!!')
+    # num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
+    # print(num_singleton_chunks)
 
     # chunk all of the data by canopy
-    singleton_chunks = [[] for _ in range(num_singleton_chunks)]
-    for idx, c in enumerate(singletons):
-        singleton_chunks[idx % num_singleton_chunks].append(c)
-
-    for x in range(0, num_singleton_chunks):
-        run_singletons(config, singleton_chunks[x], outdir, 'singleton-job-%s' % x)
+    # singleton_chunks = [[] for _ in range(num_singleton_chunks)]
+    # for idx, c in enumerate(singletons):
+    #     singleton_chunks[idx % num_singleton_chunks].append(c)
+    #
+    # for x in range(0, num_singleton_chunks):
+    #     run_singletons(config, singleton_chunks[x], outdir, 'singleton-job-%s' % x)
 
 
 
