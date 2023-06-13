@@ -6,15 +6,19 @@ import configparser
 from absl import logging
 from nltk import word_tokenize
 
-last_split_patterns = ['(?i)as .* by .* of', '(?i)on behalf of', '(?i)as .* by', '(?i)c/o', '(?i)board of regents of']
-first_split_patterns = ['(?i)also trading as', '(?i)acting by and through']
 import json
 import editdistance
 import re
 import uuid
+import configparser
+
+last_split_patterns = ['(?i)as .* by .* of', '(?i)on behalf of', '(?i)as .* by', '(?i)c/o', '(?i)board of regents of']
+first_split_patterns = ['(?i)also trading as', '(?i)acting by and through']
+
 
 class AssigneePreprocessor:
-    def __init__(self, assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file, threshold=0.2):
+    def __init__(self, assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file, threshold=0.2,
+            min_name_length=7):
         self.correction_configuration = list()
         with open(assignee_correction_file) as fin:
             for line in fin:
@@ -26,6 +30,7 @@ class AssigneePreprocessor:
         self.remapping_configuration = json.load(open(assignee_abbreviation_file, 'r'))
         # self.assignee_suffixes  = remapping_configuration.keys()
         self.threshold = threshold
+        self.min_name_length = min_name_length
 
     def preprocess(self, doc):
         processed_doc = self.expand_abbreviation(doc)
@@ -41,7 +46,7 @@ class AssigneePreprocessor:
     def correct_tokens(self, doc):
         processed_document_elements = []
         for token in doc.split():
-            if len(token) > 1.5 * self.threshold:
+            if len(token) >= self.min_name_length and (len(token) > 1.5 * self.threshold):
                 for primary_word in self.correction_configuration:
                     how_different = editdistance.distance(primary_word.lower(),
                                                           token.lower())
@@ -77,6 +82,7 @@ def get_assignee_preprocessor():
     assignee_stopphrase_file='/project/clustering_resources/assignee_stopwords.txt', threshold=2)
     return assignee_preprocessor
 
+
 def normalize_name(name, *args, **kwargs):
     processed_name = name
     # if kwargs.get('preprocess', True):
@@ -104,9 +110,7 @@ def load_assignee_stopwords():
     r = set()
     return r
 
-
 assignee_stop_words = load_assignee_stopwords()
-
 
 def split(name):
     for pat in last_split_patterns:

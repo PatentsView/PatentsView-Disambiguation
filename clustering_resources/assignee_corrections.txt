@@ -63,10 +63,8 @@ fabrication
 fellow
 fellows
 firm
-five
 florida
 foundation
-four
 france
 general
 georgia
@@ -141,7 +139,6 @@ nine
 nunavut
 ohio
 oklahoma
-one
 ontario
 oregon
 palau
@@ -178,7 +175,6 @@ services
 seven
 shanghai
 shenzhen
-six
 software
 solution
 specialties
@@ -189,16 +185,13 @@ suzhou
 system
 technologies
 technology
-ten
 tennessee
 texas
 therapeutics
 three
 trading
 trustees
-two
 university
-us
 utah
 vascular
 venture

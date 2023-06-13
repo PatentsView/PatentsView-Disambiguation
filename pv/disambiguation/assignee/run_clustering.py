@@ -11,6 +11,7 @@ import logging
 from grinch.agglom import Agglom
 from grinch.model import LinearAndRuleModel
 from grinch.multifeature_grinch import WeightedMultiFeatureGrinch
+from scipy import sparse
 from tqdm import tqdm
 
 # from pv.disambiguation.assignee.assignee_analyzer import load_assignee_analyzer_configuration, \
@@ -179,8 +180,10 @@ def run_batch(config, canopy_list, outdir, loader, chunk_id, job_name='disambig'
                         num_mentions_processed)
             num_mentions_processed += len(all_pids)
             num_canopies_processed += np.unique(all_canopies).shape[0]
-            run_on_batch(all_pids, all_lbls, all_records, all_canopies, weight_model, encoding_model, results,
-                         canopy2tree_id, tree_list, pids_list, pids_canopy_list, job_name)
+            run_on_batch(all_pids=all_pids, all_lbls=all_lbls, all_records=all_records, all_canopies=all_canopies,
+                         model=weight_model, encoding_model=encoding_model, canopy2predictions=results,
+                         canopy2tree=canopy2tree_id, trees=tree_list, pids_list=pids_list, canopy_list=pids_canopy_list,
+                         job_name=job_name, batch=idx)
             if idx % 10 == 0:
                 logger.info(
                     {'computed': idx + int(chunk_id) * int(config['assignee']['chunk_size']),
@@ -238,7 +241,7 @@ def run_clustering(config):
     loader = Loader.from_config(config)
     all_canopies = set(loader.assignee_canopies.keys())
     # all_canopies = set([x for x in all_canopies])
-    # all_canopies = set([x for x in all_canopies if loader.num_records(x) < int(config['assignee']['max_canopy_size'])])
+    all_canopies = set([x for x in all_canopies if loader.num_records(x) < int(config['assignee']['max_canopy_size'])])
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
                                  reverse=True)
