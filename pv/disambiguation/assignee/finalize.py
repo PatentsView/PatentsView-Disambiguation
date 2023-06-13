@@ -6,8 +6,9 @@ from absl import app
 from absl import flags
 from absl import logging
 from tqdm import tqdm
-
+import pandas as pd
 logging.set_verbosity(logging.INFO)
+# from experiments.assignee_Z_Frame_analysis import plot_Z_v_text_distance
 
 
 def process_file(point2clusters, clusters, pkl_file):
@@ -30,6 +31,24 @@ def process(point2clusters, clusters, rundir):
     for f in tqdm([f for f in os.listdir(rundir) if f.endswith('.pkl') and 'internals' not in f and 'job' in f]):
         num_assign += process_file(point2clusters, clusters, os.path.join(rundir, f))
     return num_assign
+
+def check_assignee_disambiguation_tsv(output_file):
+    # d = pd.read_csv("disambiguation.tsv", sep="\t", names=['id', 'ass_id'])
+    d = pd.read_csv(output_file, sep="\t", names=['id', 'ass_id'])
+    unique_ids = len(list(d['id']))
+    unique_assignee_ids = len(set(list(d['ass_id'])))
+    print(f"There are {unique_ids} unique IDs and {unique_assignee_ids} unique_assignee_ids")
+    if unique_ids < 11000000 or unique_assignee_ids < 450000 or unique_assignee_ids > 700000:
+        raise Exception(f"ASSIGNEE DISAMBIGUATION RESULTS LOOK WRONG")
+    s = d.groupby('ass_id', sort=True).count()
+    f = s.sort_values(by='id', ascending=False).head(20)
+    f = f.reset_index()
+    if f['id'][0] > 100000:
+        print(f)
+        raise Exception(f"ASSIGNEE DISAMBIGUATION OVER-CLUSTERED")
+    if f['id'][0] < 50000:
+        print(f)
+        raise Exception(f"ASSIGNEE DISAMBIGUATION UNDER-CLUSTERED")
 
 
 def finalize_results(config):
@@ -96,6 +115,7 @@ def finalize_results(config):
         for m, e in missing_mid2eid.items():
             if m not in mid2eid:
                 fout.write('%s\t%s\n' % (m, e))
+    check_assignee_disambiguation_tsv(output_file)
     logging.info('writing output ... done.')
 
 

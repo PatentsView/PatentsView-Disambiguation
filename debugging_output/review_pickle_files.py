@@ -1,6 +1,9 @@
 from os import listdir
 from os.path import isfile, join
 import pandas as pd
+import datetime
+from lib.configuration import get_current_config, get_unique_connection_string
+from sqlalchemy import create_engine
 
 
 def check_output_blank(filepath):
@@ -16,31 +19,31 @@ def check_output_blank(filepath):
                 if temp[key][0]==temp[key][1]:
                     print(f"{key} in {file} IS WRONG: HAS {len(temp[key][0])} & {len(temp[key][1])}")
 
-def find_inventor_id_singleton(filepath, inventor_id_searching):
-    files = [f for f in listdir(filepath) if isfile(join(filepath, f))]
-    print(files)
-    for file in files:
-        if 'job' in file:
-            print(f"Checking file {file}")
-            temp = pd.read_pickle(f"{filepath}/{file}")
-            for key in temp.keys():
-                try:
-                    lookup_attempt = temp[key]
-                    test = lookup_attempt[0]
-                    for i in test:
-                        if i == inventor_id_searching:
-                            print("--------------------------")
-                            print(f"{file} is the correct file for the ID {inventor_id_searching}!")
-                            print("--------------------------")
-                            print(
-                                f"{inventor_id_searching} returned {len(set(temp[inventor_id_searching][0]))} rows and {len(set(temp[inventor_id_searching][1]))}  unique IDS")
-                            print("--------------------------")
-                            inventor_freq = freq_distribution_from_list(temp[inventor_id_searching][1])
-                            print("Below is each inventor_id and the number of relevant occurrence")
-                            print(inventor_freq)
-                            print("--------------------------")
-                except KeyError:
-                    continue
+# def find_inventor_id_singleton(filepath, inventor_id_searching):
+#     files = [f for f in listdir(filepath) if isfile(join(filepath, f))]
+#     print(files)
+#     for file in files:
+#         if 'job' in file:
+#             print(f"Checking file {file}")
+#             temp = pd.read_pickle(f"{filepath}/{file}")
+#             for key in temp.keys():
+#                 try:
+#                     lookup_attempt = temp[key]
+#                     test = lookup_attempt[0]
+#                     for i in test:
+#                         if i == inventor_id_searching:
+#                             print("--------------------------")
+#                             print(f"{file} is the correct file for the ID {inventor_id_searching}!")
+#                             print("--------------------------")
+#                             print(
+#                                 f"{inventor_id_searching} returned {len(set(temp[inventor_id_searching][0]))} rows and {len(set(temp[inventor_id_searching][1]))}  unique IDS")
+#                             print("--------------------------")
+#                             inventor_freq = freq_distribution_from_list(temp[inventor_id_searching][1])
+#                             print("Below is each inventor_id and the number of relevant occurrence")
+#                             print(inventor_freq)
+#                             print("--------------------------")
+#                 except KeyError:
+#                     continue
 
 
 def check_duplicate_uuids(filepath):
@@ -69,8 +72,52 @@ def find_top_n_canopies(file, n=10):
     print(temp_df.sort_values(by=['Num'], ascending=False).head(n))
 
 
+def check_assignee_disambiguation_tsv(output_file):
+    d = pd.read_csv(output_file, sep="\t", names=['id', 'ass_id'])
+    unique_ids = len(list(d['id']))
+    unique_assignee_ids = len(set(list(d['ass_id'])))
+    print(f"There are {unique_ids} unique IDs and {unique_assignee_ids} unique_assignee_ids")
+    if unique_ids < 11000000 or unique_assignee_ids < 450000 or unique_assignee_ids > 700000:
+        raise Exception(f"ASSIGNEE DISAMBIGUATION RESULTS LOOK WRONG")
+    s = d.groupby('ass_id', sort=True).count()
+    f = s.sort_values(by='id', ascending=False).head()
+    f = f.reset_index()
+    if f['id'][0] > 100000:
+        raise Exception(f"ASSIGNEE DISAMBIGUATION OVERCLUSTERED")
+
+
+
+
+
+def convert_pickle_to_table(file):
+    data = pd.read_pickle(file)
+    temp_list = []
+    for key in data.keys():
+        temp = [data[key].uuid, data[key].name_hash, str(data[key].name_features), str(data[key].mention_ids), str(data[key].record_ids), str(data[key].location_strings), str(data[key].canopies), str(data[key].unique_exact_strings), data[key].normalized_most_frequent]
+        temp_list.append(temp)
+    final = pd.DataFrame(temp_list, columns=['uuid', 'name_hash', 'name_features', 'mention_ids', 'record_ids', 'location_strings', 'canopies', 'unique_exact_strings', 'normalized_most_frequent'])
+    qa_engine = get_engine()
+    final.to_sql("assignee_mentions_20230330", if_exists='append', con=qa_engine, index=False)
+
+# def convert_final_jsons(final):
+#     columns_to_convert = ["name_features", "mention_ids", "record_ids","canopies", "location_strings","unique_exact_strings"]
+#     for col in columns_to_convert:
+#         final[col] = final[col].apply(json.dumps)
+#     return final
+
+def get_engine():
+    config = get_current_config(**{'execution_date': datetime.date(2023, 1, 1)})
+    qa_connection_string = get_unique_connection_string(config, database='patent_disambiguation_testing', connection='DATABASE_SETUP')
+    qa_engine = create_engine(qa_connection_string)
+    return qa_engine
+
+
+# d = {"key": }
+
 if __name__ == "__main__":
-    mypath = '/home/centos/testing_disambig_env/PatentsView-Disambiguation/exp_out/inventor/2022-09-29'
+    # mypath = '/home/centos/testing_disambig_env/PatentsView-Disambiguation/exp_out/inventor/2022-09-29'
     #check_output_blank(mypath)
     #find_inventor_id_singleton(mypath, 'jw443vh150exrrlohrkvrl3u4')
-    check_duplicate_uuids(mypath)
+    # check_duplicate_uuids(mypath)
+    breakpoint()
+    convert_pickle_to_table("assignee_mentions.records.pkl")

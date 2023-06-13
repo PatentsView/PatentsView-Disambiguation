@@ -47,6 +47,8 @@ def generate_uuid_map(config):
     if os.path.isfile(output_file):
         print("Removing Current File in Directory")
         os.remove(output_file)
+    if os.path.isfile(output_file):
+        Exception("OLD UUID NOT DELETED")
     with open(output_file, 'wb') as fout:
         pickle.dump([granted_uuids, pgranted_uuids], fout)
 

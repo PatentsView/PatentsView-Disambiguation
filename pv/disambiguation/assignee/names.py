@@ -1,6 +1,7 @@
 import re
 import string
 import unicodedata
+import configparser
 
 from absl import logging
 from nltk import word_tokenize
@@ -74,17 +75,19 @@ class AssigneePreprocessor:
                 processed_document_elements.append(token)
         return " ".join(processed_document_elements)
 
-
-assignee_preprocessor = AssigneePreprocessor(
+def get_assignee_preprocessor():
+    assignee_preprocessor = AssigneePreprocessor(
     assignee_abbreviation_file='/project/clustering_resources/assignee_abbreviations.json',
     assignee_correction_file='/project/clustering_resources/assignee_corrections.txt',
     assignee_stopphrase_file='/project/clustering_resources/assignee_stopwords.txt', threshold=2)
+    return assignee_preprocessor
 
 
 def normalize_name(name, *args, **kwargs):
     processed_name = name
     # if kwargs.get('preprocess', True):
     processed_name = processed_name.translate({ord(c): " " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"})
+    assignee_preprocessor = get_assignee_preprocessor()
     processed_name = assignee_preprocessor.preprocess(processed_name)
     # if kwargs.get("lower", True):
     processed_name = processed_name.lower()
@@ -107,9 +110,7 @@ def load_assignee_stopwords():
     r = set()
     return r
 
-
 assignee_stop_words = load_assignee_stopwords()
-
 
 def split(name):
     for pat in last_split_patterns:

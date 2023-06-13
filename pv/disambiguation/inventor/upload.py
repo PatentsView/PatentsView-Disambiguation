@@ -70,7 +70,7 @@ def upload(config):
             elif splt[0] in granted_ids:
                 pairs_granted.append((splt[0], splt[1]))
     create_tables(config)
-    # load_target_from_source(config, pairs_granted, target='granted_patent_database')
+    load_target_from_source(config, pairs_granted, target='granted_patent_database')
     load_target_from_source(config, pairs_pregranted, target='pregrant_database')
 
 
