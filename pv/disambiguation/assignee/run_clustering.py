@@ -183,7 +183,7 @@ def run_batch(config, canopy_list, outdir, loader, chunk_id, job_name='disambig'
             run_on_batch(all_pids=all_pids, all_lbls=all_lbls, all_records=all_records, all_canopies=all_canopies,
                          model=weight_model, encoding_model=encoding_model, canopy2predictions=results,
                          canopy2tree=canopy2tree_id, trees=tree_list, pids_list=pids_list, canopy_list=pids_canopy_list,
-                         job_name=job_name, batch=idx)
+                         job_name=job_name)
             if idx % 10 == 0:
                 logger.info(
                     {'computed': idx + int(chunk_id) * int(config['assignee']['chunk_size']),
