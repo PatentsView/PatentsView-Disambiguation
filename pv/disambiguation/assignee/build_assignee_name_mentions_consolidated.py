@@ -44,8 +44,8 @@ def generate_assignee_records_from_sql(config, ignore_filters, source='granted_p
       , organization
       , type
       , rawlocation_id
-      -- , location_id
-      , concat(ifnull(l.city, ""),ifnull(l.state, ""),ifnull(l.country,"")) as location_id
+      , location_id
+      -- , concat(ifnull(l.city, ""),ifnull(l.state, ""),ifnull(l.country,"")) as location_id
     FROM
         {db}.rawassignee ra
         left join {db}.rawlocation rl on rl.id=ra.rawlocation_id
@@ -85,9 +85,7 @@ def generate_assignee_mentions(config):
     from pv.disambiguation.core import AssigneeNameMention
     logging.info('Building assignee features')
     end_date = config["DATES"]["END_DATE"]
-    path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date, data_root=config['FOLDERS']['data_root']) + \
-           config['BUILD_ASSIGNEE_NAME_MENTIONS'][
-               'feature_out']
+    path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
     patent = build_assignee_mentions_for_source(config, 'granted_patent_database')
     pgpubs = build_assignee_mentions_for_source(config, 'pregrant_database')
     name_mentions = set(patent.keys()).union(set(pgpubs.keys()))

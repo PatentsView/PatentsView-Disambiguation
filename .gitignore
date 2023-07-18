@@ -135,3 +135,5 @@ pv/disambiguation/inventor/qc/data
 data/
 .idea/
 output/
+
+**/.DS_Store
