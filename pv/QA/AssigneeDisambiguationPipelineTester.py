@@ -27,7 +27,7 @@ class AssigneeDisambiguationPipelineTester():
         records_last_modified_date = get_file_modified_time(pickle_file_path)
         canopies_last_modified_date = get_file_modified_time(canopy_file_path)
         # loading
-        airflow_run_date = airflow_run_date.replace(tzinfo=timezone.utc)
+        airflow_run_date = airflow_run_date.replace(tzinfo=None)
         records = pickle.load(open(pickle_file_path, 'rb'))
         print("=============================================")
         print(records_last_modified_date)
