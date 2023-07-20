@@ -29,6 +29,11 @@ class AssigneeDisambiguationPipelineTester():
         canopies_last_modified_date = get_file_modified_time(canopy_file_path)
         # loading
         records = pickle.load(open(pickle_file_path, 'rb'))
+        print("=============================================")
+        print(records_last_modified_date)
+        print(canopies_last_modified_date)
+        print(airflow_run_date)
+        print("=============================================")
 
         ## Assertions go here
         # Make sure files exist. (This can go away if we add test for canopies)
