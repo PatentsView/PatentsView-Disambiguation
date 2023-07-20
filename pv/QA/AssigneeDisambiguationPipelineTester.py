@@ -1,6 +1,6 @@
 import os
 import pickle
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pv.QA.testing_utils import get_file_modified_time
 
@@ -28,6 +28,7 @@ class AssigneeDisambiguationPipelineTester():
         records_last_modified_date = get_file_modified_time(pickle_file_path)
         canopies_last_modified_date = get_file_modified_time(canopy_file_path)
         # loading
+        airflow_run_date = datetime.airflow_run_date(timezone.utc)
         records = pickle.load(open(pickle_file_path, 'rb'))
         print("=============================================")
         print(records_last_modified_date)
