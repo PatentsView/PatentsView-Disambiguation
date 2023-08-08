@@ -210,7 +210,6 @@ def run_singletons(config, singleton_list, outdir, job_name='disambig'):
 
 def run_clustering(config):
     # A connection to the SQL database that will be used to load the inventor data.
-    breakpoint()
     loader = Loader.from_config(config)
     #
     # # Find all of the canopies in the entire dataset.

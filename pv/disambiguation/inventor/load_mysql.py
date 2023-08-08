@@ -67,7 +67,6 @@ class Loader(object):
         else:
             logging.info('using no granted canopies')
             granted_canopies = set()
-        breakpoint()
         l = Loader(pregranted_canopies, granted_canopies, config)
         return l
 

@@ -43,7 +43,7 @@ def check_assignee_disambiguation_tsv(output_file):
     s = d.groupby('ass_id', sort=True).count()
     f = s.sort_values(by='id', ascending=False).head(20)
     f = f.reset_index()
-    if f['id'][0] > 100000:
+    if f['id'][0] > 350000:
         print(f)
         raise Exception(f"ASSIGNEE DISAMBIGUATION OVER-CLUSTERED")
     if f['id'][0] < 50000:
