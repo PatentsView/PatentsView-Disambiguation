@@ -216,8 +216,8 @@ def run_clustering(config):
     all_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
     #
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
-    # all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
-    #                              reverse=True)
+    all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
+                                 reverse=True)
     #
     # # Find some stats of the data before chunking it
     # logging.info('Number of canopies %s ', len(all_canopies_sorted))
@@ -229,13 +229,13 @@ def run_clustering(config):
     outdir = config['inventor']['clustering_output_folder']
 
     # # the number of chunks based on the specified chunksize
-    # num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])))
+    num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])))
     #
     # logging.info('%s num_chunks', num_chunks)
     # logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
     #
     # # chunk all of the data by canopy
-    # chunks = [[] for _ in range(num_chunks)]
+    chunks = [[] for _ in range(num_chunks)]
     # for idx, c in enumerate(all_canopies_sorted):
     #     chunks[idx % num_chunks].append(c)
     # pool = mp.Pool(int(config['inventor']['parallelism']))
@@ -251,8 +251,8 @@ def run_clustering(config):
     # ]
     # # chunk 0 will write out the meta data and singleton information
     # logging.info('Saving chunk to canopy map')
-    # with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-    #     pickle.dump([chunks, list(singletons)], fout)
+    with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+        pickle.dump([chunks, list(singletons)], fout)
 
     logging.info('Running singletons!!')
     num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
