@@ -211,60 +211,60 @@ def run_singletons(config, singleton_list, outdir, job_name='disambig'):
 def run_clustering(config):
     # A connection to the SQL database that will be used to load the inventor data.
     loader = Loader.from_config(config)
-
-    # Find all of the canopies in the entire dataset.
+    #
+    # # Find all of the canopies in the entire dataset.
     all_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
-
+    #
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
-    all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
-                                 reverse=True)
-
-    # Find some stats of the data before chunking it
-    logging.info('Number of canopies %s ', len(all_canopies_sorted))
-    logging.info('Number of singletons %s ', len(singletons))
-    logging.info('Largest canopies - ')
-    for c in all_canopies_sorted[:10]:
-        logging.info('%s - %s records', c, loader.num_records(c))
-    # setup the output dir
+    # all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
+    #                              reverse=True)
+    #
+    # # Find some stats of the data before chunking it
+    # logging.info('Number of canopies %s ', len(all_canopies_sorted))
+    # logging.info('Number of singletons %s ', len(singletons))
+    # logging.info('Largest canopies - ')
+    # for c in all_canopies_sorted[:10]:
+    #     logging.info('%s - %s records', c, loader.num_records(c))
+    # # setup the output dir
     outdir = config['inventor']['clustering_output_folder']
 
-    # the number of chunks based on the specified chunksize
-    num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])))
-
-    logging.info('%s num_chunks', num_chunks)
-    logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
-
-    # chunk all of the data by canopy
-    chunks = [[] for _ in range(num_chunks)]
-    for idx, c in enumerate(all_canopies_sorted):
-        chunks[idx % num_chunks].append(c)
-    pool = mp.Pool(int(config['inventor']['parallelism']))
-    # for x in range(0, num_chunks):
-    # for x in [0]:
-    #    logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
-    #    run_batch(config, chunks[x], outdir, x, 'job-%s' % x)
-
-    argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
-    dev_null = [
-        n for n in pool.starmap(
-            run_batch, argument_list)
-    ]
-    # chunk 0 will write out the meta data and singleton information
-    logging.info('Saving chunk to canopy map')
-    with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
-        pickle.dump([chunks, list(singletons)], fout)
+    # # the number of chunks based on the specified chunksize
+    # num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])))
+    #
+    # logging.info('%s num_chunks', num_chunks)
+    # logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
+    #
+    # # chunk all of the data by canopy
+    # chunks = [[] for _ in range(num_chunks)]
+    # for idx, c in enumerate(all_canopies_sorted):
+    #     chunks[idx % num_chunks].append(c)
+    # pool = mp.Pool(int(config['inventor']['parallelism']))
+    # # for x in range(0, num_chunks):
+    # # for x in [0]:
+    # #    logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
+    # #    run_batch(config, chunks[x], outdir, x, 'job-%s' % x)
+    #
+    # argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
+    # dev_null = [
+    #     n for n in pool.starmap(
+    #         run_batch, argument_list)
+    # ]
+    # # chunk 0 will write out the meta data and singleton information
+    # logging.info('Saving chunk to canopy map')
+    # with open(outdir + '/chunk2canopies.pkl', 'wb') as fout:
+    #     pickle.dump([chunks, list(singletons)], fout)
 
     logging.info('Running singletons!!')
     num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
     print(num_singleton_chunks)
 
     # chunk all of the data by canopy
-    # singleton_chunks = [[] for _ in range(num_singleton_chunks)]
-    # for idx, c in enumerate(singletons):
-    #     singleton_chunks[idx % num_singleton_chunks].append(c)
-    #
-    # for x in range(0, num_singleton_chunks):
-    #     run_singletons(config, singleton_chunks[x], outdir, 'singleton-job-%s' % x)
+    singleton_chunks = [[] for _ in range(num_singleton_chunks)]
+    for idx, c in enumerate(singletons):
+        singleton_chunks[idx % num_singleton_chunks].append(c)
+
+    for x in range(0, num_singleton_chunks):
+        run_singletons(config, singleton_chunks[x], outdir, 'singleton-job-%s' % x)
 
 
 
