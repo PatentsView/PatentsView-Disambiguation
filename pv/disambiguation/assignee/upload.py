@@ -31,6 +31,7 @@ def create_tables(config):
 
 def load_target_from_source(config, pairs, target='granted_patent_database'):
     cnx_g = pvdb.connect_to_disambiguation_database(config, dbtype=target)
+    end_date = config["DATES"]["END_DATE"]
     g_cursor = cnx_g.cursor()
     batch_size = 100000
     offsets = [x for x in range(0, len(pairs), batch_size)]
@@ -44,6 +45,9 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
             table_name=config['ASSIGNEE_UPLOAD']['target_table']) + ', '.join(
             ['("%s", "%s")' % x for x in pairs[sidx:eidx]])
         g_cursor.execute(sql)
+    index_query = f"alter table assignee_disambiguation_mapping_{end_date} add index uuid (uuid)"
+    logging.log(logging.INFO, f'{index_query}')
+    g_cursor.execute(index_query)
     cnx_g.commit()
     cnx_g.close()
 
@@ -66,7 +70,6 @@ def upload(config):
     create_tables(config)
     load_target_from_source(config, pairs_granted, target='granted_patent_database')
     load_target_from_source(config, pairs_pregranted, target='pregrant_database')
-
 
 def main(argv):
     config = configparser.ConfigParser()

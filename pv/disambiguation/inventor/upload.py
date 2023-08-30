@@ -29,6 +29,7 @@ def create_tables(config):
 
 def load_target_from_source(config, pairs, target='granted_patent_database'):
     cnx_g = pvdb.connect_to_disambiguation_database(config, dbtype=target)
+    end_date = config["DATES"]["END_DATE"]
     g_cursor = cnx_g.cursor()
     batch_size = 100000
     offsets = [x for x in range(0, len(pairs), batch_size)]
@@ -50,6 +51,9 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
         from mysql.connector import errorcode
         if not e.errno == errorcode.ER_MULTIPLE_PRI_KEY:
             raise
+    index_query = f"alter table inventor_disambiguation_mapping_{end_date} add index uuid (uuid)"
+    logging.log(logging.INFO, f'{index_query}')
+    g_cursor.execute(index_query)
     cnx_g.close()
 
 
