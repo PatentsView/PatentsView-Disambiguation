@@ -36,6 +36,7 @@ class AssigneePreprocessor:
         processed_doc = self.expand_abbreviation(doc)
         processed_doc = self.correct_tokens(processed_doc)
         processed_doc = self.remove_stopphrase(processed_doc)
+        processed_doc = self.remove_stopphrase(processed_doc)
         return processed_doc
 
     def remove_stopphrase(self, doc):
@@ -79,7 +80,8 @@ def get_assignee_preprocessor():
     assignee_preprocessor = AssigneePreprocessor(
     assignee_abbreviation_file='/project/clustering_resources/assignee_abbreviations.json',
     assignee_correction_file='/project/clustering_resources/assignee_corrections.txt',
-    assignee_stopphrase_file='/project/clustering_resources/assignee_stopwords.txt', threshold=2)
+    assignee_stopphrase_file='/project/clustering_resources/assignee_stopwords.txt',
+    assignee_bronwyn_hall='/project/clustering_resources/assignee_bronwyn_hall.json', threshold=2)
     return assignee_preprocessor
 
 
