@@ -17,7 +17,7 @@ first_split_patterns = ['(?i)also trading as', '(?i)acting by and through']
 
 
 class AssigneePreprocessor:
-    def __init__(self, assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file, threshold=0.2,
+    def __init__(self, assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file, assignee_bronwyn_hall, threshold=0.2,
             min_name_length=7):
         self.correction_configuration = list()
         with open(assignee_correction_file) as fin:
@@ -29,6 +29,7 @@ class AssigneePreprocessor:
                 self.stopphrase_configuration.append(line.strip())
         self.remapping_configuration = json.load(open(assignee_abbreviation_file, 'r'))
         # self.assignee_suffixes  = remapping_configuration.keys()
+        self.assignee_bronwyn_hall = json.load(open(assignee_bronwyn_hall, 'r'))
         self.threshold = threshold
         self.min_name_length = min_name_length
 
@@ -36,12 +37,17 @@ class AssigneePreprocessor:
         processed_doc = self.expand_abbreviation(doc)
         processed_doc = self.correct_tokens(processed_doc)
         processed_doc = self.remove_stopphrase(processed_doc)
-        processed_doc = self.remove_stopphrase(processed_doc)
+        processed_doc = self.correct_words_bronwyn_hall(processed_doc)
         return processed_doc
 
     def remove_stopphrase(self, doc):
         for stopphrase in self.stopphrase_configuration:
             doc = re.sub(r"\b" + stopphrase + r"\b", " ", doc).strip()
+        return doc
+
+    def correct_words_bronwyn_hall(self, doc):
+        for rawassignee_words, bronwyn_hall_replacement in self.assignee_bronwyn_hall.items():
+            doc = re.sub(r"\b" + rawassignee_words + r"\b", bronwyn_hall_replacement, doc).strip()
         return doc
 
     def correct_tokens(self, doc):
