@@ -72,7 +72,7 @@ def analyze_assignee_name(assignee_name, *args, **kwargs):
 
     def correct_words_bronwyn_hall(doc):
         for rawassignee_words, bronwyn_hall_replacement in BH_CONFIGURATION.items():
-            doc = re.sub(r"\b" + rawassignee_words + r"\b", bronwyn_hall_replacement, doc).strip()
+            doc = re.sub(rawassignee_words, bronwyn_hall_replacement, doc)
         return doc
 
     def correct_tokens(token):
