@@ -16,6 +16,7 @@ def create_tables(config):
     cnx_pg = pvdb.connect_to_disambiguation_database(config, dbtype='pregrant_database')
     g_cursor = cnx_g.cursor()
     table_name= config["DISAMBIG_TABLES"]["INVENTOR"]
+    g_cursor.execute(f"drop table if exists {table_name}")
     g_cursor.execute(
         "CREATE TABLE IF NOT EXISTS {table_name} (uuid VARCHAR(255), inventor_id VARCHAR(255))".format(
             table_name=table_name))

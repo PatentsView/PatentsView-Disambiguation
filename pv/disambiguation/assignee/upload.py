@@ -17,7 +17,7 @@ def create_tables(config):
     g_cursor = cnx_g.cursor()
     table_name = config["DISAMBIG_TABLES"]["ASSIGNEE"]
     logging.log(logging.INFO, 'Creating target tables with name {}'.format(table_name))
-    g_cursor.execute(f"drop table if exists {config['ASSIGNEE_UPLOAD']['target_table']}")
+    g_cursor.execute(f"drop table if exists {table_name}")
     g_cursor.execute(
         "CREATE TABLE IF NOT EXISTS {table_name} (uuid VARCHAR(255), assignee_id VARCHAR(255))".format(
             table_name=table_name))
