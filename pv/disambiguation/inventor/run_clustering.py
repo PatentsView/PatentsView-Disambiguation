@@ -276,9 +276,9 @@ def test_file_export(outdir):
     for fname in os.listdir(outdir):
         singleton_count = 0
         job_count = 0
-        if fname.contains('singleton'):
+        if 'singleton' in fname:
             singleton_count += 1
-        elif fname.contains('job'):
+        elif 'job' in fname:
             job_count += 1
     print(f"{job_count} JOB FILES CREATED | {singleton_count} SINGLETON FILES CREATED ")
     assert singleton_count>=30, "NOT ENOUGH SINGLETON FILES GENERATED"
