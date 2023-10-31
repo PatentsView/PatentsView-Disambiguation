@@ -14,7 +14,7 @@ class Loader(object):
 
     @staticmethod
     def from_config(config):
-        end_date = config["DATES"]["END_DATE"]
+        end_date = config["DATES"]["END_DATE_DASH"]
         path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS'][
             'feature_out']
         with open(path + '.%s.pkl' % 'canopies', 'rb') as fin:

@@ -84,7 +84,7 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
 def generate_assignee_mentions(config):
     from pv.disambiguation.core import AssigneeNameMention
     logging.info('Building assignee features')
-    end_date = config["DATES"]["END_DATE"]
+    end_date = config["DATES"]["END_DATE_DASH"]
     path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
     patent = build_assignee_mentions_for_source(config, 'granted_patent_database')
     pgpubs = build_assignee_mentions_for_source(config, 'pregrant_database')

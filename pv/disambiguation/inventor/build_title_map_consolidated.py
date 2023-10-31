@@ -40,7 +40,7 @@ def build_title_map_for_source(config, source='granted_patent_database'):
 
 def generate_title_maps(config):
     # create output folder if it doesn't exist
-    end_date = config["DATES"]["END_DATE"]
+    end_date = config["DATES"]["END_DATE_DASH"]
     path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_TITLES']['feature_out']
     logging.info('writing results to folder: %s', os.path.dirname(path))
     features = dict()

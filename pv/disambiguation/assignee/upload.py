@@ -50,7 +50,7 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
 
 
 def upload(config):
-    end_date = config["DATES"]["END_DATE"]
+    end_date = config["DATES"]["END_DATE_DASH"]
     output_file = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['ASSIGNEE_UPLOAD']['uuidmap']
     granted_uuids, pgranted_uuids = pickle.load(open(output_file, 'rb'))
     pairs_pregranted = []

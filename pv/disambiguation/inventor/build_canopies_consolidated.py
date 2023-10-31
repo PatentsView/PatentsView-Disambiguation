@@ -78,7 +78,7 @@ def build_canopies_for_type(config, source='granted_patent_database'):
 
 def generate_inventor_canopies(config):
     # create output folder if it doesn't exist
-    end_date = config["DATES"]["END_DATE"]
+    end_date = config["DATES"]["END_DATE_DASH"]
     path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_CANOPIES']['canopy_out']
     logging.info('writing results to files: %s', os.path.dirname(path))
 

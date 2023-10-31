@@ -12,7 +12,7 @@ class InventorModel(object):
     @staticmethod
     def from_config(config):
         logging.info('Building Inventor Model...')
-        end_date = config["DATES"]["END_DATE"]
+        end_date = config["DATES"]["END_DATE_DASH"]
         ipath = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date)
 
         print(ipath + config['INVENTOR_BUILD_TITLES']['feature_out'])

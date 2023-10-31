@@ -78,7 +78,7 @@ def finalize_results(config):
     logging.info('running cc...done')
 
     logging.info('loading mentions...')
-    end_date = config["DATES"]["END_DATE"]
+    end_date = config["DATES"]["END_DATE_DASH"]
     path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS'][
         'feature_out']
     print(path)

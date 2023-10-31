@@ -50,7 +50,7 @@ class Loader(object):
 
     @staticmethod
     def from_config(config, config_type='inventor'):
-        end_date = config["DATES"]["END_DATE"]
+        end_date = config["DATES"]["END_DATE_DASH"]
         path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_CANOPIES']['canopy_out']
         logging.info('building loader from config %s', str(config))
         if config[config_type]['pregranted_canopies'].lower() != 'none':
