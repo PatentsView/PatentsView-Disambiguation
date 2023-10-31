@@ -15,7 +15,7 @@ def create_tables(config):
     cnx_pg = pvdb.connect_to_disambiguation_database(config, dbtype='pregrant_database')
 
     g_cursor = cnx_g.cursor()
-    table_name = config['ASSIGNEE_UPLOAD']['target_table']
+    table_name = config["DISAMBIG_TABLES"]["ASSIGNEE"]
     logging.log(logging.INFO, 'Creating target tables with name {}'.format(table_name))
     g_cursor.execute(f"drop table if exists {config['ASSIGNEE_UPLOAD']['target_table']}")
     g_cursor.execute(
@@ -31,21 +31,18 @@ def create_tables(config):
 
 def load_target_from_source(config, pairs, target='granted_patent_database'):
     cnx_g = pvdb.connect_to_disambiguation_database(config, dbtype=target)
-    end_date = config["DATES"]["END_DATE"]
+    ass_disambig_table = config['DISAMBIG_TABLES']["ASSIGNEE"]
     g_cursor = cnx_g.cursor()
     batch_size = 100000
     offsets = [x for x in range(0, len(pairs), batch_size)]
-    print(config['ASSIGNEE_UPLOAD']['target_table'])
     sql_template = "INSERT INTO {table_name} (uuid, assignee_id) VALUES "
     logging.log(logging.INFO, 'Inserting records with format {template}'.format(template=sql_template))
     for idx in tqdm(range(len(offsets)), 'adding %s' % target, total=len(offsets)):
         sidx = offsets[idx]
         eidx = min(len(pairs), offsets[idx] + batch_size)
-        sql = sql_template.format(
-            table_name=config['ASSIGNEE_UPLOAD']['target_table']) + ', '.join(
-            ['("%s", "%s")' % x for x in pairs[sidx:eidx]])
+        sql = sql_template.format(table_name=ass_disambig_table) + ', '.join(['("%s", "%s")' % x for x in pairs[sidx:eidx]])
         g_cursor.execute(sql)
-    index_query = f"alter table assignee_disambiguation_mapping_{end_date} add index uuid (uuid)"
+    index_query = f"alter table {ass_disambig_table} add index uuid (uuid)"
     logging.log(logging.INFO, f'{index_query}')
     g_cursor.execute(index_query)
     cnx_g.commit()

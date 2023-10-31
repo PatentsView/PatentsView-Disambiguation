@@ -58,9 +58,9 @@ def prepare_config(config):
         source='both')
     config['inventor']['clustering_output_folder'] = os.path.join(config['inventor']['outprefix'], 'inventor',
                                                                   config['inventor']['run_id'])
-    suffix = datetime.datetime.strptime(config['DATES']['END_DATE'], "%Y-%m-%d").strftime("%Y%m%d")
+    # suffix = datetime.datetime.strptime(config['DATES']['END_DATE'], "%Y-%m-%d").strftime("%Y%m%d")
     config['INVENTOR_UPLOAD'] = {}
-    config['INVENTOR_UPLOAD']['target_table'] = "inventor_disambiguation_mapping_{}".format(suffix)
+    # config['INVENTOR_UPLOAD']['target_table'] = "inventor_disambiguation_mapping_{}".format(suffix)
 
     ### Assignee
     config['assignee']['run_id'] = config['DATES']['END_DATE']
@@ -73,6 +73,6 @@ def prepare_config(config):
 
     config['assignee']['clustering_output_folder'] = os.path.join(config['assignee']['outprefix'], 'assignee',
                                                                   config['assignee']['run_id'])
-    config['ASSIGNEE_UPLOAD']['target_table'] = "assignee_disambiguation_mapping_{}".format(suffix)
+    # config['ASSIGNEE_UPLOAD']['target_table'] = "assignee_disambiguation_mapping_{}".format(suffix)
 
     return config
