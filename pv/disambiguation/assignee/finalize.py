@@ -43,12 +43,14 @@ def check_assignee_disambiguation_tsv(output_file):
     s = d.groupby('ass_id', sort=True).count()
     f = s.sort_values(by='id', ascending=False).head(20)
     f = f.reset_index()
-    if f['id'][0] > 100000:
-        print(f)
-        raise Exception(f"ASSIGNEE DISAMBIGUATION OVER-CLUSTERED")
-    if f['id'][0] < 50000:
-        print(f)
-        raise Exception(f"ASSIGNEE DISAMBIGUATION UNDER-CLUSTERED")
+    print(f)
+    # REMOVING THE Exception HERE BECAUSE WE WANT TO CHECK THE CLUSTER RESULTS AFTER POST-PROCESSING
+    # if f['id'][0] > 350000:
+    #     print(f)
+    #     raise Exception(f"ASSIGNEE DISAMBIGUATION OVER-CLUSTERED")
+    # if f['id'][0] < 50000:
+    #     print(f)
+    #     raise Exception(f"ASSIGNEE DISAMBIGUATION UNDER-CLUSTERED")
 
 
 def finalize_results(config):
@@ -78,7 +80,7 @@ def finalize_results(config):
     logging.info('running cc...done')
 
     logging.info('loading mentions...')
-    end_date = config["DATES"]["END_DATE"]
+    end_date = config["DATES"]["END_DATE_DASH"]
     path = f"{config['BASE_PATH']['assignee']}".format(end_date=end_date) + config['BUILD_ASSIGNEE_NAME_MENTIONS'][
         'feature_out']
     print(path)

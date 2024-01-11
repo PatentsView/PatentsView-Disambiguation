@@ -214,7 +214,6 @@ def run_clustering(config):
 
     # Find all of the canopies in the entire dataset.
     all_canopies = set(loader.pregranted_canopies.keys()).union(set(loader.granted_canopies.keys()))
-
     singletons = set([x for x in all_canopies if loader.num_records(x) == 1])
     all_canopies_sorted = sorted(list(all_canopies.difference(singletons)), key=lambda x: (loader.num_records(x), x),
                                  reverse=True)
@@ -228,22 +227,25 @@ def run_clustering(config):
     # setup the output dir
     outdir = config['inventor']['clustering_output_folder']
 
-    # the number of chunks based on the specified chunksize
+    # # the number of chunks based on the specified chunksize
     num_chunks = max(1, int(len(all_canopies_sorted) / int(config['inventor']['chunk_size'])))
 
     logging.info('%s num_chunks', num_chunks)
     logging.info('%s chunk_size', int(config['inventor']['chunk_size']))
 
-    # chunk all of the data by canopy
+    # chunk all of the data by canopy - CREATING CHUNKS
     chunks = [[] for _ in range(num_chunks)]
     for idx, c in enumerate(all_canopies_sorted):
         chunks[idx % num_chunks].append(c)
-    pool = mp.Pool(int(config['inventor']['parallelism']))
+
+    # RUN CLUSTERING -- NO PARALLELISM
     # for x in range(0, num_chunks):
     # for x in [0]:
     #    logging.log(logging.INFO, 'Chunk {x}'.format(x=x))
     #    run_batch(config, chunks[x], outdir, x, 'job-%s' % x)
 
+    # RUN CLUSTERING -- PARALLELISM
+    pool = mp.Pool(int(config['inventor']['parallelism']))
     argument_list = [(config, chunks[x], outdir, x, 'job-%s' % x) for x in range(0, num_chunks)]
     dev_null = [
         n for n in pool.starmap(
@@ -258,14 +260,29 @@ def run_clustering(config):
     num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
     print(num_singleton_chunks)
 
-    # chunk all of the data by canopy
-    # singleton_chunks = [[] for _ in range(num_singleton_chunks)]
-    # for idx, c in enumerate(singletons):
-    #     singleton_chunks[idx % num_singleton_chunks].append(c)
-    #
-    # for x in range(0, num_singleton_chunks):
-    #     run_singletons(config, singleton_chunks[x], outdir, 'singleton-job-%s' % x)
+    # chunk all of the data by canopy - CREATING SINGLETONS CHUNKS
+    singleton_chunks = [[] for _ in range(num_singleton_chunks)]
+    for idx, c in enumerate(singletons):
+        singleton_chunks[idx % num_singleton_chunks].append(c)
 
+    # RUN SINGLETONS
+    for x in range(0, num_singleton_chunks):
+        run_singletons(config, singleton_chunks[x], outdir, 'singleton-job-%s' % x)
+
+    test_file_export(outdir)
+
+
+def test_file_export(outdir):
+    for fname in os.listdir(outdir):
+        singleton_count = 0
+        job_count = 0
+        if 'singleton' in fname:
+            singleton_count += 1
+        elif 'job' in fname:
+            job_count += 1
+    print(f"{job_count} JOB FILES CREATED | {singleton_count} SINGLETON FILES CREATED ")
+    assert singleton_count>=30, "NOT ENOUGH SINGLETON FILES GENERATED"
+    assert job_count>=88, "NOT ENOUGH JOB FILES GENERATED"
 
 
 def main(argv):

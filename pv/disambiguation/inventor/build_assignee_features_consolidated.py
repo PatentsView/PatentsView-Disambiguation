@@ -59,7 +59,7 @@ def build_assignee_mentions_for_type(config, source='granted_patent_database'):
 def generate_assignee_mentions(config):
     logging.info('Building assignee features')
     features = collections.defaultdict(list)
-    end_date = config["DATES"]["END_DATE"]
+    end_date = config["DATES"]["END_DATE_DASH"]
     pool = mp.Pool()
     feats = [
         n for n in pool.starmap(
