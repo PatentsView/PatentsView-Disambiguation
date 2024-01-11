@@ -9,6 +9,7 @@ from absl import logging, app
 import csv, sys
 from pendulum import DateTime
 from lib.configuration import get_disambig_config
+from multiprocessing.pool import ThreadPool as Pool
 
 from pv.disambiguation.util.config_util import generate_incremental_components
 
@@ -76,9 +77,6 @@ def build_assignee_mentions_for_source(config, source='granted_patent_database')
         am = AssigneeMention.from_sql_records(rec)
         feature_map[am.name_features()[0]].append(am)
         idx += 1
-        # if idx % 10000 == 0:
-        #     print(f"Iteration {idx} of len({records_generator}) : {idx}/{records_generator} %")
-        # logging.log_every_n(logging.INFO, 'Processed %s %s records - %s features', 10000, source, idx, len(feature_map))
     return feature_map
 
 def generate_assignee_mentions(config):
@@ -95,11 +93,14 @@ def generate_assignee_mentions(config):
     records = dict()
     from collections import defaultdict
     canopies = defaultdict(set)
+    pool = Pool(4)
     for nm in tqdm(name_mentions, desc='Assignee NameMentions', position=0, leave=True, file=sys.stdout, miniters=100000, maxinterval=1200):
         anm = AssigneeNameMention.from_assignee_mentions(nm, feats[0][nm] + feats[1][nm])
         for c in anm.canopies:
-            canopies[c].add(anm.uuid)
+            pool.apply_async(canopies[c].add(anm.uuid), (c,))
         records[anm.uuid] = anm
+    pool.close()
+    pool.join()
     if os.path.isfile("assignee_mentions.records.pkl"):
         print("Removing Current File in Directory")
         os.remove("assignee_mentions.records.pkl")
@@ -109,19 +110,6 @@ def generate_assignee_mentions(config):
 
     print(f"RECORDS HAVE SHAPE: {len(records.keys())}")
     print(f"CANOPIES HAVE SHAPE: {len(canopies.keys())}")
-
-    from itertools import islice
-
-    # def chunks(data, name, SIZE=1000000):
-    #     it = iter(data)
-    #     for i in range(0, len(data), SIZE):
-    #         batched_name = f"{name}.{i}.pkl"
-    #         temp_canopies = {k: data[k] for k in islice(it, SIZE)}
-    #         with open(path + batched_name, 'wb') as fout:
-    #             pickle.dump(temp_canopies, fout, buffer_callback=10, protocol=5)
-    #
-    # chunks(records, name=".records", SIZE=250000)
-    # chunks(canopies, name=".canopies", SIZE=50000)
 
     with open(path + '.%s.pkl' % 'records', 'wb') as fout:
         pickle.dump(records, fout, buffer_callback=10, protocol=5)

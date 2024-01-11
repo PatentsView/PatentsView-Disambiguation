@@ -13,7 +13,7 @@ class AssigneeDisambiguationPipelineTester():
         # Local imports
         from pv.disambiguation.core import AssigneeNameMention
         # Config setup
-        end_date = self.config["DATES"]["END_DATE"]
+        end_date = self.config["DATES"]["END_DATE"]["END_DATE_DASH"]
         path = f"{self.config['BASE_PATH']['assignee']}".format(end_date=end_date) + \
                self.config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
         print(path)
