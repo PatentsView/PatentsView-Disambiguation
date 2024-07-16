@@ -35,9 +35,11 @@ def build_canopies_for_type(config, source='granted_patent_database'):
     if cnx is None:
         return canopy2uuids
     cursor = cnx.cursor()
+    # TODO: See about storing and re-loading these records from an earlier step
     query = "SELECT {id_field}, name_first, name_last FROM rawinventor ri {filter};" \
         .format(id_field=incremental_components.get('id_field'),
                 filter=incremental_components.get('filter'))
+    # TODO: repeat for individual assignees and inventors
     print(query)
     cursor.execute(query)
     idx = 0
@@ -49,6 +51,7 @@ def build_canopies_for_type(config, source='granted_patent_database'):
         logging.log_every_n(logging.INFO, 'Processed %s %s records - %s canopies', 1000, source, idx,
                             len(canopy2uuids))
     logging.log(logging.INFO, 'Processed %s %s records - %s canopies', idx, source, len(canopy2uuids))
+    # canopy2uuids has structure {"fl:ab_ln:cdefg":['uuid-1','uuid-2'], ... }
     return canopy2uuids
 
 
@@ -76,7 +79,12 @@ def build_canopies_for_type(config, source='granted_patent_database'):
 #     return new_granted_canopies, new_pregranted_canopies
 
 
-def generate_inventor_canopies(config):
+def generate_inventor_canopies(config) -> None:
+    """
+    creates two dictionaries with inventor name patterns as keys and lists of raw record uuids as values,
+    then writes these dictionaries to pickles, one for pregrant, one for granted.
+    No Return
+    """
     # create output folder if it doesn't exist
     end_date = config["DATES"]["END_DATE_DASH"]
     path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_CANOPIES']['canopy_out']
