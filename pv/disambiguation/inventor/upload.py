@@ -44,6 +44,28 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
         g_cursor.execute(sql)
     cnx_g.commit()
     try:
+        g_cursor.execute(
+            '''
+            DELETE FROM {table_name}
+            WHERE uuid NOT IN (
+                SELECT MIN(uuid) AS uuid
+                FROM {table_name}
+                GROUP BY uuid
+            )
+            '''.format(
+                table_name=config['INVENTOR_UPLOAD']['target_table']
+            )
+        )
+        # Fetch the number of rows affected
+        duplicates_removed = g_cursor.rowcount
+        # Print the result
+        print(f"Duplicate rows removed successfully. Total duplicates removed: {duplicates_removed}")
+    except Exception as e:
+        print(f"An error occurred while removing duplicates: {e}")
+        from mysql.connector import errorcode
+        if not e.errno == errorcode.ER_MULTIPLE_PRI_KEY:
+            raise
+    try:
         g_cursor.execute(f"alter table {inventor_disambig_table} add primary key (uuid)" )
     except ProgrammingError as e:
         from mysql.connector import errorcode
