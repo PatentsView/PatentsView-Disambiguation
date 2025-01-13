@@ -58,7 +58,7 @@ def prepare_config(config):
         source='both')
     config['inventor']['clustering_output_folder'] = os.path.join(config['inventor']['outprefix'], 'inventor',
                                                                   config['inventor']['run_id'])
-    suffix = datetime.datetime.strptime(config['DATES']['END_DATE'], "%Y%m%d").strftime("%Y%m%d")
+    suffix = datetime.datetime.strptime(config['DATES']['END_DATE'], "%Y%m%d").strftime("%Y-%m-%d")
     config['INVENTOR_UPLOAD'] = {}
     config['INVENTOR_UPLOAD']['target_table'] = "inventor_disambiguation_mapping_{}".format(suffix)
 
