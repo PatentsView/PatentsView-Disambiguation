@@ -33,12 +33,13 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
     batch_size = 100000
     offsets = [x for x in range(0, len(pairs), batch_size)]
     print("INSERT INTO {table_name} (uuid, inventor_id) VALUES .... ".format(table_name=config['INVENTOR_UPLOAD']['target_table']) )
-    for idx in tqdm(range(len(offsets)), 'adding %s' % target, total=len(offsets)):
+    for idx in tqdm(range(len(offsets)), 'adding %s' % target, total=len(offsets), mininterval=(len(offsets)/100)):
         sidx = offsets[idx]
         eidx = min(len(pairs), offsets[idx] + batch_size)
-        sql = "INSERT INTO {table_name} (uuid, inventor_id) VALUES ".format(
+        sql = "INSERT IGNORE INTO {table_name} (uuid, inventor_id) VALUES ".format(
             table_name=config['INVENTOR_UPLOAD']['target_table']) + ', '.join(
-            ['("%s", "%s")' % x for x in pairs[sidx:eidx]])
+            ['(%s, %s)' % x for x in pairs[sidx:eidx]]
+        )
         # logging.log_first_n(logging.INFO, '%s', 1, sql)
         g_cursor.execute(sql)
     cnx_g.commit()
