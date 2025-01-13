@@ -1,5 +1,5 @@
 import configparser
-import datetime
+from datetime import datetime
 import re
 from absl import app
 from absl import logging
