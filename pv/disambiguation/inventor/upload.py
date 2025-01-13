@@ -117,8 +117,8 @@ def upload(config):
     pairs_pregranted = list(set(pairs_pregranted))
 
     # Log the lengths after removing duplicates
-    print(f" After set Length of unique pairs_granted: {len(pairs_granted)}")
-    print(f"After set Length of unique pairs_pregranted: {len(pairs_pregr
+    print(f"After set Length of unique pairs_granted: {len(pairs_granted)}")
+    print(f"After set Length of unique pairs_pregranted: {len(pairs_pregr)}")
 
     create_tables(config)
     load_target_from_source(config, pairs_granted, target='granted_patent_database')
