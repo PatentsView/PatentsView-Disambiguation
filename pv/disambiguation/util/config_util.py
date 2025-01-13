@@ -45,7 +45,8 @@ def prepare_config(config):
     canopy_path = config['INVENTOR_BUILD_CANOPIES']['canopy_out']
 
     date_formatted = datetime.datetime.strptime(config['DATES']['END_DATE'], "%Y%m%d").strftime("%Y-%m-%d")
-    canopy_path = f"/project/data/{date_formatted}/inventor"
+    print(date_formatted)
+    print(canopy_path)
     config['inventor']['pregranted_canopies'] = "{out_path}.{source}.pkl".format(out_path=canopy_path,
                                                                                  source='pregranted')
     config['inventor']['granted_canopies'] = "{out_path}.{source}.pkl".format(out_path=canopy_path,
