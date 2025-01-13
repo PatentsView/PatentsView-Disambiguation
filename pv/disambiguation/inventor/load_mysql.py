@@ -1,9 +1,10 @@
 import pickle
-
+import datetime
 from absl import logging
 
 import pv.disambiguation.util.db as pvdb
 from pv.disambiguation.core import InventorMention
+
 
 
 class Loader(object):
@@ -51,7 +52,14 @@ class Loader(object):
     @staticmethod
     def from_config(config, config_type='inventor'):
         end_date = config["DATES"]["END_DATE"]
-        path = f"{config['BASE_PATH']['inventor']}".format(end_date=end_date) + config['INVENTOR_BUILD_CANOPIES']['canopy_out']
+        # Convert `end_date` to the desired format
+        formatted_end_date = datetime.datetime.strptime(end_date, "%Y%m%d").strftime("%Y-%m-%d")
+        print("new formatted end date")
+        print(formatted_end_date)
+        # Construct the path with the formatted date
+        path = f"{config['BASE_PATH']['inventor']}".format(end_date=formatted_end_date) + \
+               config['INVENTOR_BUILD_CANOPIES']['canopy_out']
+
         logging.info('building loader from config %s', str(config))
         if config[config_type]['pregranted_canopies'].lower() != 'none':
             logging.info('loading pregranted canopies from %s', config[config_type]['pregranted_canopies'])
