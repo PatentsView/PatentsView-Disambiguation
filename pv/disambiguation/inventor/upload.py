@@ -31,32 +31,25 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
     cnx_g = pvdb.connect_to_disambiguation_database(config, dbtype=target)
     g_cursor = cnx_g.cursor()
     batch_size = 100000
-    unique_pairs = list({pair[0]: pair for pair in pairs}.values())
-    offsets = [x for x in range(0, len(unique_pairs), batch_size)]
+    offsets = [x for x in range(0, len(pairs), batch_size)]
     print("INSERT INTO {table_name} (uuid, inventor_id) VALUES .... ".format(table_name=config['INVENTOR_UPLOAD']['target_table']) )
     for idx in tqdm(range(len(offsets)), 'adding %s' % target, total=len(offsets)):
         sidx = offsets[idx]
         eidx = min(len(pairs), offsets[idx] + batch_size)
-        sql = """
-        INSERT INTO {table_name} (uuid, inventor_id)
-        VALUES {values}
-        ON DUPLICATE KEY UPDATE uuid = uuid
-        """.format(
-            table_name=config['INVENTOR_UPLOAD']['target_table'],
-            values=', '.join(['("%s", "%s")' % x for x in pairs[sidx:eidx]])
-        )
+        sql = "INSERT INTO {table_name} (uuid, inventor_id) VALUES ".format(
+            table_name=config['INVENTOR_UPLOAD']['target_table']) + ', '.join(
+            ['("%s", "%s")' % x for x in pairs[sidx:eidx]])
         # logging.log_first_n(logging.INFO, '%s', 1, sql)
         g_cursor.execute(sql)
     cnx_g.commit()
-    # try:
-    #     # Step 1: Add in Primary Key
-    #     g_cursor.execute(
-    #         'alter table {table_name} add primary key (uuid)'.format(
-    #             table_name=config['INVENTOR_UPLOAD']['target_table']))
-    # except ProgrammingError as e:
-    #     from mysql.connector import errorcode
-    #     if not e.errno == errorcode.ER_MULTIPLE_PRI_KEY:
-    #         raise
+    try:
+        g_cursor.execute(
+            'alter table {table_name} add primary key (uuid)'.format(
+                table_name=config['INVENTOR_UPLOAD']['target_table']))
+    except ProgrammingError as e:
+        from mysql.connector import errorcode
+        if not e.errno == errorcode.ER_MULTIPLE_PRI_KEY:
+            raise
     cnx_g.close()
 
 
@@ -79,6 +72,10 @@ def upload(config):
     pregranted_ids = set([y for x in loader.pregranted_canopies.values() for y in x])
     granted_ids = set([y for x in loader.granted_canopies.values() for y in x])
 
+    # Print the lengths of the sets
+    print("Length of pregranted_ids:", len(pregranted_ids))
+    print("Length of granted_ids:", len(granted_ids))
+
     pairs_pregranted = []
     pairs_granted = []
     with open(finalize_output_file, 'r') as fin:
@@ -89,7 +86,7 @@ def upload(config):
             elif splt[0] in granted_ids:
                 pairs_granted.append((splt[0], splt[1]))
     create_tables(config)
-    # load_target_from_source(config, pairs_granted, target='granted_patent_database')
+    load_target_from_source(config, pairs_granted, target='granted_patent_database')
     load_target_from_source(config, pairs_pregranted, target='pregrant_database')
 
 
