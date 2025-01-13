@@ -91,12 +91,26 @@ def upload(config):
     pairs_pregranted = []
     pairs_granted = []
     with open(finalize_output_file, 'r') as fin:
+        line_count = 0  # Counter to limit the number of lines printed
+        print_limit = 5  # Change this to the number of lines you want to preview
+
         for line in fin:
             splt = line.strip().split('\t')
+
+            # Print the line and the split content for the first few lines
+            if line_count < print_limit:
+                print(f"Raw line: {line.strip()}")
+                print(f"Split content: {splt}")
+
             if splt[0] in pregranted_ids:
                 pairs_pregranted.append((splt[0], splt[1]))
             elif splt[0] in granted_ids:
                 pairs_granted.append((splt[0], splt[1]))
+
+            line_count += 1
+
+    print(f"length of pair_granted:{len(pairs_granted)}")
+    print(f"length of pair_pregranted:{len(pairs_pregranted)}")
     create_tables(config)
     load_target_from_source(config, pairs_granted, target='granted_patent_database')
     load_target_from_source(config, pairs_pregranted, target='pregrant_database')
