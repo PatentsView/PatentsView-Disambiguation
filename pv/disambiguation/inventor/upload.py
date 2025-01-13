@@ -89,9 +89,6 @@ def upload(config):
         # Replace the original date with the formatted date in the path
         finalize_output_file = finalize_output_file.replace(original_date, formatted_date)
 
-    # Add the filename to the updated folder path
-    finalize_output_file = f"{finalize_output_file}/disambiguation.tsv"
-
     # Print the result
     print(finalize_output_file)
 
