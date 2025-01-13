@@ -28,14 +28,20 @@ def create_tables(config):
     pg_cursor.close()
 
 def load_target_from_source(config, pairs, target='granted_patent_database'):
-    print("inside load target from source")
-    print(len(pairs))
     cnx_g = pvdb.connect_to_disambiguation_database(config, dbtype=target)
     g_cursor = cnx_g.cursor()
     batch_size = 100000
     offsets = [x for x in range(0, len(pairs), batch_size)]
-    print("length of offsets")
-    print(len(offsets))
+    print("INSERT INTO {table_name} (uuid, inventor_id) VALUES .... ".format(table_name=config['INVENTOR_UPLOAD']['target_table']) )
+    for idx in tqdm(range(len(offsets)), 'adding %s' % target, total=len(offsets)):
+        sidx = offsets[idx]
+        eidx = min(len(pairs), offsets[idx] + batch_size)
+        sql = "INSERT INTO {table_name} (uuid, inventor_id) VALUES ".format(
+            table_name=config['INVENTOR_UPLOAD']['target_table']) + ', '.join(
+            ['("%s", "%s")' % x for x in pairs[sidx:eidx]])
+        # logging.log_first_n(logging.INFO, '%s', 1, sql)
+        g_cursor.execute(sql)
+    cnx_g.commit()
     try:
         g_cursor.execute(
             'alter table {table_name} add primary key (uuid)'.format(
@@ -44,26 +50,9 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
         from mysql.connector import errorcode
         if not e.errno == errorcode.ER_MULTIPLE_PRI_KEY:
             raise
-    print("added primary key to table")
-    cnx_g.commit()
-    print("INSERT INTO {table_name} (uuid, inventor_id) VALUES .... ".format(table_name=config['INVENTOR_UPLOAD']['target_table']) )
-    for idx in tqdm(range(len(offsets)), 'adding %s' % target, total=len(offsets), mininterval=(len(offsets)/100)):
-        sidx = offsets[idx]
-        eidx = min(len(pairs), offsets[idx] + batch_size)
-        sql = """
-        INSERT INTO {table_name} (uuid, inventor_id) VALUES 
-        """.format(
-            table_name=config['INVENTOR_UPLOAD']['target_table']
-        ) + ', '.join(
-            ['(%s, %s)' % x for x in pairs[sidx:eidx]]
-        ) + """
-        ON DUPLICATE KEY UPDATE inventor_id = VALUES(inventor_id)
-        """
-        # logging.log_first_n(logging.INFO, '%s', 1, sql)
-        g_cursor.execute(sql)
-    cnx_g.commit()
     cnx_g.close()
 
+mininterval=(len(offsets)/100)
 
 def upload(config):
     finalize_output_file = "{}/disambiguation.tsv".format(config['inventor']['clustering_output_folder'])
