@@ -31,7 +31,24 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
     cnx_g = pvdb.connect_to_disambiguation_database(config, dbtype=target)
     g_cursor = cnx_g.cursor()
     batch_size = 100000
-    offsets = [x for x in range(0, len(pairs), batch_size)]
+
+    seen_uuids = set()
+    unique_pairs = []
+    duplicate_count = 0
+
+    for pair in pairs:
+        if pair[0] in seen_uuids:
+            duplicate_count += 1  # Count duplicates
+        else:
+            seen_uuids.add(pair[0])
+            unique_pairs.append(pair)
+
+    print(f"Total pairs processed: {len(pairs)}")
+    print(f"Unique pairs retained: {len(unique_pairs)}")
+    print(f"Duplicate pairs filtered out: {duplicate_count}"
+
+    unique_pairs = list({pair[0]: pair for pair in pairs}.values())
+    offsets = [x for x in range(0, len(unique_pairs), batch_size)]
     print("INSERT INTO {table_name} (uuid, inventor_id) VALUES .... ".format(table_name=config['INVENTOR_UPLOAD']['target_table']) )
     for idx in tqdm(range(len(offsets)), 'adding %s' % target, total=len(offsets)):
         sidx = offsets[idx]
