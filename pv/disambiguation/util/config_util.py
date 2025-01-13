@@ -43,6 +43,9 @@ def generate_incremental_components(config, source, db_table_prefix, ignore_filt
 def prepare_config(config):
     config['inventor']['run_id'] = config['DATES']['END_DATE']
     canopy_path = config['INVENTOR_BUILD_CANOPIES']['canopy_out']
+
+    date_formatted = datetime.datetime.strptime(config['DATES']['END_DATE'], "%Y%m%d").strftime("%Y-%m-%d")
+    canopy_path = f"/project/data/{date_formatted}/inventor"
     config['inventor']['pregranted_canopies'] = "{out_path}.{source}.pkl".format(out_path=canopy_path,
                                                                                  source='pregranted')
     config['inventor']['granted_canopies'] = "{out_path}.{source}.pkl".format(out_path=canopy_path,
@@ -58,7 +61,7 @@ def prepare_config(config):
         source='both')
     config['inventor']['clustering_output_folder'] = os.path.join(config['inventor']['outprefix'], 'inventor',
                                                                   config['inventor']['run_id'])
-    suffix = datetime.datetime.strptime(config['DATES']['END_DATE'], "%Y%m%d").strftime("%Y-%m-%d")
+    suffix = datetime.datetime.strptime(config['DATES']['END_DATE'], "%Y-%m-%d").strftime("%Y%m%d")
     config['INVENTOR_UPLOAD'] = {}
     config['INVENTOR_UPLOAD']['target_table'] = "inventor_disambiguation_mapping_{}".format(suffix)
 
