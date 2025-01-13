@@ -28,6 +28,7 @@ def create_tables(config):
     pg_cursor.close()
 
 
+
 def load_target_from_source(config, pairs, target='granted_patent_database'):
     cnx_g = pvdb.connect_to_disambiguation_database(config, dbtype=target)
     g_cursor = cnx_g.cursor()
