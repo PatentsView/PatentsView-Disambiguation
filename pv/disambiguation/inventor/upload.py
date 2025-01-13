@@ -36,35 +36,17 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
     for idx in tqdm(range(len(offsets)), 'adding %s' % target, total=len(offsets)):
         sidx = offsets[idx]
         eidx = min(len(pairs), offsets[idx] + batch_size)
-        sql = "INSERT INTO {table_name} (uuid, inventor_id) VALUES ".format(
-            table_name=config['INVENTOR_UPLOAD']['target_table']) + ', '.join(
-            ['("%s", "%s")' % x for x in pairs[sidx:eidx]])
+        sql = """
+        INSERT INTO {table_name} (uuid, inventor_id)
+        VALUES {values}
+        ON DUPLICATE KEY UPDATE uuid = uuid
+        """.format(
+            table_name=config['INVENTOR_UPLOAD']['target_table'],
+            values=', '.join(['("%s", "%s")' % x for x in pairs[sidx:eidx]])
+        )
         # logging.log_first_n(logging.INFO, '%s', 1, sql)
         g_cursor.execute(sql)
     cnx_g.commit()
-    # try:
-    #     g_cursor.execute(
-    #         '''
-    #         DELETE FROM {table_name}
-    #         WHERE uuid NOT IN (
-    #             SELECT MIN(uuid) AS uuid
-    #             FROM {table_name}
-    #             GROUP BY uuid
-    #         )
-    #         '''.format(
-    #             table_name=config['INVENTOR_UPLOAD']['target_table']
-    #         )
-    #     )
-    #     # Fetch the number of rows affected
-    #     duplicates_removed = g_cursor.rowcount
-    #
-    #     # Print the result
-    #     print(f"Duplicate rows removed successfully. Total duplicates removed: {duplicates_removed}")
-    # except Exception as e:
-    #         print(f"An error occurred while removing duplicates: {e}")
-    #         from mysql.connector import errorcode
-    #         if not e.errno == errorcode.ER_MULTIPLE_PRI_KEY:
-    #             raise
     try:
         # Step 1: Add in Primary Key
         g_cursor.execute(
