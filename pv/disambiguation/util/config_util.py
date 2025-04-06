@@ -74,8 +74,8 @@ def prepare_config(config):
     config['inventor']['assignees'] = "{out_path}.{source}.pkl".format(
         out_path=config['INVENTOR_BUILD_ASSIGNEE_FEAT']['feature_out'],
         source='both')
-    config['inventor']['clustering_output_folder'] = os.path.join(config['inventor']['outprefix'], 'inventor',
-                                                                  config['inventor']['run_id'])
+    config['inventor']['clustering_output_folder'] = os.path.join(config['inventor']['outprefix'], 'inventor')
+                                                                  # config['inventor']['run_id'])
     suffix = datetime.datetime.strptime(config['DATES']['END_DATE'], "%Y%m%d").strftime("%Y%m%d")
     config['INVENTOR_UPLOAD'] = {}
 
