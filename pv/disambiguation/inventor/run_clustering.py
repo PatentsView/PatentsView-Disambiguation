@@ -258,7 +258,6 @@ def run_clustering(config):
 
     logging.info('Running singletons!!')
     num_singleton_chunks = max(1, int(len(singletons) / int(config['inventor']['chunk_size'])))
-    print(num_singleton_chunks)
 
     # chunk all of the data by canopy - CREATING SINGLETONS CHUNKS
     singleton_chunks = [[] for _ in range(num_singleton_chunks)]
@@ -273,14 +272,14 @@ def run_clustering(config):
 
 
 def test_file_export(outdir):
+    singleton_count = 0
+    job_count = 0
     for fname in os.listdir(outdir):
-        singleton_count = 0
-        job_count = 0
         if 'singleton' in fname:
             singleton_count += 1
         elif 'job' in fname:
             job_count += 1
-    print(f"{job_count} JOB FILES CREATED | {singleton_count} SINGLETON FILES CREATED ")
+    logging.info(f"{job_count} JOB FILES CREATED | {singleton_count} SINGLETON FILES CREATED ")
     assert singleton_count>=30, "NOT ENOUGH SINGLETON FILES GENERATED"
     assert job_count>=88, "NOT ENOUGH JOB FILES GENERATED"
 
