@@ -12,7 +12,7 @@ from pv.disambiguation.location.reparser import LOCATIONS
 def clean_name(name_str):
     return name_str.replace('\"', '')
 
-
+# TODO: exchange old-style %s string formats for more readable f-strings or "{}".format()
 class InventorMention(object):
     def __init__(self, uuid, patent_id, rawlocation_id, name_first, name_last, sequence, rule_47, deceased,
                  document_number=None, city=None, state=None, country=None):
@@ -36,6 +36,7 @@ class InventorMention(object):
         self.title = None
         self.coinventors = []
 
+        # NOTE: underscored features are the cleaned versions produced by compute_name_features()
         self._first_name = None
         self._first_initial = None
         self._first_letter = None
