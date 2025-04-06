@@ -29,8 +29,7 @@ def process(fout, rundir):
 
 def finalize(config):
     output_file = "{}/disambiguation.tsv".format(config['inventor']['clustering_output_folder'])
-    clustering_output_directory = os.path.join(config['inventor']['outprefix'], 'inventor',
-                                               config['inventor']['run_id'])
+    clustering_output_directory = os.path.join(config['inventor']['clustering_output_folder'])
     with open(output_file, "w") as fout:
         process(fout, clustering_output_directory)
 

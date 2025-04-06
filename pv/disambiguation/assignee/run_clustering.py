@@ -135,17 +135,12 @@ def batcher(canopy_list, loader, min_batch_size=800):
                 all_lbls.append(-1)
                 all_canopies.append(c)
                 all_records.append(record)
-        # lbls = -1 * np.ones(len(records))
-        # all_canopies.extend([c for _ in range(len(pids))])
-        # all_pids.extend(pids)
-        # all_lbls.extend(lbls)
-        # all_records.extend(records)
     if len(all_pids) > 0:
         yield list(all_pids), list(all_lbls), all_records, all_canopies
 
 
 def run_batch(config, canopy_list, outdir, loader, chunk_id, job_name='disambig'):
-    logger.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
+    # logger.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
 
     os.makedirs(outdir, exist_ok=True)
     results = dict()
@@ -162,16 +157,13 @@ def run_batch(config, canopy_list, outdir, loader, chunk_id, job_name='disambig'
             results = pickle.load(fin)
 
     to_run_on = needs_predicting(canopy_list, results, None)
-    logger.info('had results for %s, running on %s', len(canopy_list) - len(to_run_on), len(to_run_on))
+    # logger.info('had results for %s, running on %s', len(canopy_list) - len(to_run_on), len(to_run_on))
 
     if len(to_run_on) == 0:
         logger.info('already had all canopies completed! wrapping up here...')
     encoding_model = AssigneeModel.from_config(config)
     weight_model = LinearAndRuleModel.from_encoding_model(encoding_model)
     weight_model.aux['threshold'] = 1.0 / (1.0 + float(config['assignee']['sim_threshold']))
-    print(" -------------  -------------  -------------  ------------- ")
-    print(f"USING float({config['assignee']['sim_threshold']}) THRESHOLD")
-    print(" -------------  -------------  -------------  ------------- ")
     logger.info('[%s] using threshold %s ', job_name, weight_model.aux['threshold'])
     if to_run_on:
         for idx, (all_pids, all_lbls, all_records, all_canopies) in enumerate(
@@ -188,14 +180,11 @@ def run_batch(config, canopy_list, outdir, loader, chunk_id, job_name='disambig'
                 logger.info(
                     {'computed': idx + int(chunk_id) * int(config['assignee']['chunk_size']),
                      'num_mentions': num_mentions_processed})
-            #     logger.info('[%s] caching results for job', job_name)
-            #     with open(outfile, 'wb') as fin:
-            #         pickle.dump(results, fin)
 
     with open(outfile, 'wb') as fin:
         pickle.dump(results, fin)
 
-    logger.info('Beginning to save all tree structures....')
+    # logger.info('Beginning to save all tree structures....')
     grinch_trees = []
     for idx, t in tqdm(enumerate(tree_list), total=len(tree_list)):
         grinch = WeightedMultiFeatureGrinch.from_agglom(t, pids_list[idx], pids_canopy_list[idx])
@@ -214,7 +203,7 @@ def handle_singletons(canopy2predictions, singleton_canopies, loader):
 
 
 def run_singletons(canopy_list, outdir, loader, job_name='disambig'):
-    logger.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
+    # logger.info('need to run on %s canopies = %s ...', len(canopy_list), str(canopy_list[:5]))
 
     os.makedirs(outdir, exist_ok=True)
     results = dict()
