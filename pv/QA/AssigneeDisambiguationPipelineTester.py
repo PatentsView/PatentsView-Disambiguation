@@ -15,6 +15,7 @@ class AssigneeDisambiguationPipelineTester():
         from pv.disambiguation.core import AssigneeNameMention
         # Config setup
         end_date = self.config["DATES"]["END_DATE"]
+        end_date = datetime.strptime(end_date, "%Y%m%d").strftime("%Y-%m-%d")
         path = f"{self.config['BASE_PATH']['assignee']}".format(end_date=end_date,
                                                                 data_root=self.config['FOLDERS']['data_root']) + \
                self.config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
