@@ -41,7 +41,6 @@ def generate_incremental_components(config, source, db_table_prefix, ignore_filt
 
 
 def prepare_config(config):
-    config['inventor']['run_id'] = config['DATES']['END_DATE']
     canopy_path = config['INVENTOR_BUILD_CANOPIES']['canopy_out']
 
     date_formatted = datetime.datetime.strptime(config['DATES']['END_DATE'], "%Y%m%d").strftime("%Y-%m-%d")
@@ -64,10 +63,8 @@ def prepare_config(config):
                                                                   config['inventor']['run_id'])
     suffix = datetime.datetime.strptime(config['DATES']['END_DATE'], "%Y%m%d").strftime("%Y%m%d")
     config['INVENTOR_UPLOAD'] = {}
-    config['INVENTOR_UPLOAD']['target_table'] = "inventor_disambiguation_mapping_{}".format(suffix)
 
     ### Assignee
-    config['assignee']['run_id'] = config['DATES']['END_DATE']
     path = config['BUILD_ASSIGNEE_NAME_MENTIONS']['feature_out']
     config['assignee']['assignee_canopies'] = "{out_path}.canopies.pkl".format(out_path=path)
     config['assignee']['assignee_mentions'] = "{out_path}.records.pkl".format(out_path=path)
@@ -76,7 +73,5 @@ def prepare_config(config):
     config['assignee']['assignees'] = config['inventor']['patent_titles']
 
     config['assignee']['clustering_output_folder'] = os.path.join(config['assignee']['outprefix'], 'assignee',
-                                                                  config['assignee']['run_id'])
-    config['ASSIGNEE_UPLOAD']['target_table'] = "assignee_disambiguation_mapping_{}".format(suffix)
-
+                                                                  config['DATES']['END_DATE_DASH'])
     return config

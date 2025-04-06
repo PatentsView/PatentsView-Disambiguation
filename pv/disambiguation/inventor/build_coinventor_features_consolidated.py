@@ -50,7 +50,7 @@ def build_coinventor_mentions_for_type(config, source='granted_patent_database')
 def generate_coinventor_mentions(config):
     logging.info('Building assignee features')
     features = collections.defaultdict(list)
-    end_date = config["DATES"]["END_DATE"]
+    end_date = config["DATES"]["END_DATE_DASH"]
     # Generate mentions from granted and pregrant databases
     pool = mp.Pool()
     feats = [

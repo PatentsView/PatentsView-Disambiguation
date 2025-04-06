@@ -59,7 +59,6 @@ class Loader(object):
         # Construct the path with the formatted date
         path = f"{config['BASE_PATH']['inventor']}".format(end_date=formatted_end_date) + \
                config['INVENTOR_BUILD_CANOPIES']['canopy_out']
-
         logging.info('building loader from config %s', str(config))
         if config[config_type]['pregranted_canopies'].lower() != 'none':
             logging.info('loading pregranted canopies from %s', config[config_type]['pregranted_canopies'])
