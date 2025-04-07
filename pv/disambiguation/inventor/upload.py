@@ -53,7 +53,7 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
                     table_name=inventor_disambig_table
                 )
             )
-            # Fetch the number of rows affected
+        # Fetch the number of rows affected
         duplicates_removed = g_cursor.rowcount
         # Print the result
         print(f"Duplicate rows removed successfully. Total duplicates removed: {duplicates_removed}")
