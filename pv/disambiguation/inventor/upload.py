@@ -44,15 +44,14 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
         g_cursor.execute(sql)
     cnx_g.commit()
     try:
-        try:
-            g_cursor.execute(
-                '''
-                ALTER TABLE {table_name}
-                ADD PRIMARY KEY (uuid)
-                '''.format(
-                    table_name=inventor_disambig_table
-                )
+        g_cursor.execute(
+            '''
+            ALTER TABLE {table_name}
+            ADD PRIMARY KEY (uuid)
+            '''.format(
+                table_name=inventor_disambig_table
             )
+        )
         # Fetch the number of rows affected
         duplicates_removed = g_cursor.rowcount
         # Print the result
