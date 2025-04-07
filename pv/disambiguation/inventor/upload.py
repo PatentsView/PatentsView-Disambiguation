@@ -47,10 +47,12 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
         g_cursor.execute(
             '''
             DELETE FROM {table_name}
-            WHERE rowid NOT IN (
-                SELECT MIN(rowid)
-                FROM {table_name}
-                GROUP BY uuid
+            WHERE uuid NOT IN (
+                SELECT min_id FROM (
+                    SELECT MIN(uuid) AS min_id
+                    FROM {table_name}
+                    GROUP BY uuid
+                ) AS sub
             )
             '''.format(
                 table_name=inventor_disambig_table
