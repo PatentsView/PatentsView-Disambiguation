@@ -43,24 +43,24 @@ def load_target_from_source(config, pairs, target='granted_patent_database'):
         # logging.log_first_n(logging.INFO, '%s', 1, sql)
         g_cursor.execute(sql)
     cnx_g.commit()
-    try:
-        g_cursor.execute(
-            '''
-            ALTER TABLE {table_name}
-            ADD PRIMARY KEY (uuid)
-            '''.format(
-                table_name=inventor_disambig_table
-            )
-        )
-        # Fetch the number of rows affected
-        duplicates_removed = g_cursor.rowcount
-        # Print the result
-        print(f"Duplicate rows removed successfully. Total duplicates removed: {duplicates_removed}")
-    except Exception as e:
-        print(f"An error occurred while removing duplicates: {e}")
-        from mysql.connector import errorcode
-        if not e.errno == errorcode.ER_MULTIPLE_PRI_KEY:
-            raise
+    # try:
+    #     g_cursor.execute(
+    #         '''
+    #         ALTER TABLE {table_name}
+    #         ADD PRIMARY KEY (uuid)
+    #         '''.format(
+    #             table_name=inventor_disambig_table
+    #         )
+    #     )
+    #     # Fetch the number of rows affected
+    #     duplicates_removed = g_cursor.rowcount
+    #     # Print the result
+    #     print(f"Duplicate rows removed successfully. Total duplicates removed: {duplicates_removed}")
+    # except Exception as e:
+    #     print(f"An error occurred while removing duplicates: {e}")
+    #     from mysql.connector import errorcode
+    #     if not e.errno == errorcode.ER_MULTIPLE_PRI_KEY:
+    #         raise
     try:
         g_cursor.execute(f"alter table {inventor_disambig_table} add primary key (uuid)" )
     except ProgrammingError as e:
