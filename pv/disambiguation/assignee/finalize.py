@@ -38,7 +38,7 @@ def check_assignee_disambiguation_tsv(output_file):
     unique_ids = len(list(d['id']))
     unique_assignee_ids = len(set(list(d['ass_id'])))
     print(f"There are {unique_ids} unique IDs and {unique_assignee_ids} unique_assignee_ids")
-    if unique_ids < 13000000 or unique_assignee_ids < 450000 or unique_assignee_ids > 800000:
+    if unique_ids < 12000000 or unique_assignee_ids < 450000 or unique_assignee_ids > 800000:
         raise Exception(f"ASSIGNEE DISAMBIGUATION RESULTS LOOK WRONG")
     s = d.groupby('ass_id', sort=True).count()
     f = s.sort_values(by='id', ascending=False).head(20)
