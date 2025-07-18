@@ -152,12 +152,17 @@ def run_batch(config, canopy_list, outdir, loader, chunk_id, job_name='disambig'
     outstatefile = os.path.join(outdir, job_name) + 'internals.pkl'
     num_mentions_processed = 0
     num_canopies_processed = 0
-    if os.path.exists(outfile):
-        with open(outfile, 'rb') as fin:
-            results = pickle.load(fin)
 
-    to_run_on = needs_predicting(canopy_list, results, None)
-    # logger.info('had results for %s, running on %s', len(canopy_list) - len(to_run_on), len(to_run_on))
+    if os.path.exists(outfile):
+        try:
+            os.remove(outfile)
+            print(f"File '{outfile}' has been deleted successfully.")
+        except PermissionError:
+            print(f"Permission denied: Could not delete '{outfile}'.")
+        except Exception as e:
+            raise Exception(f"Failed to delete {outfile}")
+
+    to_run_on = canopy_list
 
     if len(to_run_on) == 0:
         logger.info('already had all canopies completed! wrapping up here...')
