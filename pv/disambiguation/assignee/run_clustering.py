@@ -161,6 +161,16 @@ def run_batch(config, canopy_list, outdir, loader, chunk_id, job_name='disambig'
             print(f"Permission denied: Could not delete '{outfile}'.")
         except Exception as e:
             raise Exception(f"Failed to delete {outfile}")
+        
+    
+    if os.path.exists(outstatefile):
+        try:
+            os.remove(outstatefile)
+            print(f"File '{outstatefile}' has been deleted successfully.")
+        except PermissionError:
+            print(f"Permission denied: Could not delete '{outstatefile}'.")
+        except Exception as e:
+            raise Exception(f"Failed to delete {outstatefile}")
 
     to_run_on = canopy_list
 
