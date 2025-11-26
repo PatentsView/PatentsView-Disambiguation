@@ -22,6 +22,7 @@ def create_tables(config):
         "CREATE TABLE IF NOT EXISTS {table_name} (uuid VARCHAR(255), assignee_id VARCHAR(255))".format(
             table_name=table_name))
     pg_cursor = cnx_pg.cursor()
+    pg_cursor.execute(f"drop table if exists {table_name}")
     pg_cursor.execute(
         "CREATE TABLE IF NOT EXISTS {table_name} (uuid VARCHAR(255), assignee_id VARCHAR(255))".format(
             table_name=table_name))
