@@ -39,7 +39,7 @@ password =
 
 ### Download Resources
 
-Download pre-trained models for disambiguation, place in `resources` folder: [clustering_resources/](s3://data.patentsview.org/clustering_resources/)
+Download pre-trained models for disambiguation, place in `resources` folder: [clustering_resources/20250930_latest.zip](https://s3.amazonaws.com/data.patentsview.org/clustering_resources/20250930_latest.zip)
 
 ## Inventor
 
