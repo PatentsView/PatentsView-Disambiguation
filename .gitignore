@@ -137,3 +137,9 @@ data/
 output/
 
 **/.DS_Store
+
+# clustering resources
+clustering_resources/*.pkl
+clustering_resources/*.bin
+clustering_resources/*.torch
+clustering_resources/location
