@@ -3,9 +3,10 @@ import json
 import unicodedata
 import editdistance
 
+
+
 # %%
-def load_assignee_analyzer_configuration(assignee_abbreviation_file, assignee_correction_file,
-                                         assignee_stopphrase_file):
+def load_assignee_analyzer_configuration(assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file, assignee_bh_file):
     correction_configuration = list()
     with open(assignee_correction_file) as fin:
         for line in fin:
@@ -15,7 +16,8 @@ def load_assignee_analyzer_configuration(assignee_abbreviation_file, assignee_co
         for line in fin:
             stopphrase_configuration.append(line.strip())
     remapping_configuration = json.load(open(assignee_abbreviation_file, 'r'))
-    return correction_configuration, stopphrase_configuration, remapping_configuration
+    bh_configuration = json.load(open(assignee_bh_file, 'r'))
+    return correction_configuration, stopphrase_configuration, remapping_configuration, bh_configuration
 
 
 # %%
@@ -59,12 +61,18 @@ def analyze_assignee_name(assignee_name, *args, **kwargs):
     assignee_abbreviation_file = path + "assignee_abbreviations.json"
     assignee_correction_file = path + "assignee_corrections.txt"
     assignee_stopphrase_file = path + "assignee_stopwords.txt"
+    assignee_bronwyn_hall_file = path + "assignee_bronwyn_hall.json"
 
-    CORRECTION_CONFIGURATION, STOPPHRASE_CONFIGURATION, REMAPPING_CONFIGURATION = load_assignee_analyzer_configuration(
-        assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file)
+    CORRECTION_CONFIGURATION, STOPPHRASE_CONFIGURATION, REMAPPING_CONFIGURATION, BH_CONFIGURATION = load_assignee_analyzer_configuration(
+        assignee_abbreviation_file, assignee_correction_file, assignee_stopphrase_file, assignee_bronwyn_hall_file)
     def remove_stopphrase(doc):
         for stopphrase in STOPPHRASE_CONFIGURATION:
             doc = re.sub(r"\b" + stopphrase + r"\b", " ", doc).strip()
+        return doc
+
+    def correct_words_bronwyn_hall(doc):
+        for rawassignee_words, bronwyn_hall_replacement in BH_CONFIGURATION.items():
+            doc = re.sub(rawassignee_words, bronwyn_hall_replacement, doc)
         return doc
 
     def correct_tokens(token):
@@ -101,6 +109,7 @@ def analyze_assignee_name(assignee_name, *args, **kwargs):
     assignee_name = unicodedata.normalize('NFD', assignee_name)
     assignee_name = expand_abbreviation(assignee_name)
     assignee_name = remove_stopphrase(assignee_name)
+    assignee_name = correct_words_bronwyn_hall(assignee_name)
     return char_wb_ngram_with_lower_priority_exclusion(assignee_name, exclusion_list=CORRECTION_CONFIGURATION,
                                                        ngram_range=kwargs.get('ngram_range', N_GRAM_RANGE),
                                                        white_spaces=kwargs.get('white_spaces', re.compile(r"\s\s+")))
